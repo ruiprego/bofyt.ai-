@@ -1,7 +1,7 @@
 import { categoryById, type CategoryId } from './categories'
 import { detectGoalIntent, type GoalIntentKind } from './intent'
 import { toGoalTitle } from './plan'
-import type { Product } from '@/lib/products/types'
+import type { Product, ProductPriceConstraint } from '@/lib/products/types'
 
 export type ResultKind = 'places' | 'options' | 'products'
 
@@ -44,6 +44,8 @@ export interface GoalResultModel {
   defaultRefinement: string
   nextActionLabel: string
   emptyMessage?: string
+  closestItems?: ResultItem[]
+  priceConstraint?: ProductPriceConstraint
 }
 
 type PlaceSeed = Omit<ResultItem, 'id' | 'areaId' | 'steps' | 'summary'> & { summary?: string }
@@ -114,39 +116,69 @@ const OPTION_PROFILE = [
 
 const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 
-export function buildResult(goal: string, areas: CategoryId[], products?: Product[]): GoalResultModel {
+function toProductResultItem(product: Product, areaId: CategoryId): ResultItem {
+  return {
+    id: product.id,
+    name: product.title,
+    subtitle: [product.brand, product.category].filter(Boolean).join(' · '),
+    summary: product.description ?? '',
+    steps: [],
+    imageUrl: product.imageUrl,
+    brand: product.brand,
+    price: product.price,
+    currency: product.currency,
+    retailer: product.retailer,
+    rating: product.rating,
+    reviewCount: product.reviewCount,
+    productUrl: product.productUrl,
+    availability: product.availability,
+    category: product.category,
+    areaId,
+  }
+}
+
+function formatConstraintValue(value: number, currency?: string) {
+  const amount = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(value)
+  const symbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency === 'GBP' ? '£' : undefined
+  return symbol ? `${symbol}${amount}` : currency ? `${amount} ${currency}` : amount
+}
+
+function noExactMatchesMessage(constraint?: ProductPriceConstraint) {
+  if (!constraint || (constraint.minPrice === undefined && constraint.maxPrice === undefined)) return undefined
+  const min = constraint.minPrice === undefined ? undefined : formatConstraintValue(constraint.minPrice, constraint.currency)
+  const max = constraint.maxPrice === undefined ? undefined : formatConstraintValue(constraint.maxPrice, constraint.currency)
+  if (min && max) return `No exact matches found between ${min} and ${max}`
+  if (max) return `No exact matches found under ${max}`
+  if (min) return `No exact matches found above ${min}`
+  return undefined
+}
+
+export function buildResult(
+  goal: string,
+  areas: CategoryId[],
+  products?: Product[],
+  closestProducts?: Product[],
+  priceConstraint?: ProductPriceConstraint,
+): GoalResultModel {
   const intent = detectGoalIntent(goal)
 
   if (intent.kind === 'shopping' || products !== undefined) {
     const liveProducts = products ?? []
-    const items = liveProducts.map((product) => ({
-      id: product.id,
-      name: product.title,
-      subtitle: [product.brand, product.category].filter(Boolean).join(' · '),
-      summary: product.description ?? '',
-      steps: [],
-      imageUrl: product.imageUrl,
-      brand: product.brand,
-      price: product.price,
-      currency: product.currency,
-      retailer: product.retailer,
-      rating: product.rating,
-      reviewCount: product.reviewCount,
-      productUrl: product.productUrl,
-      availability: product.availability,
-      category: product.category,
-      areaId: areas[0],
-    }))
+    const items = liveProducts.map((product) => toProductResultItem(product, areas[0]))
+    const closestItems = (closestProducts ?? []).map((product) => toProductResultItem(product, areas[0]))
+    const noExactMessage = noExactMatchesMessage(priceConstraint)
 
     return {
       kind: 'products',
-      heading: items.length ? 'Live product matches' : 'No live product matches',
-      statusLabel: items.length ? `${items.length} live products found` : 'No live products found',
+      heading: items.length ? 'Live product matches' : noExactMessage ?? 'No live product matches',
+      statusLabel: items.length ? `${items.length} live products found` : noExactMessage ?? 'No live products found',
       defaultRefinement: 'relevance',
       refinements: PRODUCT_REFINEMENTS,
       nextActionLabel: items.length ? 'Open top product' : 'Search again',
       items,
-      emptyMessage: 'No live products matched that search. Try a broader product, brand, or price range.',
+      closestItems,
+      priceConstraint,
+      emptyMessage: noExactMessage ?? 'No live products matched that search. Try a broader product, brand, or price range.',
     }
   }
 

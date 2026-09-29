@@ -3,11 +3,11 @@
 import type { ReactNode, RefObject } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { categoryById, type CategoryId } from '@/lib/bofyt/categories'
-import type { Product, ProductSearchFeedback } from '@/lib/products/types'
+import type { ProductSearchFeedback } from '@/lib/products/types'
 import { AiCore, type CoreMode } from './ai-core'
 import { CoreReply } from './core-reply'
 import { GoalInput } from './goal-input'
-import { GoalResult, type GoalResultHandlers } from './goal-result'
+import { GoalResult, type GoalResultData, type GoalResultHandlers } from './goal-result'
 import { ProductSearchStatus } from './product-search-status'
 import { GoalThinking } from './goal-thinking'
 
@@ -32,7 +32,7 @@ interface CenterStageProps {
   returning?: ReactNode
   coreMode: CoreMode
   pulseKey: number
-  result: { id: string; goal: string; areas: CategoryId[]; products?: Product[] } | null
+  result: GoalResultData | null
   resultHandlers: GoalResultHandlers
   productFeedback: ProductSearchFeedback | null
   onGoalChange: (value: string) => void
@@ -123,7 +123,15 @@ export function CenterStage({
       <div className="flex w-full flex-col items-center empty:hidden lg:min-h-32">
         <AnimatePresence mode="wait" initial={false}>
           {result ? (
-            <GoalResult key={result.id} goal={result.goal} areas={result.areas} products={result.products} {...resultHandlers} />
+            <GoalResult
+              key={result.id}
+              goal={result.goal}
+              areas={result.areas}
+              products={result.products}
+              closestProducts={result.closestProducts}
+              priceConstraint={result.priceConstraint}
+              {...resultHandlers}
+            />
           ) : coreMode === 'activating' ? (
             <GoalThinking key="thinking" />
           ) : productFeedback ? (

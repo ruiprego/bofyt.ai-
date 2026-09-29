@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { motion } from 'motion/react'
 import { ArrowRight, Bookmark, BookmarkCheck, Check, Eye, ExternalLink, GitCompareArrows, Navigation, PencilLine, Plus, RotateCcw } from 'lucide-react'
 import type { CategoryId } from '@/lib/bofyt/categories'
-import type { Product } from '@/lib/products/types'
+import type { Product, ProductPriceConstraint } from '@/lib/products/types'
 import { toGoalTitle } from '@/lib/bofyt/plan'
 import { buildResult, reasonFor, refineItems, type ResultItem } from '@/lib/bofyt/results'
 import { cn } from '@/lib/utils'
@@ -21,23 +21,51 @@ export interface GoalResultHandlers {
   onNotify: (text: string) => void
 }
 
+export interface GoalResultData {
+  id: string
+  goal: string
+  areas: CategoryId[]
+  products?: Product[]
+  closestProducts?: Product[]
+  priceConstraint?: ProductPriceConstraint
+}
+
 interface GoalResultProps extends GoalResultHandlers {
   goal: string
   areas: CategoryId[]
   products?: Product[]
+  closestProducts?: Product[]
+  priceConstraint?: ProductPriceConstraint
 }
 
 const ease = [0.22, 1, 0.36, 1] as const
 const MAX_COMPARE = 3
 
-export function GoalResult({ goal, areas, products, saved, onEdit, onReset, onBuildPlan, onSave, onOpenProgress, onNotify }: GoalResultProps) {
-  const model = useMemo(() => buildResult(goal, areas, products), [goal, areas, products])
+export function GoalResult({
+  goal,
+  areas,
+  products,
+  closestProducts,
+  priceConstraint,
+  saved,
+  onEdit,
+  onReset,
+  onBuildPlan,
+  onSave,
+  onOpenProgress,
+  onNotify,
+}: GoalResultProps) {
+  const model = useMemo(
+    () => buildResult(goal, areas, products, closestProducts, priceConstraint),
+    [goal, areas, products, closestProducts, priceConstraint],
+  )
   const [refinement, setRefinement] = useState(model.defaultRefinement)
   const [compared, setCompared] = useState<string[]>([])
   const [savedItems, setSavedItems] = useState<string[]>([])
   const [sheet, setSheet] = useState<ResultSheetState>(null)
 
   const items = useMemo(() => refineItems(model.items, refinement), [model.items, refinement])
+  const closestItems = model.closestItems ?? []
   const [top, ...rest] = items
   const isPlaces = model.kind === 'places'
   const isProduct = model.kind === 'products'
@@ -233,16 +261,73 @@ export function GoalResult({ goal, areas, products, saved, onEdit, onReset, onBu
           )}
         </>
       ) : (
-        <div className="mt-4 rounded-2xl border border-white/10 bg-black/45 p-4 text-sm text-white/70">
-          {model.emptyMessage ?? 'Nothing matches that filter right now.'}{' '}
-          <button
-            type="button"
-            onClick={isProduct ? onEdit : () => setRefinement(model.defaultRefinement)}
-            className="min-h-11 text-gold-light underline underline-offset-4"
-          >
-            {isProduct ? 'Edit search' : 'Show all options'}
-          </button>
-        </div>
+        <>
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/45 p-4 text-sm text-white/70">
+            {model.emptyMessage ?? 'Nothing matches that filter right now.'}{' '}
+            <button
+              type="button"
+              onClick={isProduct ? onEdit : () => setRefinement(model.defaultRefinement)}
+              className="min-h-11 text-gold-light underline underline-offset-4"
+            >
+              {isProduct ? 'Edit search' : 'Show all options'}
+            </button>
+          </div>
+
+          {isProduct && closestItems.length > 0 && (
+            <section className="mt-6 border-t border-white/10 pt-5" aria-labelledby="closest-matches-heading">
+              <p id="closest-matches-heading" className="text-[10px] uppercase tracking-[0.3em] text-gold-light">
+                {model.priceConstraint?.maxPrice !== undefined && model.priceConstraint.minPrice === undefined
+                  ? 'Closest matches above your budget'
+                  : 'Closest matches outside your price range'}
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-white/45">
+                These products are outside the requested price range and are not exact matches.
+              </p>
+              <ul
+                className="mt-3 flex flex-col gap-2"
+                aria-label={
+                  model.priceConstraint?.maxPrice !== undefined && model.priceConstraint.minPrice === undefined
+                    ? 'Closest matches above your budget'
+                    : 'Closest matches outside your price range'
+                }
+              >
+                {closestItems.map((item) => (
+                  <li key={item.id} className="rounded-2xl border border-white/10 bg-black/35 p-3.5">
+                    <div className="flex items-start gap-3">
+                      {item.imageUrl && (
+                        <img
+                          src={item.imageUrl}
+                          alt={`${item.brand ? `${item.brand} ` : ''}${item.name} product image`}
+                          className="size-16 shrink-0 rounded-lg object-contain bg-white/5"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-3">
+                          <h3 className="min-w-0 truncate text-base text-white">{item.name}</h3>
+                          {item.subtitle && <span className="shrink-0 text-xs text-white/45">{item.subtitle.split(' · ')[0]}</span>}
+                        </div>
+                        <MetaRow item={item} className="mt-1.5" />
+                      </div>
+                    </div>
+                    <ItemActions
+                      item={item}
+                      isPlaces={false}
+                      isProduct
+                      isCompared={compared.includes(item.id)}
+                      isSaved={savedItems.includes(item.id)}
+                      onView={() => setSheet({ type: 'view', item })}
+                      onCompare={() => toggleCompare(item)}
+                      onSaveItem={() => toggleSavedItem(item)}
+                      onThird={() => choose(item)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </>
       )}
 
       {/* 6. Quick refinement */}

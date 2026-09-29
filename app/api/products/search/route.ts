@@ -18,9 +18,10 @@ export async function GET(request: Request) {
   }
 
   try {
+    const searchParams = parseProductSearchParams(query)
     const provider = createProductSearchProvider()
-    const response = await provider.search(parseProductSearchParams(query), request.signal)
-    return NextResponse.json({ query, ...response })
+    const response = await provider.search(searchParams, request.signal)
+    return NextResponse.json({ query: searchParams.query, originalQuery: query, ...response })
   } catch (error) {
     if (error instanceof ProductSearchError) {
       const message = error.code === 'CONFIGURATION' ? PRODUCT_SEARCH_CONFIGURATION_MESSAGE : error.message

@@ -5,7 +5,7 @@ import { categoryById, detectCategories, type CategoryId } from '@/lib/bofyt/cat
 import { activeGoal, goalStore, useGoals } from '@/lib/bofyt/goals'
 import { detectGoalIntent } from '@/lib/bofyt/intent'
 import { ProductSearchClientError, searchProducts } from '@/lib/products/client'
-import type { Product, ProductSearchFeedback } from '@/lib/products/types'
+import type { ProductSearchFeedback } from '@/lib/products/types'
 import type { CoreMode } from './ai-core'
 import { BottomNav, type NavTarget } from './bottom-nav'
 import { BrandHeader } from './brand-header'
@@ -15,12 +15,12 @@ import { CenterStage } from './center-stage'
 import { CoreOverlay } from './core-overlay'
 import { CoreSystem } from './core-system'
 import { ContinueGoal } from './continue-goal'
-import { GoalResult, type GoalResultHandlers } from './goal-result'
+import { GoalResult, type GoalResultData, type GoalResultHandlers } from './goal-result'
 import { InfoSheet, type SheetKind } from './info-sheet'
 import { PlanSheet } from './plan-sheet'
 import { Toast, type ToastMessage } from './toast'
 
-type GoalOutcome = { id: string; goal: string; areas: CategoryId[]; products?: Product[] }
+type GoalOutcome = GoalResultData
 
 const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches
 
@@ -155,12 +155,19 @@ export function BofytExperience() {
       pulse()
 
       void searchProducts(trimmed, controller.signal)
-        .then(({ products }) => {
+        .then((response) => {
           if (controller.signal.aborted || requestId !== productRequest.current) return
           productAbort.current = null
           setActivating(false)
           setSelected(intent.categoryId ?? (intent.kind === 'category' ? areas[0] : null))
-          setResult({ id: crypto.randomUUID(), goal: trimmed, areas, products })
+          setResult({
+            id: crypto.randomUUID(),
+            goal: trimmed,
+            areas,
+            products: response.products,
+            closestProducts: response.closestProducts,
+            priceConstraint: response.priceConstraint,
+          })
           setGoal('')
           pulse()
         })
