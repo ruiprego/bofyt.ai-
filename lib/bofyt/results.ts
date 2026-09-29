@@ -1,6 +1,7 @@
 import { categoryById, type CategoryId } from './categories'
+import type { Product } from '@/lib/products/types'
 
-export type ResultKind = 'places' | 'options'
+export type ResultKind = 'places' | 'options' | 'products'
 
 export interface ResultItem {
   id: string
@@ -10,11 +11,19 @@ export interface ResultItem {
   steps: string[]
   distanceKm?: number
   priceLevel?: number
-  rating: number
+  rating?: number
   openNow?: boolean
   weeks?: number
   effort?: number
   free?: boolean
+  imageUrl?: string
+  brand?: string
+  price?: number
+  currency?: string
+  retailer?: string
+  productUrl?: string
+  availability?: string
+  category?: string
   areaId: CategoryId
 }
 
@@ -31,6 +40,7 @@ export interface GoalResultModel {
   refinements: Refinement[]
   defaultRefinement: string
   nextActionLabel: string
+  emptyMessage?: string
 }
 
 type PlaceSeed = Omit<ResultItem, 'id' | 'areaId' | 'steps' | 'summary'> & { summary?: string }
@@ -86,6 +96,12 @@ const OPTION_REFINEMENTS: Refinement[] = [
   { id: 'free', label: 'Free to start' },
 ]
 
+const PRODUCT_REFINEMENTS: Refinement[] = [
+  { id: 'relevance', label: 'Relevance' },
+  { id: 'price-low', label: 'Lowest price' },
+  { id: 'price-high', label: 'Highest price' },
+]
+
 const OPTION_PROFILE = [
   { weeks: 2, effort: 2, rating: 4.7, free: true },
   { weeks: 1, effort: 1, rating: 4.2, free: true },
@@ -95,7 +111,37 @@ const OPTION_PROFILE = [
 
 const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 
-export function buildResult(goal: string, areas: CategoryId[]): GoalResultModel {
+export function buildResult(goal: string, areas: CategoryId[], products?: Product[]): GoalResultModel {
+  if (products) {
+    const items = products.map((product) => ({
+      id: product.id,
+      name: product.title,
+      subtitle: [product.brand, product.category].filter(Boolean).join(' · '),
+      summary: product.description ?? '',
+      steps: [],
+      imageUrl: product.imageUrl,
+      brand: product.brand,
+      price: product.price,
+      currency: product.currency,
+      retailer: product.retailer,
+      productUrl: product.productUrl,
+      availability: product.availability,
+      category: product.category,
+      areaId: areas[0],
+    }))
+
+    return {
+      kind: 'products',
+      heading: items.length ? 'Live product matches' : 'No live product matches',
+      statusLabel: items.length ? `${items.length} live products found` : 'No live products found',
+      defaultRefinement: 'relevance',
+      refinements: PRODUCT_REFINEMENTS,
+      nextActionLabel: items.length ? 'Open top product' : 'Search again',
+      items,
+      emptyMessage: 'No live products matched that search. Try a broader product, brand, or price range.',
+    }
+  }
+
   const placeSet = PLACE_SETS.find((set) => set.match.test(goal))
 
   if (placeSet) {
@@ -170,24 +216,31 @@ export function refineItems(items: ResultItem[], refinement: string): ResultItem
     case 'closest':
       return list.sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0))
     case 'cheapest':
-      return list.sort((a, b) => (a.priceLevel ?? 0) - (b.priceLevel ?? 0) || b.rating - a.rating)
+      return list.sort((a, b) => (a.priceLevel ?? 0) - (b.priceLevel ?? 0) || (b.rating ?? 0) - (a.rating ?? 0))
     case 'rated':
     case 'impact':
-      return list.sort((a, b) => b.rating - a.rating)
+      return list.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+    case 'price-low':
+      return list.sort((a, b) => (a.price ?? Number.POSITIVE_INFINITY) - (b.price ?? Number.POSITIVE_INFINITY))
+    case 'price-high':
+      return list.sort((a, b) => (b.price ?? Number.NEGATIVE_INFINITY) - (a.price ?? Number.NEGATIVE_INFINITY))
     case 'open':
       return list.filter((item) => item.openNow).sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0))
     case 'fastest':
       return list.sort((a, b) => (a.weeks ?? 0) - (b.weeks ?? 0))
     case 'easiest':
-      return list.sort((a, b) => (a.effort ?? 0) - (b.effort ?? 0) || b.rating - a.rating)
+      return list.sort((a, b) => (a.effort ?? 0) - (b.effort ?? 0) || (b.rating ?? 0) - (a.rating ?? 0))
     case 'free':
-      return list.filter((item) => item.free).sort((a, b) => b.rating - a.rating)
+      return list.filter((item) => item.free).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
     default:
       return list
   }
 }
 
 const REASONS: Record<string, string> = {
+  relevance: 'Returned by the live product provider',
+  'price-low': 'Lowest listed price',
+  'price-high': 'Highest listed price',
   closest: 'Closest match to you right now',
   cheapest: 'Lowest price with a strong rating',
   rated: 'Highest rated option nearby',
@@ -203,20 +256,35 @@ export const reasonFor = (refinement: string) => REASONS[refinement] ?? 'Best ma
 const EFFORT = ['Low effort', 'Medium effort', 'High effort']
 
 export function metaFor(item: ResultItem): string[] {
-  if (item.distanceKm !== undefined) {
-    return [
-      `${item.distanceKm} km`,
-      '€'.repeat(item.priceLevel ?? 1),
-      `★ ${item.rating.toFixed(1)}`,
-      item.openNow ? 'Open now' : 'Closed',
-    ]
+  if (item.productUrl) {
+    const details: string[] = []
+    if (item.price !== undefined) details.push(formatPrice(item.price, item.currency))
+    if (item.retailer) details.push(item.retailer)
+    if (item.availability) details.push(item.availability)
+    return details
   }
-  return [
-    `${item.weeks} wk${item.weeks === 1 ? '' : 's'}`,
-    EFFORT[(item.effort ?? 1) - 1],
-    `★ ${item.rating.toFixed(1)}`,
-    item.free ? 'Free' : 'Premium',
-  ]
+
+  if (item.distanceKm !== undefined) {
+    const details = [`${item.distanceKm} km`, '€'.repeat(item.priceLevel ?? 1)]
+    if (item.rating !== undefined) details.push(`★ ${item.rating.toFixed(1)}`)
+    details.push(item.openNow ? 'Open now' : 'Closed')
+    return details
+  }
+
+  const details = [`${item.weeks} wk${item.weeks === 1 ? '' : 's'}`, EFFORT[(item.effort ?? 1) - 1]]
+  if (item.rating !== undefined) details.push(`★ ${item.rating.toFixed(1)}`)
+  details.push(item.free ? 'Free' : 'Premium')
+  return details
+}
+
+function formatPrice(price: number, currency?: string) {
+  try {
+    return currency
+      ? new Intl.NumberFormat(undefined, { style: 'currency', currency, maximumFractionDigits: 2 }).format(price)
+      : new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(price)
+  } catch {
+    return currency ? `${price} ${currency}` : String(price)
+  }
 }
 
 export const directionsUrl = (item: ResultItem) =>

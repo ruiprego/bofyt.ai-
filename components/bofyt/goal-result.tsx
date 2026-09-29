@@ -2,13 +2,14 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import { motion } from 'motion/react'
-import { ArrowRight, Bookmark, BookmarkCheck, Check, Eye, GitCompareArrows, Navigation, PencilLine, Plus, RotateCcw } from 'lucide-react'
+import { ArrowRight, Bookmark, BookmarkCheck, Check, Eye, ExternalLink, GitCompareArrows, Navigation, PencilLine, Plus, RotateCcw } from 'lucide-react'
 import type { CategoryId } from '@/lib/bofyt/categories'
+import type { Product } from '@/lib/products/types'
 import { toGoalTitle } from '@/lib/bofyt/plan'
 import { buildResult, reasonFor, refineItems, type ResultItem } from '@/lib/bofyt/results'
 import { cn } from '@/lib/utils'
 import { EyeMark } from './logo'
-import { MetaRow, openDirections, ResultSheet, type ResultSheetState } from './result-sheet'
+import { MetaRow, openDirections, openProduct, ResultSheet, type ResultSheetState } from './result-sheet'
 
 export interface GoalResultHandlers {
   saved: boolean
@@ -23,13 +24,14 @@ export interface GoalResultHandlers {
 interface GoalResultProps extends GoalResultHandlers {
   goal: string
   areas: CategoryId[]
+  products?: Product[]
 }
 
 const ease = [0.22, 1, 0.36, 1] as const
 const MAX_COMPARE = 3
 
-export function GoalResult({ goal, areas, saved, onEdit, onReset, onBuildPlan, onSave, onOpenProgress, onNotify }: GoalResultProps) {
-  const model = useMemo(() => buildResult(goal, areas), [goal, areas])
+export function GoalResult({ goal, areas, products, saved, onEdit, onReset, onBuildPlan, onSave, onOpenProgress, onNotify }: GoalResultProps) {
+  const model = useMemo(() => buildResult(goal, areas, products), [goal, areas, products])
   const [refinement, setRefinement] = useState(model.defaultRefinement)
   const [compared, setCompared] = useState<string[]>([])
   const [sheet, setSheet] = useState<ResultSheetState>(null)
@@ -37,6 +39,7 @@ export function GoalResult({ goal, areas, saved, onEdit, onReset, onBuildPlan, o
   const items = useMemo(() => refineItems(model.items, refinement), [model.items, refinement])
   const [top, ...rest] = items
   const isPlaces = model.kind === 'places'
+  const isProduct = model.kind === 'products'
 
   const toggleCompare = (item: ResultItem) => {
     if (compared.includes(item.id)) {
@@ -55,6 +58,9 @@ export function GoalResult({ goal, areas, saved, onEdit, onReset, onBuildPlan, o
     if (isPlaces) {
       openDirections(item)
       onNotify(`Opening directions to ${item.name}`)
+    } else if (isProduct && item.productUrl) {
+      openProduct(item)
+      onNotify(`Opening ${item.name}`)
     } else {
       onNotify(`${item.name} added to your plan`)
       onBuildPlan()
@@ -66,7 +72,15 @@ export function GoalResult({ goal, areas, saved, onEdit, onReset, onBuildPlan, o
     setSheet({ type: 'compare', items: selected.length >= 2 ? selected : items.slice(0, MAX_COMPARE) })
   }
 
-  const runNextAction = () => (isPlaces ? openCompare() : onBuildPlan())
+  const runNextAction = () => {
+    if (isProduct) {
+      if (top) choose(top)
+      else onEdit()
+      return
+    }
+    if (isPlaces) openCompare()
+    else onBuildPlan()
+  }
   const closeSheet = useCallback(() => setSheet(null), [])
 
   return (
@@ -129,13 +143,25 @@ export function GoalResult({ goal, areas, saved, onEdit, onReset, onBuildPlan, o
             aria-label={`Recommended: ${top.name}`}
             className="mt-4 rounded-2xl border border-gold/45 bg-black/60 p-4 shadow-[0_0_60px_-30px_rgba(226,184,101,0.9)]"
           >
-            <p className="text-[10px] uppercase tracking-[0.3em] text-gold-light">Recommended · {reasonFor(refinement)}</p>
+            {isProduct && top.imageUrl && (
+              <img
+                src={top.imageUrl}
+                alt={`${top.brand ? `${top.brand} ` : ''}${top.name} product image`}
+                className="mb-4 h-40 w-full rounded-xl object-contain bg-white/5"
+                loading="eager"
+                decoding="async"
+              />
+            )}
+            <p className="text-[10px] uppercase tracking-[0.3em] text-gold-light">
+              {isProduct ? 'Live result' : `Recommended · ${reasonFor(refinement)}`}
+            </p>
             <h3 className="mt-2 text-xl text-white">{top.name}</h3>
-            <p className="text-sm text-white/55">{top.subtitle}</p>
+            {top.subtitle && <p className="text-sm text-white/55">{top.subtitle}</p>}
             <MetaRow item={top} className="mt-3 text-sm" />
             <ItemActions
               item={top}
               isPlaces={isPlaces}
+              isProduct={isProduct}
               isCompared={compared.includes(top.id)}
               onView={() => setSheet({ type: 'view', item: top })}
               onCompare={() => toggleCompare(top)}
@@ -149,14 +175,38 @@ export function GoalResult({ goal, areas, saved, onEdit, onReset, onBuildPlan, o
             <ul className="mt-3 flex flex-col gap-2" aria-label="More options">
               {rest.map((item) => (
                 <li key={item.id} className="rounded-2xl border border-white/10 bg-black/45 p-3.5">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <h3 className="min-w-0 truncate text-base text-white">{item.name}</h3>
-                    <span className="shrink-0 text-xs text-white/45">{item.subtitle.split(' · ')[0]}</span>
-                  </div>
-                  <MetaRow item={item} className="mt-1.5" />
+                  {isProduct ? (
+                    <div className="flex items-start gap-3">
+                      {item.imageUrl && (
+                        <img
+                          src={item.imageUrl}
+                          alt={`${item.brand ? `${item.brand} ` : ''}${item.name} product image`}
+                          className="size-16 shrink-0 rounded-lg object-contain bg-white/5"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-3">
+                          <h3 className="min-w-0 truncate text-base text-white">{item.name}</h3>
+                          {item.subtitle && <span className="shrink-0 text-xs text-white/45">{item.subtitle.split(' · ')[0]}</span>}
+                        </div>
+                        <MetaRow item={item} className="mt-1.5" />
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-baseline justify-between gap-3">
+                        <h3 className="min-w-0 truncate text-base text-white">{item.name}</h3>
+                        <span className="shrink-0 text-xs text-white/45">{item.subtitle.split(' · ')[0]}</span>
+                      </div>
+                      <MetaRow item={item} className="mt-1.5" />
+                    </>
+                  )}
                   <ItemActions
                     item={item}
                     isPlaces={isPlaces}
+                    isProduct={isProduct}
                     isCompared={compared.includes(item.id)}
                     onView={() => setSheet({ type: 'view', item })}
                     onCompare={() => toggleCompare(item)}
@@ -169,13 +219,13 @@ export function GoalResult({ goal, areas, saved, onEdit, onReset, onBuildPlan, o
         </>
       ) : (
         <div className="mt-4 rounded-2xl border border-white/10 bg-black/45 p-4 text-sm text-white/70">
-          Nothing matches that filter right now.{' '}
+          {model.emptyMessage ?? 'Nothing matches that filter right now.'}{' '}
           <button
             type="button"
-            onClick={() => setRefinement(model.defaultRefinement)}
+            onClick={isProduct ? onEdit : () => setRefinement(model.defaultRefinement)}
             className="min-h-11 text-gold-light underline underline-offset-4"
           >
-            Show all options
+            {isProduct ? 'Edit search' : 'Show all options'}
           </button>
         </div>
       )}
@@ -244,6 +294,7 @@ export function GoalResult({ goal, areas, saved, onEdit, onReset, onBuildPlan, o
 function ItemActions({
   item,
   isPlaces,
+  isProduct,
   isCompared,
   onView,
   onCompare,
@@ -252,6 +303,7 @@ function ItemActions({
 }: {
   item: ResultItem
   isPlaces: boolean
+  isProduct: boolean
   isCompared: boolean
   onView: () => void
   onCompare: () => void
@@ -275,18 +327,34 @@ function ItemActions({
         {isCompared ? <Check aria-hidden className="size-3.5" /> : <GitCompareArrows aria-hidden className="size-3.5" />}
         Compare
       </button>
-      <button
-        type="button"
-        onClick={onThird}
-        aria-label={isPlaces ? `Directions to ${item.name}` : `Add ${item.name} to plan`}
-        className={cn(
-          base,
-          prominent ? 'border-gold bg-gold text-black' : 'border-gold/50 text-gold-light hover:bg-gold/10',
-        )}
-      >
-        {isPlaces ? <Navigation aria-hidden className="size-3.5" /> : <Plus aria-hidden className="size-3.5" />}
-        {isPlaces ? 'Directions' : 'Plan'}
-      </button>
+      {isProduct && item.productUrl ? (
+        <a
+          href={item.productUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Open ${item.name}`}
+          className={cn(
+            base,
+            prominent ? 'border-gold bg-gold text-black' : 'border-gold/50 text-gold-light hover:bg-gold/10',
+          )}
+        >
+          <ExternalLink aria-hidden className="size-3.5" />
+          Open product
+        </a>
+      ) : (
+        <button
+          type="button"
+          onClick={onThird}
+          aria-label={isPlaces ? `Directions to ${item.name}` : `Add ${item.name} to plan`}
+          className={cn(
+            base,
+            prominent ? 'border-gold bg-gold text-black' : 'border-gold/50 text-gold-light hover:bg-gold/10',
+          )}
+        >
+          {isPlaces ? <Navigation aria-hidden className="size-3.5" /> : <Plus aria-hidden className="size-3.5" />}
+          {isPlaces ? 'Directions' : 'Plan'}
+        </button>
+      )}
     </div>
   )
 }

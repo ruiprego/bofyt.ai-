@@ -4,11 +4,13 @@ import { useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { X } from 'lucide-react'
 import type { Category, CategoryId } from '@/lib/bofyt/categories'
+import type { Product, ProductSearchFeedback } from '@/lib/products/types'
 import { AiCore, type CoreMode } from './ai-core'
 import { PLACEHOLDERS } from './center-stage'
 import { GoalInput } from './goal-input'
 import { GoalResult, type GoalResultHandlers } from './goal-result'
 import { GoalThinking } from './goal-thinking'
+import { ProductSearchStatus } from './product-search-status'
 
 interface CoreOverlayProps {
   open: boolean
@@ -16,11 +18,13 @@ interface CoreOverlayProps {
   goal: string
   activating: boolean
   pulseKey: number
-  result: { id: string; goal: string; areas: CategoryId[] } | null
+  result: { id: string; goal: string; areas: CategoryId[]; products?: Product[] } | null
   resultHandlers: GoalResultHandlers
+  productFeedback: ProductSearchFeedback | null
   onGoalChange: (value: string) => void
   onSubmit: () => void
   onPulse: () => void
+  onRetryProductSearch: () => void
   onClose: () => void
 }
 
@@ -34,9 +38,11 @@ export function CoreOverlay({
   pulseKey,
   result,
   resultHandlers,
+  productFeedback,
   onGoalChange,
   onSubmit,
   onPulse,
+  onRetryProductSearch,
   onClose,
 }: CoreOverlayProps) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -108,7 +114,7 @@ export function CoreOverlay({
 
             <AnimatePresence mode="wait" initial={false}>
               {result ? (
-                <GoalResult key={result.id} goal={result.goal} areas={result.areas} {...resultHandlers} />
+                <GoalResult key={result.id} goal={result.goal} areas={result.areas} products={result.products} {...resultHandlers} />
               ) : (
                 <motion.div
                   key="ask"
@@ -143,7 +149,13 @@ export function CoreOverlay({
                       onFocusChange={() => {}}
                     />
                   </div>
-                  <div className="min-h-10">{activating && <GoalThinking />}</div>
+                  <div className="min-h-10">
+                    {activating ? (
+                      <GoalThinking />
+                    ) : productFeedback ? (
+                      <ProductSearchStatus message={productFeedback.message} onRetry={onRetryProductSearch} />
+                    ) : null}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>

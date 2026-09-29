@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { categoryById, detectCategories, detectPrimary, type CategoryId } from '@/lib/bofyt/categories'
 import { activeGoal, goalStore, useGoals } from '@/lib/bofyt/goals'
+import { ProductSearchClientError, searchProducts } from '@/lib/products/client'
+import { isProductSearchQuery } from '@/lib/products/parse'
+import type { Product, ProductSearchFeedback } from '@/lib/products/types'
 import type { CoreMode } from './ai-core'
 import { BottomNav, type NavTarget } from './bottom-nav'
 import { BrandHeader } from './brand-header'
@@ -17,7 +20,7 @@ import { InfoSheet, type SheetKind } from './info-sheet'
 import { PlanSheet } from './plan-sheet'
 import { Toast, type ToastMessage } from './toast'
 
-type GoalOutcome = { id: string; goal: string; areas: CategoryId[] }
+type GoalOutcome = { id: string; goal: string; areas: CategoryId[]; products?: Product[] }
 
 const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches
 
@@ -25,6 +28,8 @@ export function BofytExperience() {
   const inputRef = useRef<HTMLInputElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const activationTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const productAbort = useRef<AbortController | null>(null)
+  const productRequest = useRef(0)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [goal, setGoal] = useState('')
@@ -38,6 +43,7 @@ export function BofytExperience() {
   const [navActive, setNavActive] = useState<NavTarget>('home')
   const [coreOpen, setCoreOpen] = useState(false)
   const [planSource, setPlanSource] = useState<GoalOutcome | null>(null)
+  const [productFeedback, setProductFeedback] = useState<ProductSearchFeedback | null>(null)
   const [toast, setToast] = useState<ToastMessage | null>(null)
   const goals = useGoals()
 
@@ -58,6 +64,7 @@ export function BofytExperience() {
   useEffect(
     () => () => {
       if (activationTimer.current) clearTimeout(activationTimer.current)
+      if (productAbort.current) productAbort.current.abort()
       if (toastTimer.current) clearTimeout(toastTimer.current)
     },
     [],
@@ -94,6 +101,13 @@ export function BofytExperience() {
   }
 
   const changeGoal = (value: string) => {
+    if (productAbort.current) {
+      productAbort.current.abort()
+      productAbort.current = null
+      productRequest.current += 1
+      setActivating(false)
+    }
+    setProductFeedback(null)
     setGoal(value)
     if (result) setResult(null)
     const detected = detectPrimary(value)
@@ -104,6 +118,11 @@ export function BofytExperience() {
   }
 
   const applyPrompt = (prompt: string) => {
+    productAbort.current?.abort()
+    productAbort.current = null
+    productRequest.current += 1
+    setActivating(false)
+    setProductFeedback(null)
     setGoal(prompt)
     setResult(null)
     pulse()
@@ -117,7 +136,45 @@ export function BofytExperience() {
       pulse()
       return
     }
+
     const areas = detectCategories(trimmed, selected)
+    if (isProductSearchQuery(trimmed)) {
+      productAbort.current?.abort()
+      const controller = new AbortController()
+      const requestId = ++productRequest.current
+      productAbort.current = controller
+      setProductFeedback(null)
+      setActivating(true)
+      setResult(null)
+      pulse()
+
+      void searchProducts(trimmed, controller.signal)
+        .then(({ products }) => {
+          if (controller.signal.aborted || requestId !== productRequest.current) return
+          productAbort.current = null
+          setActivating(false)
+          setSelected(areas[0])
+          setResult({ id: crypto.randomUUID(), goal: trimmed, areas, products })
+          setGoal('')
+          pulse()
+        })
+        .catch((error: unknown) => {
+          if (controller.signal.aborted || requestId !== productRequest.current) return
+          productAbort.current = null
+          setActivating(false)
+          setProductFeedback({
+            kind: error instanceof ProductSearchClientError && error.code === 'CONFIGURATION' ? 'configuration' : 'error',
+            message: error instanceof Error ? error.message : 'The live product search could not be reached. Try again.',
+          })
+          pulse()
+        })
+      return
+    }
+
+    productAbort.current?.abort()
+    productAbort.current = null
+    productRequest.current += 1
+    setProductFeedback(null)
     setActivating(true)
     setResult(null)
     pulse()
@@ -131,6 +188,11 @@ export function BofytExperience() {
   }
 
   const reset = () => {
+    productAbort.current?.abort()
+    productAbort.current = null
+    productRequest.current += 1
+    setActivating(false)
+    setProductFeedback(null)
     setResult(null)
     setGoal('')
     setSelected(null)
@@ -139,6 +201,11 @@ export function BofytExperience() {
 
   const editResult = () => {
     if (!result) return
+    productAbort.current?.abort()
+    productAbort.current = null
+    productRequest.current += 1
+    setActivating(false)
+    setProductFeedback(null)
     setGoal(result.goal)
     setResult(null)
     setTimeout(focusInput, 0)
@@ -255,6 +322,7 @@ export function BofytExperience() {
           pulseKey={pulseKey}
           result={result}
           resultHandlers={resultHandlers}
+          productFeedback={productFeedback}
           onGoalChange={changeGoal}
           onSubmit={submitGoal}
           onFocusChange={setFocused}
@@ -263,6 +331,7 @@ export function BofytExperience() {
             focusInput()
           }}
           onPickPrompt={applyPrompt}
+          onRetryProductSearch={submitGoal}
         />
       </main>
 
@@ -274,9 +343,11 @@ export function BofytExperience() {
         pulseKey={pulseKey}
         result={result}
         resultHandlers={resultHandlers}
+        productFeedback={productFeedback}
         onGoalChange={changeGoal}
         onSubmit={submitGoal}
         onPulse={pulse}
+        onRetryProductSearch={submitGoal}
         onClose={() => {
           setCoreOpen(false)
           setNavActive('home')

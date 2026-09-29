@@ -3,10 +3,12 @@
 import type { ReactNode, RefObject } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { categoryById, type CategoryId } from '@/lib/bofyt/categories'
+import type { Product, ProductSearchFeedback } from '@/lib/products/types'
 import { AiCore, type CoreMode } from './ai-core'
 import { CoreReply } from './core-reply'
 import { GoalInput } from './goal-input'
 import { GoalResult, type GoalResultHandlers } from './goal-result'
+import { ProductSearchStatus } from './product-search-status'
 import { GoalThinking } from './goal-thinking'
 
 export const PLACEHOLDERS: Record<CategoryId, string> = {
@@ -30,13 +32,15 @@ interface CenterStageProps {
   returning?: ReactNode
   coreMode: CoreMode
   pulseKey: number
-  result: { id: string; goal: string; areas: CategoryId[] } | null
+  result: { id: string; goal: string; areas: CategoryId[]; products?: Product[] } | null
   resultHandlers: GoalResultHandlers
+  productFeedback: ProductSearchFeedback | null
   onGoalChange: (value: string) => void
   onSubmit: () => void
   onFocusChange: (focused: boolean) => void
   onActivateCore: () => void
   onPickPrompt: (prompt: string) => void
+  onRetryProductSearch: () => void
 }
 
 export function CenterStage({
@@ -52,11 +56,13 @@ export function CenterStage({
   pulseKey,
   result,
   resultHandlers,
+  productFeedback,
   onGoalChange,
   onSubmit,
   onFocusChange,
   onActivateCore,
   onPickPrompt,
+  onRetryProductSearch,
 }: CenterStageProps) {
   const category = selected ? categoryById[selected] : null
   const contextId = selected ?? preview
@@ -117,9 +123,11 @@ export function CenterStage({
       <div className="flex w-full flex-col items-center empty:hidden lg:min-h-32">
         <AnimatePresence mode="wait" initial={false}>
           {result ? (
-            <GoalResult key={result.id} goal={result.goal} areas={result.areas} {...resultHandlers} />
+            <GoalResult key={result.id} goal={result.goal} areas={result.areas} products={result.products} {...resultHandlers} />
           ) : coreMode === 'activating' ? (
             <GoalThinking key="thinking" />
+          ) : productFeedback ? (
+            <ProductSearchStatus key="product-search-status" message={productFeedback.message} onRetry={onRetryProductSearch} />
           ) : goal.trim() ? (
             <GoalEcho key="echo" goal={goal.trim()} categoryTitle={category?.title} />
           ) : category ? (
