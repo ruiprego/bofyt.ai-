@@ -1,4 +1,4 @@
-import { isProductSearchQuery } from '@/lib/products/parse'
+import { isProductSearchQuery } from '../products/parse'
 import { categoryById, detectPrimary, type CategoryId } from './categories'
 
 export type GoalIntentKind = 'shopping' | 'travel' | 'fitness' | 'finance' | 'career' | 'category'
@@ -31,7 +31,7 @@ const INTENT_RULES: IntentRule[] = [
     kind: 'finance',
     label: 'Finance',
     categoryId: 'personal',
-    pattern: /\b(save|saving|savings|money|finance|financial|budget|debt|invest|investment|income|expense|expenses|spend|€|\$|£|usd|eur|gbp|chf)\b/i,
+    pattern: /\b(save|saving|savings|money|finance|finances|financial|budget|debt|invest|investment|income|expense|expenses|spend|€|\$|£|usd|eur|gbp|chf)\b/i,
   },
   {
     kind: 'fitness',

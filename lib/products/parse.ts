@@ -1,7 +1,7 @@
 import type { ProductSearchParams } from './types'
 
-const SEARCH_INTENT = /\b(find|search|show|shop|buy|recommend|compare|looking for|where can i get|help me find|best|top|cheap|cheapest|affordable|budget|deal|deals|price|cost|under|below|less than|up to)\b/i
-const PRODUCT_TERMS = /\b(shoes?|sneakers?|trainers?|laptops?|macbooks?|computers?|phones?|smartphones?|tablets?|televisions?|tvs?|headphones?|earbuds?|cameras?|monitors?|keyboards?|mice|dresses?|jackets?|coats?|jeans?|backpacks?|watches?|appliances?|products?)\b/i
+const SEARCH_INTENT = /\b(find|search|show|shop|buy|purchase|recommend|compare|looking for|where can i get|help me find|best|top|cheap|cheapest|affordable|budget|deal|deals|price|cost|under|below|less than|up to|need|want)\b/i
+const PRODUCT_TERMS = /\b(shoes?|sneakers?|trainers?|boots?|sandals?|laptops?|macbooks?|computers?|pc|pcs|desktops?|phones?|smartphones?|iphones?|ipads?|tablets?|televisions?|tvs?|headphones?|earbuds?|speakers?|cameras?|monitors?|keyboards?|mice|dresses?|jackets?|coats?|jeans?|backpacks?|watches?|smartwatches?|appliances?|washing machines?|refrigerators?|fridges?|vacuums?|printers?|consoles?|xbox|playstations?|switches?|products?)\b/i
 const MODEL_NUMBER_PATTERN = /\b[a-z][a-z0-9-]*(?:\s+[a-z0-9-]+){0,4}\s+\d{2,4}\b/i
 const CURRENCY_CODES = ['EUR', 'USD', 'GBP', 'CHF', 'CAD', 'AUD'] as const
 const CURRENCY_SYMBOLS: Record<string, string> = { '€': 'EUR', $: 'USD', '£': 'GBP' }
