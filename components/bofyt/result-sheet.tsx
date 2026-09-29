@@ -203,6 +203,7 @@ function CompareBody({ items, kind, onChoose }: { items: ResultItem[]; kind: Res
         ? [
             { label: 'Price', value: (i: ResultItem) => productPrice(i), best: (a: ResultItem[]) => minBy(a, (i) => i.price ?? Number.POSITIVE_INFINITY) },
             { label: 'Retailer', value: (i: ResultItem) => i.retailer ?? '—', best: () => null },
+            { label: 'Rating', value: (i: ResultItem) => (i.rating === undefined ? '—' : `★ ${i.rating.toFixed(1)}`), best: (a: ResultItem[]) => minBy(a, (i) => -(i.rating ?? Number.POSITIVE_INFINITY)) },
             { label: 'Availability', value: (i: ResultItem) => i.availability ?? '—', best: () => null },
           ]
         : [

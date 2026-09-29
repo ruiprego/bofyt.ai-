@@ -34,6 +34,7 @@ export function GoalResult({ goal, areas, products, saved, onEdit, onReset, onBu
   const model = useMemo(() => buildResult(goal, areas, products), [goal, areas, products])
   const [refinement, setRefinement] = useState(model.defaultRefinement)
   const [compared, setCompared] = useState<string[]>([])
+  const [savedItems, setSavedItems] = useState<string[]>([])
   const [sheet, setSheet] = useState<ResultSheetState>(null)
 
   const items = useMemo(() => refineItems(model.items, refinement), [model.items, refinement])
@@ -50,6 +51,16 @@ export function GoalResult({ goal, areas, products, saved, onEdit, onReset, onBu
     } else {
       setCompared((ids) => [...ids, item.id])
       onNotify(`${item.name} added to compare`)
+    }
+  }
+
+  const toggleSavedItem = (item: ResultItem) => {
+    if (savedItems.includes(item.id)) {
+      setSavedItems((ids) => ids.filter((id) => id !== item.id))
+      onNotify(`Removed ${item.name} from saved products`)
+    } else {
+      setSavedItems((ids) => [...ids, item.id])
+      onNotify(`${item.name} saved`)
     }
   }
 
@@ -163,8 +174,10 @@ export function GoalResult({ goal, areas, products, saved, onEdit, onReset, onBu
               isPlaces={isPlaces}
               isProduct={isProduct}
               isCompared={compared.includes(top.id)}
+              isSaved={savedItems.includes(top.id)}
               onView={() => setSheet({ type: 'view', item: top })}
               onCompare={() => toggleCompare(top)}
+              onSaveItem={() => toggleSavedItem(top)}
               onThird={() => choose(top)}
               prominent
             />
@@ -208,8 +221,10 @@ export function GoalResult({ goal, areas, products, saved, onEdit, onReset, onBu
                     isPlaces={isPlaces}
                     isProduct={isProduct}
                     isCompared={compared.includes(item.id)}
+                    isSaved={savedItems.includes(item.id)}
                     onView={() => setSheet({ type: 'view', item })}
                     onCompare={() => toggleCompare(item)}
+                    onSaveItem={() => toggleSavedItem(item)}
                     onThird={() => choose(item)}
                   />
                 </li>
@@ -296,8 +311,10 @@ function ItemActions({
   isPlaces,
   isProduct,
   isCompared,
+  isSaved,
   onView,
   onCompare,
+  onSaveItem,
   onThird,
   prominent = false,
 }: {
@@ -305,14 +322,16 @@ function ItemActions({
   isPlaces: boolean
   isProduct: boolean
   isCompared: boolean
+  isSaved: boolean
   onView: () => void
   onCompare: () => void
+  onSaveItem: () => void
   onThird: () => void
   prominent?: boolean
 }) {
-  const base = 'inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full border text-[11px] uppercase tracking-[0.12em] transition-colors active:scale-95'
+  const base = 'inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full border text-[11px] uppercase tracking-[0.12em] transition-colors active:scale-95'
   return (
-    <div className="mt-3 flex gap-2">
+    <div className={cn('mt-3 gap-2', isProduct ? 'grid grid-cols-2' : 'flex')}>
       <button type="button" onClick={onView} aria-label={`View ${item.name}`} className={cn(base, 'border-white/20 text-white/85 hover:border-gold/60')}>
         <Eye aria-hidden className="size-3.5" />
         View
@@ -327,6 +346,18 @@ function ItemActions({
         {isCompared ? <Check aria-hidden className="size-3.5" /> : <GitCompareArrows aria-hidden className="size-3.5" />}
         Compare
       </button>
+      {isProduct && (
+        <button
+          type="button"
+          onClick={onSaveItem}
+          aria-pressed={isSaved}
+          aria-label={`${isSaved ? 'Remove' : 'Save'} ${item.name}`}
+          className={cn(base, isSaved ? 'border-gold bg-gold/15 text-gold-light' : 'border-white/20 text-white/85 hover:border-gold/60')}
+        >
+          {isSaved ? <BookmarkCheck aria-hidden className="size-3.5" /> : <Bookmark aria-hidden className="size-3.5" />}
+          {isSaved ? 'Saved' : 'Save'}
+        </button>
+      )}
       {isProduct && item.productUrl ? (
         <a
           href={item.productUrl}

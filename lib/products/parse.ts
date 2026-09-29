@@ -12,6 +12,7 @@ const CURRENCY_CODES = ['EUR', 'USD', 'GBP', 'CHF', 'CAD', 'AUD'] as const
 const CURRENCY_SYMBOLS: Record<string, string> = { '€': 'EUR', $: 'USD', '£': 'GBP' }
 const COLORS = ['black', 'white', 'grey', 'gray', 'red', 'blue', 'green', 'yellow', 'orange', 'pink', 'purple', 'brown', 'beige', 'silver', 'gold']
 const GENDERS = ["women's", 'women', 'woman', "men's", 'mens', 'men', 'man', 'unisex', 'kids', 'children', 'boys', 'girls']
+const GOAL_LANGUAGE = /\b(i|we|my|want|need|goal|trying|plan|build|launch|create|learn|lose|save|grow|become|finish|improve|stop|start|develop)\b/i
 const BRANDS = [
   'adidas',
   'apple',
@@ -138,8 +139,13 @@ export function isProductSearchQuery(text: string) {
     SYMBOL_PRICE_PATTERN.test(query)
   const knownBrand = hasKnownBrand(query)
   const hasModelNumber = MODEL_NUMBER_PATTERN.test(query)
+  const hasProductAttribute = Boolean(findValue(query, COLORS) || findValue(query, GENDERS) || extractBrand(query) || extractSize(query))
+  const isBareProductPhrase = hasProductTerm && !GOAL_LANGUAGE.test(query) && query.split(/\s+/).length <= 8
 
-  return (hasProductTerm && hasShoppingIntent) || (knownBrand && (hasProductTerm || hasModelNumber))
+  return (
+    (hasProductTerm && (hasShoppingIntent || hasProductAttribute || isBareProductPhrase)) ||
+    (knownBrand && (hasProductTerm || hasModelNumber))
+  )
 }
 
 export function parseProductSearchParams(text: string): ProductSearchParams {

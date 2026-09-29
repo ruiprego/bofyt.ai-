@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { categoryById, detectCategories, detectPrimary, type CategoryId } from '@/lib/bofyt/categories'
+import { categoryById, detectCategories, type CategoryId } from '@/lib/bofyt/categories'
 import { activeGoal, goalStore, useGoals } from '@/lib/bofyt/goals'
+import { detectGoalIntent } from '@/lib/bofyt/intent'
 import { ProductSearchClientError, searchProducts } from '@/lib/products/client'
-import { isProductSearchQuery } from '@/lib/products/parse'
 import type { Product, ProductSearchFeedback } from '@/lib/products/types'
 import type { CoreMode } from './ai-core'
 import { BottomNav, type NavTarget } from './bottom-nav'
@@ -110,10 +110,14 @@ export function BofytExperience() {
     setProductFeedback(null)
     setGoal(value)
     if (result) setResult(null)
-    const detected = detectPrimary(value)
-    if (detected && detected !== selected) {
+
+    const intent = detectGoalIntent(value)
+    if (intent.kind !== 'category') {
       setPreview(null)
-      selectCategory(detected)
+      if (intent.categoryId !== selected) setSelected(intent.categoryId)
+    } else if (intent.categoryId && intent.categoryId !== selected) {
+      setPreview(null)
+      selectCategory(intent.categoryId)
     }
   }
 
@@ -137,8 +141,10 @@ export function BofytExperience() {
       return
     }
 
-    const areas = detectCategories(trimmed, selected)
-    if (isProductSearchQuery(trimmed)) {
+    const intent = detectGoalIntent(trimmed)
+    const preferredArea = intent.categoryId ?? (intent.kind === 'category' ? selected : null)
+    const areas = detectCategories(trimmed, preferredArea)
+    if (intent.kind === 'shopping') {
       productAbort.current?.abort()
       const controller = new AbortController()
       const requestId = ++productRequest.current
@@ -153,7 +159,7 @@ export function BofytExperience() {
           if (controller.signal.aborted || requestId !== productRequest.current) return
           productAbort.current = null
           setActivating(false)
-          setSelected(areas[0])
+          setSelected(intent.categoryId ?? (intent.kind === 'category' ? areas[0] : null))
           setResult({ id: crypto.randomUUID(), goal: trimmed, areas, products })
           setGoal('')
           pulse()
@@ -180,7 +186,7 @@ export function BofytExperience() {
     pulse()
     activationTimer.current = setTimeout(() => {
       setActivating(false)
-      setSelected(areas[0])
+      setSelected(intent.categoryId ?? (intent.kind === 'category' ? areas[0] : null))
       setResult({ id: crypto.randomUUID(), goal: trimmed, areas })
       setGoal('')
       pulse()

@@ -1,4 +1,6 @@
 import { categoryById, type CategoryId } from './categories'
+import { detectGoalIntent, type GoalIntentKind } from './intent'
+import { toGoalTitle } from './plan'
 import type { Product } from '@/lib/products/types'
 
 export type ResultKind = 'places' | 'options' | 'products'
@@ -21,6 +23,7 @@ export interface ResultItem {
   price?: number
   currency?: string
   retailer?: string
+  reviewCount?: number
   productUrl?: string
   availability?: string
   category?: string
@@ -112,8 +115,11 @@ const OPTION_PROFILE = [
 const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 
 export function buildResult(goal: string, areas: CategoryId[], products?: Product[]): GoalResultModel {
-  if (products) {
-    const items = products.map((product) => ({
+  const intent = detectGoalIntent(goal)
+
+  if (intent.kind === 'shopping' || products !== undefined) {
+    const liveProducts = products ?? []
+    const items = liveProducts.map((product) => ({
       id: product.id,
       name: product.title,
       subtitle: [product.brand, product.category].filter(Boolean).join(' · '),
@@ -124,6 +130,8 @@ export function buildResult(goal: string, areas: CategoryId[], products?: Produc
       price: product.price,
       currency: product.currency,
       retailer: product.retailer,
+      rating: product.rating,
+      reviewCount: product.reviewCount,
       productUrl: product.productUrl,
       availability: product.availability,
       category: product.category,
@@ -173,6 +181,10 @@ export function buildResult(goal: string, areas: CategoryId[], products?: Produc
     }
   }
 
+  if (intent.kind !== 'category') {
+    return buildIntentResult(goal, intent.kind, areas)
+  }
+
   const [primaryId, secondaryId] = areas
   const primary = categoryById[primaryId]
   const offset = Number(primary.index) % OPTION_PROFILE.length
@@ -206,6 +218,200 @@ export function buildResult(goal: string, areas: CategoryId[], products?: Produc
     defaultRefinement: /fast|quick|asap|soon/i.test(goal) ? 'fastest' : 'impact',
     refinements: OPTION_REFINEMENTS,
     nextActionLabel: 'Build my plan',
+    items,
+  }
+}
+
+type ActionIntentKind = Exclude<GoalIntentKind, 'shopping' | 'category'>
+
+type IntentOptionSeed = {
+  name: string
+  subtitle: string
+  description: string
+  step: string
+  weeks: number
+  effort: number
+  free: boolean
+}
+
+const INTENT_OPTION_PROFILES: Record<
+  ActionIntentKind,
+  { heading: string; noun: string; nextActionLabel: string; defaultRefinement: string; items: IntentOptionSeed[] }
+> = {
+  travel: {
+    heading: 'Flight & travel research',
+    noun: 'travel paths',
+    nextActionLabel: 'Start travel research',
+    defaultRefinement: 'fastest',
+    items: [
+      {
+        name: 'Compare flight routes',
+        subtitle: 'Travel research',
+        description: 'Compare routes, timings, and the full trip cost before booking.',
+        step: 'Shortlist the best departure and arrival windows',
+        weeks: 1,
+        effort: 1,
+        free: true,
+      },
+      {
+        name: 'Track the best fare',
+        subtitle: 'Price tracking',
+        description: 'Set a target price and watch for a better fare before you commit.',
+        step: 'Set a price ceiling and flexible date range',
+        weeks: 2,
+        effort: 1,
+        free: true,
+      },
+      {
+        name: 'Build the trip plan',
+        subtitle: 'Itinerary',
+        description: 'Turn the route into a practical itinerary with stays and next actions.',
+        step: 'Map the first three decisions for the trip',
+        weeks: 2,
+        effort: 2,
+        free: true,
+      },
+    ],
+  },
+  fitness: {
+    heading: 'Fitness path',
+    noun: 'fitness paths',
+    nextActionLabel: 'Start fitness plan',
+    defaultRefinement: 'fastest',
+    items: [
+      {
+        name: 'Training plan',
+        subtitle: 'Movement',
+        description: 'Build a progressive routine around the result you want to achieve.',
+        step: 'Set a safe baseline for your current fitness level',
+        weeks: 2,
+        effort: 2,
+        free: true,
+      },
+      {
+        name: 'Nutrition & recovery',
+        subtitle: 'Energy',
+        description: 'Support the goal with realistic food, sleep, and recovery choices.',
+        step: 'Choose one recovery change you can repeat this week',
+        weeks: 1,
+        effort: 1,
+        free: true,
+      },
+      {
+        name: 'Progress tracking',
+        subtitle: 'Measurement',
+        description: 'Measure the signals that show whether your plan is working.',
+        step: 'Pick one weekly progress metric',
+        weeks: 1,
+        effort: 1,
+        free: true,
+      },
+    ],
+  },
+  finance: {
+    heading: 'Finance plan',
+    noun: 'finance paths',
+    nextActionLabel: 'Build savings plan',
+    defaultRefinement: 'impact',
+    items: [
+      {
+        name: 'Savings target',
+        subtitle: 'Target setting',
+        description: 'Translate the amount you named into a clear monthly or weekly target.',
+        step: 'Set the deadline and contribution needed',
+        weeks: 1,
+        effort: 1,
+        free: true,
+      },
+      {
+        name: 'Monthly cash flow',
+        subtitle: 'Spending plan',
+        description: 'Find the spending changes that create room for the goal without guesswork.',
+        step: 'Review the last month of income and expenses',
+        weeks: 2,
+        effort: 2,
+        free: true,
+      },
+      {
+        name: 'Progress review',
+        subtitle: 'Accountability',
+        description: 'Keep the target visible and adjust the plan as your numbers change.',
+        step: 'Schedule a short weekly money review',
+        weeks: 1,
+        effort: 1,
+        free: true,
+      },
+    ],
+  },
+  career: {
+    heading: 'Career search',
+    noun: 'career paths',
+    nextActionLabel: 'Build career plan',
+    defaultRefinement: 'impact',
+    items: [
+      {
+        name: 'Target roles',
+        subtitle: 'Job research',
+        description: 'Clarify the role, location, and requirements that match the opportunity you want.',
+        step: 'Define the role and location filters that matter most',
+        weeks: 1,
+        effort: 1,
+        free: true,
+      },
+      {
+        name: 'Application kit',
+        subtitle: 'Positioning',
+        description: 'Shape your CV, profile, and proof around the roles you are targeting.',
+        step: 'Collect three examples of relevant work',
+        weeks: 2,
+        effort: 2,
+        free: true,
+      },
+      {
+        name: 'Interview preparation',
+        subtitle: 'Readiness',
+        description: 'Prepare focused stories and practice for the conversations that move you forward.',
+        step: 'Draft answers for the five questions you expect',
+        weeks: 2,
+        effort: 2,
+        free: true,
+      },
+      {
+        name: 'Networking',
+        subtitle: 'Connections',
+        description: 'Create a consistent outreach loop that opens more relevant conversations.',
+        step: 'List five people or communities to contact',
+        weeks: 3,
+        effort: 2,
+        free: true,
+      },
+    ],
+  },
+}
+
+function buildIntentResult(goal: string, kind: ActionIntentKind, areas: CategoryId[]): GoalResultModel {
+  const profile = INTENT_OPTION_PROFILES[kind]
+  const goalTitle = toGoalTitle(goal)
+  const areaId = areas[0] ?? 'personal'
+  const items = profile.items.map((seed) => ({
+    id: slug(`${kind}-${seed.name}`),
+    name: seed.name,
+    subtitle: seed.subtitle,
+    summary: `${seed.description} BOFYT shapes it around “${goalTitle}”.`,
+    steps: [`Define what success looks like for “${goalTitle}”`, seed.step, 'Review progress with BOFYT each week'],
+    weeks: seed.weeks,
+    effort: seed.effort,
+    free: seed.free,
+    areaId,
+  }))
+
+  return {
+    kind: 'options',
+    heading: profile.heading,
+    statusLabel: `${items.length} ${profile.noun}`,
+    defaultRefinement: profile.defaultRefinement,
+    refinements: OPTION_REFINEMENTS,
+    nextActionLabel: profile.nextActionLabel,
     items,
   }
 }
@@ -260,6 +466,8 @@ export function metaFor(item: ResultItem): string[] {
     const details: string[] = []
     if (item.price !== undefined) details.push(formatPrice(item.price, item.currency))
     if (item.retailer) details.push(item.retailer)
+    if (item.rating !== undefined) details.push(`★ ${item.rating.toFixed(1)}`)
+    if (item.reviewCount !== undefined) details.push(`${new Intl.NumberFormat().format(item.reviewCount)} reviews`)
     if (item.availability) details.push(item.availability)
     return details
   }
