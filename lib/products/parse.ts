@@ -1,7 +1,8 @@
 import type { ProductSearchParams } from './types'
 
-const SEARCH_INTENT = /\b(find|search|show|shop|buy|recommend|compare|looking for|where can i get|help me find|best|top)\b/i
+const SEARCH_INTENT = /\b(find|search|show|shop|buy|recommend|compare|looking for|where can i get|help me find|best|top|cheap|cheapest|affordable|budget|deal|deals|price|cost|under|below|less than|up to)\b/i
 const PRODUCT_TERMS = /\b(shoes?|sneakers?|trainers?|laptops?|macbooks?|computers?|phones?|smartphones?|tablets?|televisions?|tvs?|headphones?|earbuds?|cameras?|monitors?|keyboards?|mice|dresses?|jackets?|coats?|jeans?|backpacks?|watches?|appliances?|products?)\b/i
+const MODEL_NUMBER_PATTERN = /\b[a-z][a-z0-9-]*(?:\s+[a-z0-9-]+){0,4}\s+\d{2,4}\b/i
 const PRICE_PATTERN = /\b(?:under|below|less than|up to|max(?:imum)?(?: of)?|budget(?: of)?|within)\s*(?:€|\$|£|chf|eur|usd|gbp|cad|aud)?\s*([\d][\d.,]*)/i
 const MIN_PRICE_PATTERN = /\b(?:over|above|more than|at least|from)\s*(?:€|\$|£|chf|eur|usd|gbp|cad|aud)?\s*([\d][\d.,]*)/i
 const BETWEEN_PRICE_PATTERN = /\bbetween\s*(?:€|\$|£|chf|eur|usd|gbp|cad|aud)?\s*([\d][\d.,]*)\s*(?:and|-)\s*(?:€|\$|£|chf|eur|usd|gbp|cad|aud)?\s*([\d][\d.,]*)/i
@@ -106,6 +107,13 @@ function extractBrand(text: string) {
   return BRANDS.find((brand) => normalized.includes(brand))
 }
 
+function hasKnownBrand(text: string) {
+  return BRANDS.some((brand) => {
+    const escaped = brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    return new RegExp(`(?:^|\\b)${escaped}(?:\\b|$)`, 'i').test(text)
+  })
+}
+
 function extractKeywords(text: string, brand?: string, color?: string, gender?: string) {
   return text
     .toLowerCase()
@@ -119,14 +127,19 @@ function extractKeywords(text: string, brand?: string, color?: string, gender?: 
 
 export function isProductSearchQuery(text: string) {
   const query = text.trim()
-  if (!query || !PRODUCT_TERMS.test(query)) return false
-  return (
+  if (!query) return false
+
+  const hasProductTerm = PRODUCT_TERMS.test(query)
+  const hasShoppingIntent =
     SEARCH_INTENT.test(query) ||
     PRICE_PATTERN.test(query) ||
     MIN_PRICE_PATTERN.test(query) ||
     BETWEEN_PRICE_PATTERN.test(query) ||
     SYMBOL_PRICE_PATTERN.test(query)
-  )
+  const knownBrand = hasKnownBrand(query)
+  const hasModelNumber = MODEL_NUMBER_PATTERN.test(query)
+
+  return (hasProductTerm && hasShoppingIntent) || (knownBrand && (hasProductTerm || hasModelNumber))
 }
 
 export function parseProductSearchParams(text: string): ProductSearchParams {
