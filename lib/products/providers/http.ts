@@ -4,7 +4,8 @@ import {
   ProductSearchError,
 } from '../types'
 
-const REQUEST_TIMEOUT_MS = 10_000
+const SERPAPI_ENDPOINT = 'https://serpapi.com/search.json'
+const REQUEST_TIMEOUT_MS = 15_000
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null
@@ -17,8 +18,22 @@ function asString(value: unknown) {
 function asNumber(value: unknown) {
   if (typeof value === 'number' && Number.isFinite(value)) return value
   if (typeof value !== 'string') return undefined
-  const normalized = value.replace(/[^\d,.-]/g, '').replace(/,(?=\d{3}(?:\D|$))/g, '')
-  const parsed = Number(normalized.replace(',', '.'))
+
+  const normalized = value.trim().replace(/[^\d,.-]/g, '')
+  if (!normalized) return undefined
+
+  const lastComma = normalized.lastIndexOf(',')
+  const lastDot = normalized.lastIndexOf('.')
+  let canonical = normalized
+
+  if (lastComma >= 0 && lastDot >= 0) {
+    canonical = lastComma > lastDot ? normalized.replace(/\./g, '').replace(',', '.') : normalized.replace(/,/g, '')
+  } else if (lastComma >= 0) {
+    const fractionalDigits = normalized.length - lastComma - 1
+    canonical = fractionalDigits === 3 ? normalized.replace(/,/g, '') : normalized.replace(',', '.')
+  }
+
+  const parsed = Number(canonical)
   return Number.isFinite(parsed) ? parsed : undefined
 }
 
@@ -41,98 +56,119 @@ function firstString(record: Record<string, unknown>, keys: string[]) {
   return undefined
 }
 
-function findCandidates(payload: unknown): unknown[] {
-  if (Array.isArray(payload)) return payload
-  const record = asRecord(payload)
-  if (!record) return []
-  for (const key of ['products', 'results', 'items', 'shopping_results']) {
-    if (Array.isArray(record[key])) return record[key]
-  }
-  for (const key of ['data', 'response']) {
-    const nested = findCandidates(record[key])
-    if (nested.length) return nested
-  }
-  return []
-}
-
-function parseCurrency(rawPrice: unknown, record: Record<string, unknown>) {
-  const value = firstString(record, ['currency', 'currencyCode', 'priceCurrency'])
+function parseCurrency(rawPrice: unknown, record: Record<string, unknown>, fallback?: string) {
+  const value = firstString(record, ['currency', 'currency_code', 'currencyCode', 'priceCurrency'])
   if (value) return value.toUpperCase()
+
   const price = asString(rawPrice)
   if (price?.includes('€')) return 'EUR'
   if (price?.includes('$')) return 'USD'
   if (price?.includes('£')) return 'GBP'
   if (/\bCHF\b/i.test(price ?? '')) return 'CHF'
-  return undefined
+  if (/\bCAD\b/i.test(price ?? '')) return 'CAD'
+  if (/\bAUD\b/i.test(price ?? '')) return 'AUD'
+  return fallback?.toUpperCase()
 }
 
-function normalizeProduct(value: unknown): Product | null {
+function imageUrls(record: Record<string, unknown>) {
+  const candidates: unknown[] = [
+    record.thumbnail,
+    record.serpapi_thumbnail,
+    record.imageUrl,
+    record.image,
+    record.product_image,
+    record.product_image_url,
+  ]
+
+  for (const key of ['thumbnails', 'images', 'image_urls', 'additional_images']) {
+    const values = record[key]
+    if (Array.isArray(values)) candidates.push(...values)
+  }
+
+  return candidates
+    .map(asUrl)
+    .filter((value): value is string => Boolean(value))
+    .filter((value, index, list) => list.indexOf(value) === index)
+}
+
+function normalizeProduct(value: unknown, fallbackCurrency?: string): Product | null {
   const record = asRecord(value)
   if (!record) return null
 
   const title = firstString(record, ['title', 'name', 'productName'])
-  const productUrl = asUrl(record.productUrl ?? record.url ?? record.link ?? record.product_link ?? record.offerUrl)
+  const productUrl = asUrl(record.product_link ?? record.productUrl ?? record.url ?? record.link ?? record.offerUrl)
   if (!title || !productUrl) return null
 
-  const rawPrice = record.extracted_price ?? record.price ?? record.currentPrice ?? record.salePrice ?? asRecord(record.offers)?.price
+  const rawPrice = record.extracted_price ?? record.price ?? record.currentPrice ?? record.salePrice
+  const rawOldPrice =
+    record.extracted_old_price ?? record.old_price ?? record.original_price ?? record.originalPrice ?? record.was_price
+  const images = imageUrls(record)
   const rawAvailability = record.availability ?? record.stock
-  const availability = typeof rawAvailability === 'boolean' ? (rawAvailability ? 'In stock' : 'Out of stock') : asString(rawAvailability)
-  const imageUrl = asUrl(record.imageUrl ?? record.image ?? record.thumbnail ?? (Array.isArray(record.images) ? record.images[0] : undefined))
-  const id = firstString(record, ['id', 'productId', 'product_id', 'sku']) ?? productUrl
-  const price = asNumber(rawPrice)
+  const availability =
+    typeof rawAvailability === 'boolean' ? (rawAvailability ? 'In stock' : 'Out of stock') : asString(rawAvailability)
+  const id = firstString(record, ['product_id', 'id', 'productId', 'sku']) ?? productUrl
 
   return {
     id,
     title,
     brand: firstString(record, ['brand', 'manufacturer']),
-    description: firstString(record, ['description', 'snippet', 'summary']),
-    imageUrl,
-    price,
-    currency: parseCurrency(rawPrice, record),
-    retailer: firstString(record, ['retailer', 'source', 'store', 'seller', 'merchant']),
+    description: firstString(record, ['snippet', 'description', 'summary']),
+    imageUrl: images[0],
+    imageUrls: images.length > 1 ? images : undefined,
+    price: asNumber(rawPrice),
+    oldPrice: asNumber(rawOldPrice),
+    currency: parseCurrency(rawPrice, record, fallbackCurrency),
+    rating: asNumber(record.rating),
+    reviewCount: asNumber(record.reviews ?? record.review_count ?? record.reviewCount),
+    retailer: firstString(record, ['source', 'retailer', 'store', 'seller', 'merchant']),
     productUrl,
     availability,
+    delivery: firstString(record, ['delivery', 'shipping', 'delivery_info']),
     category: firstString(record, ['category', 'productType', 'type']),
   }
 }
 
-function normalizeResponse(payload: unknown): ProductSearchResponse {
-  const products = findCandidates(payload).map(normalizeProduct).filter((product): product is Product => Boolean(product))
-  const uniqueProducts = products.filter((product, index, list) => list.findIndex((item) => item.productUrl === product.productUrl) === index)
+function normalizeResponse(payload: unknown, fallbackCurrency?: string): ProductSearchResponse {
   const record = asRecord(payload)
-  const total = asNumber(record?.total ?? record?.totalResults ?? record?.results_count)
-  const nextPage = asUrl(record?.nextPage ?? record?.next_page ?? record?.nextUrl) ?? null
-
-  return { products: uniqueProducts, total: total ?? uniqueProducts.length, nextPage }
-}
-
-function buildRequestUrl(baseUrl: string, params: ProductSearchParams) {
-  let url: URL
-  try {
-    url = new URL(baseUrl)
-  } catch {
-    throw new ProductSearchError('The product-search API URL is invalid.', 'CONFIGURATION')
+  const providerError = asString(record?.error)
+  if (providerError) {
+    throw new ProductSearchError('SerpApi returned an error for this search.', 'UPSTREAM', 502)
   }
 
+  if (!record || !Array.isArray(record.shopping_results)) {
+    throw new ProductSearchError('SerpApi returned an invalid shopping result list.', 'INVALID_RESPONSE', 502)
+  }
+
+  const products = record.shopping_results
+    .map((item) => normalizeProduct(item, fallbackCurrency))
+    .filter((product): product is Product => Boolean(product))
+  const uniqueProducts = products.filter(
+    (product, index, list) => list.findIndex((item) => item.productUrl === product.productUrl) === index,
+  )
+
+  return {
+    products: uniqueProducts,
+    total: uniqueProducts.length,
+    nextPage: null,
+  }
+}
+
+function buildRequestUrl(params: ProductSearchParams, apiKey: string) {
+  const url = new URL(SERPAPI_ENDPOINT)
+  url.searchParams.set('engine', 'google_shopping')
   url.searchParams.set('q', params.query)
-  if (params.category) url.searchParams.set('category', params.category)
-  if (params.brand) url.searchParams.set('brand', params.brand)
-  if (params.keywords.length) url.searchParams.set('keywords', params.keywords.join(','))
+  url.searchParams.set('api_key', apiKey)
+  url.searchParams.set('output', 'json')
   if (params.minPrice !== undefined) url.searchParams.set('min_price', String(params.minPrice))
   if (params.maxPrice !== undefined) url.searchParams.set('max_price', String(params.maxPrice))
-  if (params.currency) url.searchParams.set('currency', params.currency)
-  if (params.color) url.searchParams.set('color', params.color)
-  if (params.size) url.searchParams.set('size', params.size)
-  if (params.gender) url.searchParams.set('gender', params.gender)
-  if (params.page) url.searchParams.set('page', String(params.page))
+  if (params.page && params.page > 1) url.searchParams.set('start', String((params.page - 1) * 40))
   return url
 }
 
-export class HttpProductSearchProvider implements ProductSearchProvider {
+export class SerpApiProductSearchProvider implements ProductSearchProvider {
   async search(params: ProductSearchParams, signal?: AbortSignal): Promise<ProductSearchResponse> {
-    const baseUrl = process.env.PRODUCT_SEARCH_API_URL?.trim()
-    const apiKey = process.env.PRODUCT_SEARCH_API_KEY?.trim()
-    if (!baseUrl || !apiKey) {
+    const apiKey = process.env.SERPAPI_API_KEY?.trim()
+    if (!apiKey) {
       throw new ProductSearchError(PRODUCT_SEARCH_CONFIGURATION_MESSAGE, 'CONFIGURATION', 503)
     }
 
@@ -142,33 +178,31 @@ export class HttpProductSearchProvider implements ProductSearchProvider {
     signal?.addEventListener('abort', forwardAbort, { once: true })
 
     try {
-      const response = await fetch(buildRequestUrl(baseUrl, params), {
+      const response = await fetch(buildRequestUrl(params, apiKey), {
         method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-          'X-API-Key': apiKey,
-        },
+        headers: { Accept: 'application/json' },
         cache: 'no-store',
         signal: controller.signal,
       })
 
       if (!response.ok) {
-        throw new ProductSearchError(`Product search provider returned ${response.status}.`, 'UPSTREAM', 502)
+        if (response.status === 401 || response.status === 403) {
+          throw new ProductSearchError('SerpApi rejected the configured API key.', 'UPSTREAM', 502)
+        }
+        if (response.status === 429) {
+          throw new ProductSearchError('SerpApi rate limit reached. Try again shortly.', 'UPSTREAM', 502)
+        }
+        throw new ProductSearchError(`SerpApi returned ${response.status}.`, 'UPSTREAM', 502)
       }
 
       let payload: unknown
       try {
         payload = await response.json()
       } catch {
-        throw new ProductSearchError('Product search provider returned invalid JSON.', 'INVALID_RESPONSE', 502)
+        throw new ProductSearchError('SerpApi returned invalid JSON.', 'INVALID_RESPONSE', 502)
       }
 
-      const normalized = normalizeResponse(payload)
-      if (!Array.isArray(normalized.products)) {
-        throw new ProductSearchError('Product search provider returned an invalid product list.', 'INVALID_RESPONSE', 502)
-      }
-      return normalized
+      return normalizeResponse(payload, params.currency)
     } catch (error) {
       if (error instanceof ProductSearchError) throw error
       if (signal?.aborted) throw error

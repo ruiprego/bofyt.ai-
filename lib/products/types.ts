@@ -18,11 +18,16 @@ export interface Product {
   brand?: string
   description?: string
   imageUrl?: string
+  imageUrls?: string[]
   price?: number
+  oldPrice?: number
   currency?: string
+  rating?: number
+  reviewCount?: number
   retailer?: string
   productUrl: string
   availability?: string
+  delivery?: string
   category?: string
 }
 
@@ -56,7 +61,7 @@ export interface ProductSearchFeedback {
 }
 
 export const PRODUCT_SEARCH_CONFIGURATION_MESSAGE =
-  "Product search isn't connected yet. Add PRODUCT_SEARCH_API_URL and PRODUCT_SEARCH_API_KEY to enable live results."
+  "Product search isn't connected yet. Add SERPAPI_API_KEY to enable live results."
 
 export const isProduct = (value: unknown): value is Product => {
   if (!value || typeof value !== 'object') return false
