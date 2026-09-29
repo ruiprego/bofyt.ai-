@@ -37,6 +37,19 @@ function asNumber(value: unknown) {
   return Number.isFinite(parsed) ? parsed : undefined
 }
 
+function parseExactPrice(value: unknown) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined
+  const text = asString(value)
+  if (!text) return undefined
+  if (/\b(?:from|starting(?:\s+at)?|as\s+low\s+as)\b/i.test(text)) return undefined
+
+  const numericTokens = text.match(/\d[\d.,]*/g)
+  if (!numericTokens || numericTokens.length !== 1) return undefined
+
+  const parsed = asNumber(numericTokens[0])
+  return parsed !== undefined && Number.isFinite(parsed) ? parsed : undefined
+}
+
 function asUrl(value: unknown) {
   const raw = asString(value)
   if (!raw) return undefined
@@ -56,23 +69,33 @@ function firstString(record: Record<string, unknown>, keys: string[]) {
   return undefined
 }
 
-function parseCurrency(rawPrice: unknown, record: Record<string, unknown>, fallback?: string) {
-  const value = firstString(record, ['currency', 'currency_code', 'currencyCode', 'priceCurrency'])
-  if (value) return value.toUpperCase()
+const CURRENCY_PATTERNS: Array<[RegExp, string]> = [
+  [/\b(?:EUR|EUROS?)\b|€/i, 'EUR'],
+  [/\b(?:USD|DOLLARS?)\b|US\s*\$/i, 'USD'],
+  [/\b(?:GBP|POUNDS?)\b|£/i, 'GBP'],
+  [/\b(?:CHF|FRANCS?)\b/i, 'CHF'],
+  [/\bCAD\b|CA\s*\$/i, 'CAD'],
+  [/\bAUD\b|AU\s*\$/i, 'AUD'],
+  [/\$/i, 'USD'],
+]
+
+function normalizeCurrency(value: unknown) {
+  const text = asString(value)
+  if (!text) return undefined
+  const exactCode = text.toUpperCase().trim()
+  if (/^[A-Z]{3}$/.test(exactCode)) return exactCode
+  return CURRENCY_PATTERNS.find(([pattern]) => pattern.test(text))?.[1]
+}
+
+function parseCurrency(rawPrice: unknown, record: Record<string, unknown>) {
+  const explicit = firstString(record, ['currency', 'currency_code', 'currencyCode', 'priceCurrency'])
+  const explicitCurrency = normalizeCurrency(explicit)
+  if (explicitCurrency) return explicitCurrency
 
   const price = [asString(rawPrice), asString(record.price), asString(record.currentPrice), asString(record.salePrice)]
     .filter(Boolean)
     .join(' ')
-  if (price.includes('€')) return 'EUR'
-  if (price.includes('$')) return 'USD'
-  if (price.includes('£')) return 'GBP'
-  if (/\bCHF\b/i.test(price)) return 'CHF'
-  if (/\bCAD\b/i.test(price)) return 'CAD'
-  if (/\bAUD\b/i.test(price)) return 'AUD'
-  if (/\bEUR\b/i.test(price)) return 'EUR'
-  if (/\bUSD\b/i.test(price)) return 'USD'
-  if (/\bGBP\b/i.test(price)) return 'GBP'
-  return fallback?.toUpperCase()
+  return normalizeCurrency(price)
 }
 
 function imageUrls(record: Record<string, unknown>) {
@@ -96,7 +119,7 @@ function imageUrls(record: Record<string, unknown>) {
     .filter((value, index, list) => list.indexOf(value) === index)
 }
 
-function normalizeProduct(value: unknown, fallbackCurrency?: string): Product | null {
+export function normalizeProduct(value: unknown): Product | null {
   const record = asRecord(value)
   if (!record) return null
 
@@ -105,6 +128,7 @@ function normalizeProduct(value: unknown, fallbackCurrency?: string): Product | 
   if (!title || !productUrl) return null
 
   const rawPrice = record.extracted_price ?? record.price ?? record.currentPrice ?? record.salePrice
+  const displayedPrice = firstString(record, ['price', 'currentPrice', 'salePrice'])
   const rawOldPrice =
     record.extracted_old_price ?? record.old_price ?? record.original_price ?? record.originalPrice ?? record.was_price
   const images = imageUrls(record)
@@ -123,9 +147,9 @@ function normalizeProduct(value: unknown, fallbackCurrency?: string): Product | 
     imageUrl: images[0],
     image: images[0],
     imageUrls: images.length > 1 ? images : undefined,
-    price: asNumber(rawPrice),
-    oldPrice: asNumber(rawOldPrice),
-    currency: parseCurrency(rawPrice, record, fallbackCurrency),
+    price: parseExactPrice(displayedPrice ?? rawPrice),
+    oldPrice: parseExactPrice(rawOldPrice),
+    currency: parseCurrency(rawPrice, record),
     rating: asNumber(record.rating),
     reviewCount: reviews,
     reviews,
@@ -192,7 +216,7 @@ function normalizeResponse(payload: unknown, params: ProductSearchParams): Produ
   }
 
   const normalizedProducts = record.shopping_results
-    .map((item) => normalizeProduct(item, params.currency))
+    .map((item) => normalizeProduct(item))
     .filter((product): product is Product => Boolean(product))
   const uniqueProducts = normalizedProducts.filter(
     (product, index, list) => list.findIndex((item) => item.productUrl === product.productUrl) === index,
