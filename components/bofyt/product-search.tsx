@@ -59,7 +59,7 @@ export function ProductSearch({
   return (
     <section
       aria-labelledby="product-search-heading"
-      className="relative z-10 flex w-full max-w-3xl flex-col items-center gap-5 px-1 pb-6 pt-2 text-center lg:gap-6 lg:py-10"
+      className="relative z-10 flex w-full max-w-3xl flex-col items-center gap-5 px-1 pb-6 pt-2 text-center lg:gap-6 lg:pb-10 lg:pt-2"
     >
       <motion.div
         initial={{ opacity: 0, y: 14 }}
