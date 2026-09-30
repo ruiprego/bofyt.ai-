@@ -3,6 +3,7 @@
 import { Compass, House, LineChart, UserRound } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { Category } from '@/lib/bofyt/categories'
+import type { Capability } from '@/lib/bofyt/capabilities'
 import { cn } from '@/lib/utils'
 import { EyeMark } from './logo'
 
