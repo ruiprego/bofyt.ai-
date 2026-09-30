@@ -18,6 +18,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react'
 import type { CategoryId } from '@/lib/bofyt/categories'
+import type { CapabilityId } from '@/lib/bofyt/capabilities'
 import type { Product, ProductPriceConstraint } from '@/lib/products/types'
 import { toGoalTitle } from '@/lib/bofyt/plan'
 import { buildResult, reasonFor, refineItems, type ResultItem } from '@/lib/bofyt/results'
@@ -39,6 +40,7 @@ export interface GoalResultData {
   id: string
   goal: string
   areas: CategoryId[]
+  capabilityId?: CapabilityId
   products?: Product[]
   closestProducts?: Product[]
   priceConstraint?: ProductPriceConstraint

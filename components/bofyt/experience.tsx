@@ -7,6 +7,7 @@ import {
   capabilityById,
   capabilityForCategory,
   type CapabilityId,
+  type CapabilitySearchRequest,
 } from '@/lib/bofyt/capabilities'
 import { activeGoal, goalStore, useGoals } from '@/lib/bofyt/goals'
 import { detectGoalIntent } from '@/lib/bofyt/intent'
@@ -29,8 +30,14 @@ import { Toast, type ToastMessage } from './toast'
 
 type GoalOutcome = GoalResultData
 type IntroStage = 'awakening' | 'discovery' | 'complete'
+type CapabilitySearchContext = Pick<CapabilitySearchRequest, 'capabilityId' | 'categoryId'>
 
 const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches
+
+const contextForCapability = (capabilityId: CapabilityId): CapabilitySearchContext => ({
+  capabilityId,
+  categoryId: capabilityById[capabilityId].categoryId,
+})
 
 export function BofytExperience() {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -43,6 +50,7 @@ export function BofytExperience() {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [goal, setGoal] = useState('')
+  const [goalCapabilityContext, setGoalCapabilityContext] = useState<CapabilitySearchContext | null>(null)
   const [focused, setFocused] = useState(false)
   const [selected, setSelected] = useState<CategoryId | null>(null)
   const [expandedCapability, setExpandedCapability] = useState<CapabilityId | null>(null)
@@ -58,6 +66,7 @@ export function BofytExperience() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searching, setSearching] = useState(false)
   const [searchResult, setSearchResult] = useState<GoalOutcome | null>(null)
+  const [searchCapabilityContext, setSearchCapabilityContext] = useState<CapabilitySearchContext | null>(null)
   const [searchFeedback, setSearchFeedback] = useState<ProductSearchFeedback | null>(null)
   const [toast, setToast] = useState<ToastMessage | null>(null)
   const goals = useGoals()
@@ -119,6 +128,8 @@ export function BofytExperience() {
     const capability = capabilityById[id]
     setSelected(capability.categoryId)
     setExpandedCapability(id)
+    setGoalCapabilityContext(null)
+    setSearchCapabilityContext(null)
     setCoreOpen(false)
     setSheet(null)
     setPreview(null)
@@ -142,6 +153,8 @@ export function BofytExperience() {
   const enterCapabilityExperience = (id: CapabilityId) => {
     closeCapability()
     setSelected(capabilityById[id].categoryId)
+    setGoalCapabilityContext(null)
+    setSearchCapabilityContext(null)
     setSheet(null)
     setCoreOpen(false)
     setNavActive('home')
@@ -157,11 +170,16 @@ export function BofytExperience() {
   }
 
   const changeGoal = (value: string) => {
+    if (!coreOpen && !result) setGoalCapabilityContext(null)
     setGoal(value)
     if (result) setResult(null)
 
     const intent = detectGoalIntent(value)
     if (intent.kind === 'shopping') {
+      setPreview(null)
+      return
+    }
+    if (goalCapabilityContext) {
       setPreview(null)
       return
     }
@@ -188,25 +206,29 @@ export function BofytExperience() {
       setGoal('')
       setSearchQuery(trimmed)
       setSearchFeedback(null)
-      runProductSearch(trimmed)
+      runProductSearch(trimmed, targetCategory === 'search' ? undefined : null)
     } else {
-      submitGoal(trimmed)
+      submitGoal(trimmed, null)
     }
 
     pulse()
   }
 
   const selectCapabilityPrompt = (capabilityId: CapabilityId, prompt: string) => {
-    const id = capabilityById[capabilityId].categoryId
+    const context = contextForCapability(capabilityId)
     closeCapability()
     setResult(null)
-    setSelected(id)
+    setSelected(context.categoryId)
 
-    if (id === 'search') {
+    if (context.categoryId === 'search') {
+      setGoalCapabilityContext(null)
+      setSearchCapabilityContext(context)
       setSearchFeedback(null)
       setSearchQuery(prompt)
       window.setTimeout(() => searchInputRef.current?.focus({ preventScroll: true }), 0)
     } else {
+      setSearchCapabilityContext(null)
+      setGoalCapabilityContext(context)
       setGoal(prompt)
       window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 0)
     }
@@ -222,19 +244,24 @@ export function BofytExperience() {
     if (capabilityEntryRef.current) return
 
     capabilityEntryRef.current = true
-    const id = capabilityById[expandedCapability].categoryId
+    const context = contextForCapability(expandedCapability)
     closeCapability()
-    setSelected(id)
-    if (id === 'search') {
+    setSelected(context.categoryId)
+    if (context.categoryId === 'search') {
+      setGoalCapabilityContext(null)
+      setSearchCapabilityContext(context)
       window.setTimeout(() => searchInputRef.current?.focus({ preventScroll: true }), 0)
     } else {
+      setSearchCapabilityContext(null)
+      setGoalCapabilityContext(null)
       setCoreOpen(true)
       setNavActive('core')
     }
     pulse()
   }
 
-  const submitGoal = (goalOverride?: string) => {
+  const submitGoal = (goalOverride?: string, contextOverride?: CapabilitySearchContext | null) => {
+    const context = contextOverride === undefined ? goalCapabilityContext : contextOverride
     const trimmed = (goalOverride ?? goal).trim()
     if (!trimmed || activating) {
       focusInput()
@@ -243,8 +270,9 @@ export function BofytExperience() {
     }
 
     const intent = detectGoalIntent(trimmed)
-    if (intent.kind === 'shopping') {
+    if (intent.kind === 'shopping' && !context) {
       setActivating(false)
+      setGoalCapabilityContext(null)
       setResult(null)
       setGoal('')
       setPreview(null)
@@ -253,28 +281,31 @@ export function BofytExperience() {
       setCoreOpen(false)
       setSearchQuery(trimmed)
       setSearchFeedback(null)
-      runProductSearch(trimmed)
+      runProductSearch(trimmed, null)
       pulse()
       return
     }
 
-    const preferredArea = intent.categoryId ?? (intent.kind === 'category' && selected !== 'search' ? selected : null)
+    const preferredArea = context?.categoryId ?? intent.categoryId ?? (intent.kind === 'category' && selected !== 'search' ? selected : null)
     const areas = detectCategories(trimmed, preferredArea).filter((id) => id !== 'search')
-    const goalAreas: CategoryId[] = areas.length ? areas : ['personal']
+    const goalAreas: CategoryId[] = areas.length ? areas : [context?.categoryId ?? 'personal']
 
+    setGoalCapabilityContext(context)
+    setSearchCapabilityContext(null)
     setActivating(true)
     setResult(null)
     pulse()
     activationTimer.current = setTimeout(() => {
       setActivating(false)
-      setSelected(intent.categoryId)
-      setResult({ id: crypto.randomUUID(), goal: trimmed, areas: goalAreas })
+      setSelected(context?.categoryId ?? intent.categoryId)
+      setResult({ id: crypto.randomUUID(), goal: trimmed, areas: goalAreas, capabilityId: context?.capabilityId })
       setGoal('')
       pulse()
     }, 1400)
   }
 
-  function runProductSearch(query: string) {
+  function runProductSearch(query: string, contextOverride?: CapabilitySearchContext | null) {
+    const context = contextOverride === undefined ? searchCapabilityContext : contextOverride
     const trimmed = query.trim()
     if (!trimmed || searching) return
 
@@ -282,6 +313,7 @@ export function BofytExperience() {
     const controller = new AbortController()
     const requestId = ++searchRequest.current
     searchAbort.current = controller
+    setSearchCapabilityContext(context)
     setSearchFeedback(null)
     setSearching(true)
     setSearchResult(null)
@@ -296,6 +328,7 @@ export function BofytExperience() {
           id: crypto.randomUUID(),
           goal: trimmed,
           areas: ['search'],
+          capabilityId: context?.capabilityId,
           products: response.products,
           closestProducts: response.closestProducts,
           priceConstraint: response.priceConstraint,
@@ -316,11 +349,47 @@ export function BofytExperience() {
 
   const submitProductSearch = (queryOverride?: string) => runProductSearch(queryOverride ?? searchQuery)
 
+  const submitCapabilitySearch = (request: CapabilitySearchRequest) => {
+    const context: CapabilitySearchContext = {
+      capabilityId: request.capabilityId,
+      categoryId: request.categoryId,
+    }
+
+    if (activationTimer.current) clearTimeout(activationTimer.current)
+    setActivating(false)
+    setResult(null)
+    closeCapability()
+    setSelected(request.categoryId)
+    setNavActive('home')
+
+    if (request.capabilityId === 'discover') {
+      setGoalCapabilityContext(null)
+      setGoal('')
+      setCoreOpen(false)
+      setSearchQuery(request.query)
+      setSearchFeedback(null)
+      runProductSearch(request.query, context)
+    } else {
+      setSearchCapabilityContext(null)
+      setGoalCapabilityContext(context)
+      setSearchResult(null)
+      setSearchFeedback(null)
+      setGoal(request.query)
+      setCoreOpen(true)
+      setNavActive('core')
+      submitGoal(request.query, context)
+    }
+
+    pulse()
+  }
+
   const reset = () => {
     if (activationTimer.current) clearTimeout(activationTimer.current)
     setActivating(false)
     setResult(null)
     setGoal('')
+    setGoalCapabilityContext(null)
+    setSearchCapabilityContext(null)
     setSelected(null)
     closeCapability()
     setTimeout(focusInput, 0)
@@ -330,6 +399,7 @@ export function BofytExperience() {
     if (!result) return
     if (activationTimer.current) clearTimeout(activationTimer.current)
     setActivating(false)
+    setGoalCapabilityContext(result.capabilityId ? contextForCapability(result.capabilityId) : null)
     setGoal(result.goal)
     setResult(null)
     setTimeout(focusInput, 0)
@@ -342,6 +412,7 @@ export function BofytExperience() {
     setSearching(false)
     setSearchFeedback(null)
     setSearchResult(null)
+    setSearchCapabilityContext(null)
     setSearchQuery('')
     pulse()
   }
@@ -381,6 +452,8 @@ export function BofytExperience() {
     setSheet(null)
     setNavActive('home')
     setSelected(entry.areas[0] ?? null)
+    setGoalCapabilityContext(null)
+    setSearchCapabilityContext(null)
     setResult(entry)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -391,14 +464,20 @@ export function BofytExperience() {
     if (target === 'home') {
       setSheet(null)
       setCoreOpen(false)
-      if (selected === 'search') setSelected(null)
+      if (selected === 'search') {
+        setSelected(null)
+        setSearchCapabilityContext(null)
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (target === 'explore') {
       setSheet(null)
       document.getElementById('explore')?.scrollIntoView({ behavior: 'smooth' })
     } else if (target === 'core') {
       setSheet(null)
-      if (selected === 'search') setSelected(null)
+      if (selected === 'search') {
+        setSelected(null)
+        setSearchCapabilityContext(null)
+      }
       setCoreOpen(true)
       pulse()
     } else {
@@ -505,6 +584,7 @@ export function BofytExperience() {
         onSelectModule={(module) => {
           if (expandedCapability) selectCapabilityPrompt(expandedCapability, module.prompt)
         }}
+        onCapabilitySearch={submitCapabilitySearch}
       />
 
       <CoreOverlay

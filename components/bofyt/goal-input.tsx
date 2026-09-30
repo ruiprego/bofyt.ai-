@@ -14,6 +14,9 @@ interface GoalInputProps {
   onFocusChange: (focused: boolean) => void
   id?: string
   linkKey?: string | null
+  ariaLabel?: string
+  inputLabel?: string
+  submitLabel?: string
 }
 
 export function GoalInput({
@@ -26,11 +29,14 @@ export function GoalInput({
   onFocusChange,
   id = 'goal-input',
   linkKey = null,
+  ariaLabel = 'Describe your goal',
+  inputLabel = 'Your goal',
+  submitLabel = 'Submit goal',
 }: GoalInputProps) {
   return (
     <form
       role="search"
-      aria-label="Describe your goal"
+      aria-label={ariaLabel}
       className="w-full max-w-xl min-[960px]:max-w-[clamp(20rem,calc(100vw_-_38rem),36rem)]"
       onSubmit={(event) => {
         event.preventDefault()
@@ -55,7 +61,7 @@ export function GoalInput({
         <Sparkle aria-hidden className="size-5 shrink-0 fill-white text-white transition-colors group-focus-within:fill-gold-light group-focus-within:text-gold-light" />
         <span aria-hidden className="h-8 w-px shrink-0 bg-white/15" />
         <label htmlFor={id} className="sr-only">
-          Your goal
+          {inputLabel}
         </label>
         <input
           id={id}
@@ -77,7 +83,7 @@ export function GoalInput({
         <button
           type="submit"
           disabled={busy}
-          aria-label="Submit goal"
+          aria-label={submitLabel}
           className="grid size-12 shrink-0 place-items-center rounded-full bg-gradient-to-b from-gold-light to-gold text-black shadow-[0_0_24px_-4px_rgba(226,184,101,0.8)] transition-transform duration-300 hover:scale-105 active:scale-95 disabled:opacity-80 md:size-14"
         >
           {busy ? <LoaderCircle aria-hidden className="size-5 animate-spin" /> : <ArrowRight aria-hidden className="size-5" />}

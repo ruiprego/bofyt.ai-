@@ -6,8 +6,9 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef } from 'react'
 import type { MouseEvent as ReactMouseEvent } from 'react'
 import type { Category, CategoryModule } from '@/lib/bofyt/categories'
-import type { Capability } from '@/lib/bofyt/capabilities'
+import type { Capability, CapabilitySearchRequest } from '@/lib/bofyt/capabilities'
 import { cn } from '@/lib/utils'
+import { CapabilitySearch } from './capability-search'
 
 interface CapabilityOverlayProps {
   category: Category | null
@@ -19,6 +20,7 @@ interface CapabilityOverlayProps {
   onStart: () => void
   onEnter: () => void
   onSelectModule: (module: CategoryModule) => void
+  onCapabilitySearch: (request: CapabilitySearchRequest) => void
 }
 
 const ease = [0.22, 1, 0.36, 1] as const
@@ -33,6 +35,7 @@ export function CapabilityOverlay({
   onStart,
   onEnter,
   onSelectModule,
+  onCapabilitySearch,
 }: CapabilityOverlayProps) {
   const closeRef = useRef<HTMLButtonElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -40,7 +43,7 @@ export function CapabilityOverlay({
 
   const handleCardClick = (event: ReactMouseEvent<HTMLElement>) => {
     const target = event.target
-    if (target instanceof Element && target.closest('button')) return
+    if (target instanceof Element && target.closest('button, input, form, label, textarea, select, a')) return
     onEnter()
   }
 
@@ -128,6 +131,8 @@ export function CapabilityOverlay({
 
               <div ref={contentRef} className="min-h-0 overflow-y-auto overscroll-contain">
                 <div className="flex flex-col gap-6 p-5 text-left sm:gap-7 sm:p-7">
+                  <CapabilitySearch key={capability.id} capability={capability} onSubmit={onCapabilitySearch} />
+
                   {category.id === 'search' && (
                     <div className="flex flex-col gap-3 border-b border-white/10 pb-5 sm:flex-row sm:items-center sm:justify-between">
                       <div>

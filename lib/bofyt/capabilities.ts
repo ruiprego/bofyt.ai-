@@ -13,6 +13,12 @@ export interface EvidenceLevel {
   description: string
 }
 
+export interface CapabilitySearchRequest {
+  capabilityId: CapabilityId
+  categoryId: CategoryId
+  query: string
+}
+
 export interface Capability {
   id: CapabilityId
   index: string
