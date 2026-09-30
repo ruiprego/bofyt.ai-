@@ -19,6 +19,7 @@ export const PLACEHOLDERS: Record<CategoryId, string> = {
   productivity: 'e.g. Stop procrastinating',
   creativity: 'e.g. Finish my first book',
   communication: 'e.g. Find an accountability partner',
+  search: 'e.g. Find black running shoes under €50',
 }
 
 interface CenterStageProps {

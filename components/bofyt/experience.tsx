@@ -87,6 +87,7 @@ export function BofytExperience() {
   const selectCategory = (id: CategoryId) => {
     setSelected(id)
     pulse()
+    if (id === 'search') setTimeout(focusInput, 0)
   }
 
   const toggleCategory = (id: CategoryId) => {

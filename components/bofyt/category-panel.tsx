@@ -19,7 +19,8 @@ interface CategoryPanelProps {
 const SHADE = ['opacity-0', 'opacity-20', 'opacity-35', 'opacity-50']
 
 export function CategoryPanel({ category, active, mapped, dimmed, shade = 0, onSelect, className }: CategoryPanelProps) {
-  const capabilities = category.modules.slice(0, 4).map((module) => module.name)
+  const capabilities = category.modules.slice(0, category.id === 'search' ? 5 : 4).map((module) => module.name)
+  const imageSrc = category.id === 'search' ? '/panels/search.png' : `/panels/${category.id}.webp`
   const descriptionId = `panel-${category.id}-description`
 
   return (
@@ -44,7 +45,7 @@ export function CategoryPanel({ category, active, mapped, dimmed, shade = 0, onS
       </span>
 
       <Image
-        src={`/panels/${category.id}.webp`}
+        src={imageSrc}
         alt=""
         fill
         sizes="(min-width: 1280px) 10vw, 45vw"

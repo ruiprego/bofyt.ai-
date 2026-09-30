@@ -6,6 +6,7 @@ export type CategoryId =
   | 'productivity'
   | 'creativity'
   | 'communication'
+  | 'search'
 
 export interface CategoryModule {
   name: string
@@ -158,6 +159,26 @@ export const categories: Category[] = [
       { name: 'Connecting', description: 'Meet people with your goals', prompt: 'I want to connect with people working on the same goal.' },
     ],
     keywords: ['communicat', 'speak', 'present', 'network', 'collaborat', 'team', 'partner', 'message', 'connect', 'people', 'friend', 'together', 'share', 'community'],
+    secondary: true,
+  },
+  {
+    id: 'search',
+    index: '08',
+    title: 'Search',
+    shortTitle: 'Search',
+    phrase: 'what you need',
+    description: 'Discover products, information, places and options with BOFYT.',
+    response: 'What are you looking for? I will help you discover the right products, information, places and options.',
+    tags: ['Discover', 'Products', 'Information'],
+    paths: ['Product discovery', 'Information search', 'Places', 'Options comparison'],
+    modules: [
+      { name: 'Discover', description: 'Start with a broad search', prompt: 'Find the best products and options for what I need.' },
+      { name: 'Products', description: 'Find products that fit', prompt: 'Find products for me.' },
+      { name: 'Information', description: 'Search for useful answers', prompt: 'Find information about products I am considering.' },
+      { name: 'Places', description: 'Explore places and local options', prompt: 'Find products and places near me.' },
+      { name: 'Options', description: 'Compare the choices', prompt: 'Show me the best product options.' },
+    ],
+    keywords: ['search', 'find', 'discover', 'information', 'info', 'place', 'places', 'option', 'options', 'product', 'products', 'compare', 'looking'],
     secondary: true,
   },
 ]

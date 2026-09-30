@@ -7,6 +7,7 @@ import {
   Megaphone,
   MessagesSquare,
   Palette,
+  Search,
   Sparkles,
   Target,
   Timer,
@@ -24,6 +25,7 @@ export const CATEGORY_ICONS: Record<CategoryId, LucideIcon> = {
   productivity: Timer,
   creativity: Palette,
   communication: MessagesSquare,
+  search: Search,
 }
 
 export const SOCIAL_MODULE_ICONS: Record<string, LucideIcon> = {
