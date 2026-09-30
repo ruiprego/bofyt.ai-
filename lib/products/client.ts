@@ -11,9 +11,10 @@ export class ProductSearchClientError extends Error {
 }
 
 export async function searchProducts(query: string, signal?: AbortSignal): Promise<ProductSearchResponse> {
-  const response = await fetch(`/api/products/search?q=${encodeURIComponent(query)}`, {
-    method: 'GET',
-    headers: { Accept: 'application/json' },
+  const response = await fetch('/api/products/search', {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query }),
     cache: 'no-store',
     signal,
   })

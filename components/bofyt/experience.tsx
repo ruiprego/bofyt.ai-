@@ -210,7 +210,7 @@ export function BofytExperience() {
     setResult(null)
     setGoal('')
     setSelected(null)
-    focusInput()
+    setTimeout(focusInput, 0)
   }
 
   const editResult = () => {

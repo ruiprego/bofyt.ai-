@@ -17,6 +17,8 @@ test('routes physical product shopping queries to product search', () => {
 })
 
 test('keeps genuine personal goals out of product search', () => {
+  assert.equal(detectGoalIntent('I want to grow my Instagram').kind, 'category')
+  assert.equal(detectGoalIntent('I want to get fit').kind, 'fitness')
+  assert.equal(detectGoalIntent('I want to find a new job').kind, 'career')
   assert.equal(detectGoalIntent('improve my finances').kind, 'finance')
-  assert.equal(detectGoalIntent('get fit').kind, 'fitness')
 })

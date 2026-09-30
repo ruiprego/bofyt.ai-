@@ -151,8 +151,13 @@ export function GoalResult({
 
   const runNextAction = () => {
     if (isProduct) {
-      if (top) choose(top)
-      else onEdit()
+      if (compared.length >= 2) {
+        openCompare()
+      } else if (top) {
+        choose(top)
+      } else {
+        onEdit()
+      }
       return
     }
     if (isPlaces) openCompare()
@@ -208,6 +213,8 @@ export function GoalResult({
         <ProductResultControls
           items={model.items}
           priceConstraint={model.priceConstraint}
+          comparedCount={compared.length}
+          onOpenCompare={openCompare}
           filters={productFilters}
           refinement={refinement}
           panel={productPanel}
@@ -421,7 +428,7 @@ export function GoalResult({
         whileTap={{ scale: 0.97 }}
         className="group mt-2 inline-flex h-13 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-gold-light to-gold py-4 text-sm font-medium uppercase tracking-[0.16em] text-black shadow-[0_0_30px_-8px_rgba(226,184,101,0.9)]"
       >
-        {isPlaces && compared.length >= 2 ? `Compare ${compared.length} selected` : model.nextActionLabel}
+        {compared.length >= 2 ? `Compare ${compared.length} selected` : model.nextActionLabel}
         <ArrowRight aria-hidden className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
       </motion.button>
 
@@ -463,6 +470,8 @@ function filterProductItems(items: ResultItem[], filters: ProductFilterState) {
 function ProductResultControls({
   items,
   priceConstraint,
+  comparedCount,
+  onOpenCompare,
   filters,
   refinement,
   panel,
@@ -473,6 +482,8 @@ function ProductResultControls({
 }: {
   items: ResultItem[]
   priceConstraint?: ProductPriceConstraint
+  comparedCount: number
+  onOpenCompare: () => void
   filters: ProductFilterState
   refinement: string
   panel: ProductPanel
@@ -533,6 +544,16 @@ function ProductResultControls({
           Sort
           <span className="sr-only">{selectedSort}</span>
         </button>
+        {comparedCount >= 2 && (
+          <button
+            type="button"
+            onClick={onOpenCompare}
+            className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-full border border-gold/60 bg-gold/10 px-3 text-xs uppercase tracking-[0.12em] text-gold-light transition-colors hover:bg-gold/20 active:scale-95"
+          >
+            <GitCompareArrows aria-hidden className="size-3.5" />
+            Compare {comparedCount}
+          </button>
+        )}
       </div>
 
       {panel === 'filters' && (

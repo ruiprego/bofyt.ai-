@@ -8,8 +8,19 @@ import {
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: Request) {
-  const query = new URL(request.url).searchParams.get('q')?.trim()
+async function handleProductSearch(request: Request) {
+  let payload: unknown
+  try {
+    payload = await request.json()
+  } catch {
+    return NextResponse.json({ error: { code: 'INVALID_QUERY', message: 'Send a product search as JSON.' } }, { status: 400 })
+  }
+
+  const query =
+    payload && typeof payload === 'object' && !Array.isArray(payload) && typeof (payload as { query?: unknown }).query === 'string'
+      ? (payload as { query: string }).query.trim()
+      : ''
+
   if (!query) {
     return NextResponse.json({ error: { code: 'INVALID_QUERY', message: 'Enter a product to search for.' } }, { status: 400 })
   }
@@ -35,4 +46,8 @@ export async function GET(request: Request) {
       { status: 502 },
     )
   }
+}
+
+export async function POST(request: Request) {
+  return handleProductSearch(request)
 }
