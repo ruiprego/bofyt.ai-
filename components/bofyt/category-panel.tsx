@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { Plus } from 'lucide-react'
+import type { MouseEvent as ReactMouseEvent } from 'react'
 import type { Category } from '@/lib/bofyt/categories'
 import type { Capability } from '@/lib/bofyt/capabilities'
 import { cn } from '@/lib/utils'
@@ -21,7 +22,7 @@ interface CategoryPanelProps {
   expanded?: boolean
   disableHover?: boolean
   disabled?: boolean
-  onSelect: () => void
+  onSelect: (event: ReactMouseEvent<HTMLButtonElement>) => void
   className?: string
 }
 
@@ -93,7 +94,7 @@ export function CategoryPanel({
       <span aria-hidden className="absolute inset-0 -z-10 bg-[linear-gradient(105deg,rgba(255,255,255,0.07),transparent_38%)]" />
       <span
         aria-hidden
-        className={cn('absolute inset-0 z-10 bg-void transition-opacity duration-500', active ? 'opacity-0' : SHADE[shade])}
+        className={cn('pointer-events-none absolute inset-0 z-10 bg-void transition-opacity duration-500', active ? 'opacity-0' : SHADE[shade])}
       />
 
       <span className={cn('flex flex-col gap-[clamp(0.4rem,0.7vw,0.65rem)] p-[clamp(0.55rem,0.9vw,0.875rem)]', compact && 'lg:gap-1 lg:p-2.5')}>
@@ -137,6 +138,7 @@ export function CategoryPanel({
         </span>
         <span
           aria-hidden
+          data-card-close={expanded ? 'true' : undefined}
           className={cn(
             'grid size-7 place-items-center self-center rounded-full border transition-[transform,background-color,border-color,color] duration-500',
             compact && 'lg:size-6',
@@ -151,9 +153,10 @@ export function CategoryPanel({
 
       <span
         aria-hidden
-        className={cn(
-          'absolute inset-x-3 bottom-0 z-20 h-px bg-gradient-to-r from-transparent via-gold-light to-transparent transition-opacity duration-500',
-          active ? 'opacity-100' : 'opacity-0',
+          className={cn(
+            'pointer-events-none absolute inset-x-3 bottom-0 z-20 h-px bg-gradient-to-r from-transparent via-gold-light to-transparent transition-opacity duration-500',
+            active ? 'opacity-100' : 'opacity-0',
+
         )}
       />
     </button>

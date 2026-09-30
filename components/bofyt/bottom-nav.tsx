@@ -12,6 +12,7 @@ interface BottomNavProps {
   active: NavTarget
   progressCount: number
   category: Category | null
+  capability: Capability | null
   hasGoal: boolean
   onNavigate: (target: NavTarget) => void
 }
@@ -24,8 +25,10 @@ const ITEMS = [
   { id: 'profile', label: 'Profile', icon: UserRound },
 ] as const
 
-export function BottomNav({ active, progressCount, category, hasGoal, onNavigate }: BottomNavProps) {
+export function BottomNav({ active, progressCount, category, capability, hasGoal, onNavigate }: BottomNavProps) {
   const engaged = Boolean(category) || hasGoal
+  const contextLabel = capability?.shortTitle ?? category?.shortTitle
+  const contextIndex = capability?.index ?? category?.index
   return (
     <nav
       aria-label="Primary"
@@ -40,7 +43,7 @@ export function BottomNav({ active, progressCount, category, hasGoal, onNavigate
                 <button
                   type="button"
                   onClick={() => onNavigate('core')}
-                  aria-label={category ? `AI Core, plan your ${category.title} goal` : 'AI Core, describe a goal'}
+                  aria-label={contextLabel ? `AI Core, plan your ${contextLabel} goal` : 'AI Core, describe a goal'}
                   className="-mt-6 mb-1.5 flex flex-col items-center gap-1"
                 >
                   <span className="relative grid size-14 place-items-center">
@@ -63,22 +66,22 @@ export function BottomNav({ active, progressCount, category, hasGoal, onNavigate
                       <EyeMark className="h-5 w-8" />
                     </span>
                     <AnimatePresence>
-                      {category && (
+                      {contextIndex && (
                         <motion.span
-                          key={category.id}
+                          key={contextIndex}
                           aria-hidden
                           initial={{ scale: 0, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0, opacity: 0 }}
                           className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-gold font-display text-[9px] font-semibold text-black"
                         >
-                          {category.index}
+                          {contextIndex}
                         </motion.span>
                       )}
                     </AnimatePresence>
                   </span>
                   <span className="max-w-20 truncate text-[11px] tracking-wide text-gold-light">
-                    {category ? category.shortTitle : item.label}
+                    {contextLabel ?? item.label}
                   </span>
                 </button>
               </li>

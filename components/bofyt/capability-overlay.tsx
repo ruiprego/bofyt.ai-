@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { ArrowRight, Check, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef } from 'react'
+import type { MouseEvent as ReactMouseEvent } from 'react'
 import type { Category, CategoryModule } from '@/lib/bofyt/categories'
 import type { Capability } from '@/lib/bofyt/capabilities'
 import { cn } from '@/lib/utils'
@@ -16,6 +17,7 @@ interface CapabilityOverlayProps {
   displayDescription?: string
   onClose: () => void
   onStart: () => void
+  onEnter: () => void
   onSelectModule: (module: CategoryModule) => void
 }
 
@@ -29,11 +31,18 @@ export function CapabilityOverlay({
   displayDescription,
   onClose,
   onStart,
+  onEnter,
   onSelectModule,
 }: CapabilityOverlayProps) {
   const closeRef = useRef<HTMLButtonElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const open = Boolean(category && capability)
+
+  const handleCardClick = (event: ReactMouseEvent<HTMLElement>) => {
+    const target = event.target
+    if (target instanceof Element && target.closest('button')) return
+    onEnter()
+  }
 
   useEffect(() => {
     if (!open) return
@@ -73,6 +82,7 @@ export function CapabilityOverlay({
           >
             <section
               aria-describedby="capability-overlay-description"
+              onClick={handleCardClick}
               className="relative flex max-h-[calc(100dvh-7rem)] min-h-0 w-full flex-col overflow-hidden rounded-[1.75rem] border border-gold/55 bg-void/95 shadow-[0_0_100px_-28px_rgba(226,184,101,0.85),0_28px_90px_-30px_rgba(0,0,0,0.95)] sm:max-w-4xl"
             >
               <div className="relative h-40 shrink-0 overflow-hidden border-b border-gold/30 sm:h-48">
@@ -103,7 +113,10 @@ export function CapabilityOverlay({
                   <button
                     ref={closeRef}
                     type="button"
-                    onClick={onClose}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      onClose()
+                    }}
                     aria-label={`Close ${capability.title} capability`}
                     className="group inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-white/20 bg-void/70 px-3 text-[10px] uppercase tracking-[0.18em] text-white/75 transition-[border-color,color,background-color] hover:border-gold/70 hover:bg-gold/10 hover:text-gold-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70"
                   >

@@ -25,6 +25,7 @@ interface CategoryCarouselProps {
   selected: CapabilityId | null
   highlighted: CapabilityId[]
   onSelect: (id: CapabilityId) => void
+  onEnter?: (id: CapabilityId) => boolean
   layout?: 'flow' | 'core'
   mode?: 'normal' | 'discovery'
   showIntro?: boolean
@@ -35,6 +36,7 @@ export function CategoryCarousel({
   selected,
   highlighted,
   onSelect,
+  onEnter,
   layout = 'flow',
   mode = 'normal',
   showIntro = true,
@@ -51,6 +53,7 @@ export function CategoryCarousel({
   const carouselRef = useRef<HTMLUListElement>(null)
   const swipeRef = useRef<SwipeGesture | null>(null)
   const suppressClickRef = useRef(false)
+  const enteringCapabilityRef = useRef(false)
   const [dragging, setDragging] = useState(false)
 
   const hasScrollableCards = () => {
@@ -170,11 +173,27 @@ export function CategoryCarousel({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [coreLayout])
 
-  const toggleFocus = (id: CapabilityId, expandable: boolean) => {
+  useEffect(() => {
+    if (!focusedCapability) enteringCapabilityRef.current = false
+  }, [focusedCapability])
+
+  const toggleFocus = (id: CapabilityId, expandable: boolean, event?: ReactMouseEvent<HTMLButtonElement>) => {
     if (!expandable) {
       setFocusedCapability(null)
       onSelect(id)
       return
+    }
+
+    const clickedClose = event?.target instanceof Element && Boolean(event.target.closest('[data-card-close]'))
+    if (focusedCapability === id && !clickedClose && onEnter) {
+      if (enteringCapabilityRef.current) return
+      enteringCapabilityRef.current = true
+      const entered = onEnter(id)
+      if (entered) {
+        setFocusedCapability(null)
+        return
+      }
+      enteringCapabilityRef.current = false
     }
 
     setFocusedCapability((current) => (current === id ? null : id))
@@ -275,8 +294,8 @@ export function CategoryCarousel({
                 expanded={isFocused}
                 disableHover={coreLayout}
                 disabled={!interactive}
-                onSelect={() => {
-                  if (interactive) toggleFocus(capability.id, expandable)
+                onSelect={(event) => {
+                  if (interactive) toggleFocus(capability.id, expandable, event)
                 }}
               />
             </motion.li>

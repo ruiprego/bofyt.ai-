@@ -37,6 +37,7 @@ export function BofytExperience() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const activationTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const capabilityEntryRef = useRef(false)
   const searchAbort = useRef<AbortController | null>(null)
   const searchRequest = useRef(0)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -114,6 +115,7 @@ export function BofytExperience() {
   }
 
   const openCapability = (id: CapabilityId) => {
+    capabilityEntryRef.current = false
     const capability = capabilityById[id]
     setSelected(capability.categoryId)
     setExpandedCapability(id)
@@ -136,6 +138,18 @@ export function BofytExperience() {
     setNavActive('home')
     openCapability(id)
   }
+
+  const enterCapabilityExperience = (id: CapabilityId) => {
+    closeCapability()
+    setSelected(capabilityById[id].categoryId)
+    setSheet(null)
+    setCoreOpen(false)
+    setNavActive('home')
+    pulse()
+    return true
+  }
+
+  const enterExpandedCapability = (id: CapabilityId) => enterCapabilityExperience(id)
 
   const pickFromGrid = (id: CapabilityId) => {
     toggleCapability(id)
@@ -201,6 +215,13 @@ export function BofytExperience() {
 
   const startCapability = () => {
     if (!expandedCapability) return
+    if (expandedCapability === 'reach') {
+      enterCapabilityExperience(expandedCapability)
+      return
+    }
+    if (capabilityEntryRef.current) return
+
+    capabilityEntryRef.current = true
     const id = capabilityById[expandedCapability].categoryId
     closeCapability()
     setSelected(id)
@@ -438,6 +459,7 @@ export function BofytExperience() {
               selected={selectedCapabilityId}
               highlighted={recommendedCapabilities}
               onSelect={pickFromGrid}
+              onEnter={enterExpandedCapability}
             />
           }
           returning={
@@ -477,6 +499,9 @@ export function BofytExperience() {
         displayDescription={expandedPresentation?.description}
         onClose={closeCapability}
         onStart={startCapability}
+        onEnter={() => {
+          if (expandedCapability) enterCapabilityExperience(expandedCapability)
+        }}
         onSelectModule={(module) => {
           if (expandedCapability) selectCapabilityPrompt(expandedCapability, module.prompt)
         }}
@@ -505,6 +530,7 @@ export function BofytExperience() {
         active={coreOpen ? 'core' : (sheet ?? navActive)}
         progressCount={goals.length}
         category={selected && selected !== 'search' ? categoryById[selected] : null}
+        capability={selectedCapability}
         hasGoal={Boolean(goal.trim()) || Boolean(result)}
         onNavigate={navigate}
       />
