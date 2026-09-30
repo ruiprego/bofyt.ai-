@@ -130,16 +130,11 @@ export function BofytExperience() {
   }
 
   const startFromIntroCapability = (id: CapabilityId) => {
-    const capability = capabilityById[id]
     completeIntro()
-    closeCapability()
-    setSheet(null)
-    setCoreOpen(false)
-    setNavActive('home')
     setResult(null)
     setGoal('')
-    setSelected(capability.categoryId)
-    pulse()
+    setNavActive('home')
+    openCapability(id)
   }
 
   const pickFromGrid = (id: CapabilityId) => {
