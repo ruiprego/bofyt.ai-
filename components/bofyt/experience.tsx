@@ -9,6 +9,7 @@ import type { ProductSearchFeedback } from '@/lib/products/types'
 import type { CoreMode } from './ai-core'
 import { BottomNav, type NavTarget } from './bottom-nav'
 import { BrandHeader } from './brand-header'
+import { CapabilityOverlay } from './capability-overlay'
 import { CategoryCarousel } from './category-carousel'
 import { CategoryWall, wallSideOf } from './category-wall'
 import { CenterStage } from './center-stage'
@@ -36,6 +37,7 @@ export function BofytExperience() {
   const [goal, setGoal] = useState('')
   const [focused, setFocused] = useState(false)
   const [selected, setSelected] = useState<CategoryId | null>(null)
+  const [expandedCapability, setExpandedCapability] = useState<CategoryId | null>(null)
   const [preview, setPreview] = useState<CategoryId | null>(null)
   const [activating, setActivating] = useState(false)
   const [result, setResult] = useState<GoalOutcome | null>(null)
@@ -57,13 +59,16 @@ export function BofytExperience() {
     const handleKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
       if (planSource) setPlanSource(null)
-      else if (coreOpen) setCoreOpen(false)
+      else if (expandedCapability) {
+        setExpandedCapability(null)
+        setPreview(null)
+      } else if (coreOpen) setCoreOpen(false)
       else if (sheet) setSheet(null)
       else setSelected(null)
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [sheet, coreOpen, planSource])
+  }, [sheet, coreOpen, planSource, expandedCapability])
 
   useEffect(
     () => () => {
@@ -93,10 +98,24 @@ export function BofytExperience() {
     pulse()
   }
 
+  const closeCapability = () => {
+    setExpandedCapability(null)
+    setPreview(null)
+  }
+
+  const openCapability = (id: CategoryId) => {
+    setSelected(id)
+    setExpandedCapability(id)
+    setCoreOpen(false)
+    setSheet(null)
+    setPreview(null)
+    pulse()
+  }
+
   const toggleCategory = (id: CategoryId) => {
     setResult(null)
-    if (selected === id) setSelected(null)
-    else selectCategory(id)
+    if (expandedCapability === id) closeCapability()
+    else openCapability(id)
   }
 
   const pickFromGrid = (id: CategoryId) => {
@@ -132,6 +151,36 @@ export function BofytExperience() {
     focusInput()
   }
 
+  const selectCapabilityPrompt = (id: CategoryId, prompt: string) => {
+    closeCapability()
+    setResult(null)
+    setSelected(id)
+
+    if (id === 'search') {
+      setSearchFeedback(null)
+      setSearchQuery(prompt)
+      window.setTimeout(() => searchInputRef.current?.focus({ preventScroll: true }), 0)
+    } else {
+      setGoal(prompt)
+      window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 0)
+    }
+    pulse()
+  }
+
+  const startCapability = () => {
+    if (!expandedCapability) return
+    const id = expandedCapability
+    closeCapability()
+    setSelected(id)
+    if (id === 'search') {
+      window.setTimeout(() => searchInputRef.current?.focus({ preventScroll: true }), 0)
+    } else {
+      setCoreOpen(true)
+      setNavActive('core')
+    }
+    pulse()
+  }
+
   const submitGoal = () => {
     const trimmed = goal.trim()
     if (!trimmed || activating) {
@@ -146,6 +195,7 @@ export function BofytExperience() {
       setResult(null)
       setGoal('')
       setPreview(null)
+      setExpandedCapability(null)
       setSelected('search')
       setCoreOpen(false)
       setSearchQuery(trimmed)
@@ -219,6 +269,7 @@ export function BofytExperience() {
     setResult(null)
     setGoal('')
     setSelected(null)
+    closeCapability()
     setTimeout(focusInput, 0)
   }
 
@@ -282,6 +333,7 @@ export function BofytExperience() {
   }
 
   const navigate = (target: NavTarget) => {
+    closeCapability()
     setNavActive(target)
     if (target === 'home') {
       setSheet(null)
@@ -401,6 +453,15 @@ export function BofytExperience() {
           onRetrySearch={submitProductSearch}
         />
       </main>
+
+      <CapabilityOverlay
+        category={expandedCapability ? categoryById[expandedCapability] : null}
+        onClose={closeCapability}
+        onStart={startCapability}
+        onSelectModule={(module) => {
+          if (expandedCapability) selectCapabilityPrompt(expandedCapability, module.prompt)
+        }}
+      />
 
       <CoreOverlay
         open={coreOpen}
