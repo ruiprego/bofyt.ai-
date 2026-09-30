@@ -31,7 +31,7 @@ export function GoalInput({
     <form
       role="search"
       aria-label="Describe your goal"
-      className="w-full max-w-xl"
+      className="w-full max-w-xl min-[960px]:max-w-[clamp(20rem,calc(100vw_-_38rem),36rem)]"
       onSubmit={(event) => {
         event.preventDefault()
         onSubmit()

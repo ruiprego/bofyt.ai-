@@ -53,7 +53,8 @@ export function CategoryPanel({
       aria-describedby={descriptionId}
       onClick={onSelect}
       className={cn(
-        'group relative isolate flex h-full w-full flex-col overflow-hidden rounded-md border bg-[#0a0907] text-left outline-none transition-[border-color,box-shadow,opacity] duration-500',
+        'group relative isolate flex h-full w-full flex-col overflow-hidden rounded-md border bg-[#0a0907] text-left outline-none transition-[border-color,box-shadow,opacity,transform] duration-500',
+        'min-[960px]:group-hover:-translate-y-0.5 min-[960px]:group-hover:scale-[1.015]',
         'focus-visible:ring-2 focus-visible:ring-gold/70 focus-visible:ring-offset-2 focus-visible:ring-offset-void',
         active
           ? 'border-gold-light/80 shadow-[0_0_46px_-6px_rgba(226,184,101,0.75),inset_0_0_30px_-12px_rgba(246,221,161,0.5)]'
@@ -71,7 +72,7 @@ export function CategoryPanel({
         src={imageSrc}
         alt=""
         fill
-        sizes="(min-width: 1280px) 10vw, 45vw"
+        sizes="(min-width: 960px) 12vw, 45vw"
         className={cn(
           'absolute inset-0 -z-10 object-cover object-center transition-[transform,filter] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]',
           active ? 'scale-105 brightness-110' : 'brightness-75 group-hover:scale-[1.03] group-hover:brightness-90',
@@ -87,13 +88,13 @@ export function CategoryPanel({
         className={cn('absolute inset-0 z-10 bg-void transition-opacity duration-500', active ? 'opacity-0' : SHADE[shade])}
       />
 
-      <span className={cn('flex flex-col gap-2 p-3 xl:p-3.5', compact && 'lg:gap-1 lg:p-2.5')}>
+      <span className={cn('flex flex-col gap-[clamp(0.4rem,0.7vw,0.65rem)] p-[clamp(0.55rem,0.9vw,0.875rem)]', compact && 'lg:gap-1 lg:p-2.5')}>
         <span className={cn('text-[10px] tabular-nums tracking-[0.2em] transition-colors', active ? 'text-gold-light' : 'text-white/60')}>
           {panelIndex}
         </span>
         <span
           className={cn(
-            'font-display text-[clamp(10px,0.82vw,13px)] font-medium uppercase leading-[1.2] tracking-wide break-words transition-colors duration-500',
+            'font-display text-[clamp(0.65rem,0.9vw,0.9rem)] font-medium uppercase leading-[1.2] tracking-wide break-words transition-colors duration-500',
             active ? 'text-gold-light' : 'text-white',
           )}
         >
@@ -105,13 +106,13 @@ export function CategoryPanel({
         </span>
       </span>
 
-      <span className={cn('mt-auto flex flex-col items-start gap-3 p-3 xl:p-3.5', compact && 'lg:gap-1.5 lg:p-2.5')}>
+      <span className={cn('mt-auto flex flex-col items-start gap-[clamp(0.55rem,0.9vw,0.85rem)] p-[clamp(0.55rem,0.9vw,0.875rem)]', compact && 'lg:gap-1.5 lg:p-2.5')}>
         <span className={cn('flex flex-col gap-1', compact && 'lg:gap-0')}>
           {capabilities.map((name) => (
             <span
               key={name}
               className={cn(
-                'text-[9px] uppercase leading-snug tracking-[0.16em] transition-colors duration-500',
+                'text-[clamp(0.5rem,0.62vw,0.65rem)] uppercase leading-snug tracking-[0.14em] transition-colors duration-500',
                 compact && 'lg:text-[8px] lg:tracking-[0.12em]',
                 active ? 'text-gold-light' : 'text-white/70',
               )}
