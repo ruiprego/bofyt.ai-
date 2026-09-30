@@ -7,8 +7,9 @@ import { cn } from '@/lib/utils'
 import { CategoryPanel } from './category-panel'
 
 const PRODUCTION_ORDER: CapabilityId[] = ['grow', 'reach', 'build', 'optimize', 'automate', 'discover']
-const HOVERED_TRACK = 1.5
-const COMPRESSED_TRACK = (3 - HOVERED_TRACK) / 2
+const HOVERED_TRACK = 2.3
+const HOVERED_SIDE_TOTAL = 3.7
+const COMPRESSED_TRACK = (HOVERED_SIDE_TOTAL - HOVERED_TRACK) / 2
 
 function createHoveredGridTemplate(capabilities: Array<{ id: CapabilityId }>, hovered: CapabilityId) {
   const hoveredIndex = capabilities.findIndex(({ id }) => id === hovered)
@@ -27,10 +28,13 @@ interface CategoryCarouselProps {
   highlighted: CapabilityId[]
   onSelect: (id: CapabilityId) => void
   layout?: 'flow' | 'core'
+  mode?: 'normal' | 'discovery'
+  showIntro?: boolean
 }
 
-export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'flow' }: CategoryCarouselProps) {
+export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'flow', mode = 'normal', showIntro = true }: CategoryCarouselProps) {
   const coreLayout = layout === 'core'
+  const discoveryLayout = coreLayout && mode === 'discovery'
   const capabilities = coreLayout
     ? [...CAPABILITY_COLUMNS].sort((a, b) => PRODUCTION_ORDER.indexOf(a.id) - PRODUCTION_ORDER.indexOf(b.id))
     : CAPABILITY_COLUMNS
@@ -39,19 +43,26 @@ export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'fl
 
   return (
     <section
-      id="explore"
-      aria-labelledby="explore-heading"
-      className={cn('relative flex w-full scroll-mt-24 flex-col gap-4', coreLayout && 'min-[960px]:h-full min-[960px]:gap-0')}
+      id={showIntro ? 'explore' : undefined}
+      aria-label={showIntro ? undefined : 'BOFYT capabilities'}
+      aria-labelledby={showIntro ? 'explore-heading' : undefined}
+      className={cn(
+        'relative flex w-full scroll-mt-24 flex-col gap-4',
+        coreLayout && 'min-[960px]:h-full min-[960px]:gap-0',
+        discoveryLayout && 'min-[960px]:min-h-[min(78vh,48rem)]',
+      )}
     >
-      <div className={cn('flex flex-col items-center gap-3', coreLayout && 'min-[960px]:hidden')}>
+      {showIntro && (
+        <div className={cn('flex flex-col items-center gap-3', coreLayout && 'min-[960px]:hidden')}>
         <span aria-hidden className="h-8 w-px bg-gradient-to-b from-transparent to-gold/50" />
         <h2 id="explore-heading" className="text-[11px] uppercase tracking-[0.35em] text-white/70">
           Explore any capability
         </h2>
-        <p className="max-w-md text-xs leading-relaxed text-white/45">
-          Six independent entry points. Start wherever the next useful move is.
-        </p>
-      </div>
+          <p className="max-w-md text-xs leading-relaxed text-white/45">
+            Six independent entry points. Start wherever the next useful move is.
+          </p>
+        </div>
+      )}
 
       <ul
         className={cn(
@@ -59,6 +70,7 @@ export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'fl
           !coreLayout && 'lg:-mx-8 lg:px-8',
           coreLayout &&
             'min-[960px]:absolute min-[960px]:left-1/2 min-[960px]:right-auto min-[960px]:top-1/2 min-[960px]:z-10 min-[960px]:mx-0 min-[960px]:grid min-[960px]:h-[min(68vh,42rem)] min-[960px]:w-[min(calc(100vw-2rem),112rem)] min-[960px]:-translate-x-1/2 min-[960px]:-translate-y-1/2 min-[960px]:grid-cols-[repeat(3,minmax(0,1fr))_minmax(clamp(20rem,calc(100vw_-_38rem),36rem),3.5fr)_repeat(3,minmax(0,1fr))] min-[960px]:gap-[clamp(0.5rem,0.65vw,0.75rem)] min-[960px]:overflow-visible min-[960px]:px-0 min-[960px]:pb-0 min-[960px]:transition-[grid-template-columns] min-[960px]:duration-500 min-[960px]:ease-[cubic-bezier(0.22,1,0.36,1)]',
+          discoveryLayout && 'min-[960px]:!h-[min(78vh,48rem)] min-[960px]:!w-[min(calc(100vw-2rem),124rem)]',
           )}
           style={hoveredGrid ? { gridTemplateColumns: hoveredGrid } : undefined}
         >
@@ -86,6 +98,7 @@ export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'fl
                 active={selected === capability.id}
                 mapped={mapped}
                 dimmed={Boolean(selected) && selected !== capability.id}
+                expanded={discoveryLayout && hoveredCapability === capability.id}
                 onSelect={() => onSelect(capability.id)}
               />
             </li>

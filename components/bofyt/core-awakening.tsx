@@ -6,15 +6,15 @@ import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AiCore } from './ai-core'
 
-const INTRO_STORAGE_KEY = 'bofyt_intro_completed'
-
 type AwakeningPhase = 'checking' | 'ready' | 'activating' | 'expanding'
 
 interface CoreAwakeningProps {
-  onComplete: () => void
+  onAwakened: () => void
+  canSkip?: boolean
+  onSkip?: () => void
 }
 
-export function CoreAwakening({ onComplete }: CoreAwakeningProps) {
+export function CoreAwakening({ onAwakened, canSkip = false, onSkip }: CoreAwakeningProps) {
   const reduceMotion = useReducedMotion() === true
   const [phase, setPhase] = useState<AwakeningPhase>('checking')
   const [pulseKey, setPulseKey] = useState(0)
@@ -22,20 +22,8 @@ export function CoreAwakening({ onComplete }: CoreAwakeningProps) {
   const completionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    let completed = false
-    try {
-      completed = window.localStorage.getItem(INTRO_STORAGE_KEY) === '1'
-    } catch {
-      completed = false
-    }
-
-    if (completed) {
-      onComplete()
-      return
-    }
-
     setPhase('ready')
-  }, [onComplete])
+  }, [])
 
   useEffect(
     () => () => {
@@ -45,18 +33,13 @@ export function CoreAwakening({ onComplete }: CoreAwakeningProps) {
     [],
   )
 
-  const complete = () => {
-    try {
-      window.localStorage.setItem(INTRO_STORAGE_KEY, '1')
-    } catch {
-      // The experience should still be usable if storage is unavailable.
-    }
-    onComplete()
-  }
+  const finishAwakening = () => onAwakened()
 
   const skip = () => {
-    if (phase === 'checking') return
-    complete()
+    if (!canSkip || phase === 'checking') return
+    if (expansionTimer.current) clearTimeout(expansionTimer.current)
+    if (completionTimer.current) clearTimeout(completionTimer.current)
+    onSkip?.()
   }
 
   const activate = () => {
@@ -65,7 +48,7 @@ export function CoreAwakening({ onComplete }: CoreAwakeningProps) {
     setPulseKey((key) => key + 1)
     setPhase('activating')
     expansionTimer.current = setTimeout(() => setPhase('expanding'), reduceMotion ? 20 : 560)
-    completionTimer.current = setTimeout(complete, reduceMotion ? 180 : 1900)
+    completionTimer.current = setTimeout(finishAwakening, reduceMotion ? 180 : 1900)
   }
 
   const isActivating = phase === 'activating' || phase === 'expanding'
@@ -127,6 +110,8 @@ export function CoreAwakening({ onComplete }: CoreAwakeningProps) {
           typingTick={0}
           pulseKey={pulseKey}
           particles={phase !== 'checking'}
+          ariaLabel="BOFYT Core. Activate to awaken the system"
+          disabled={phase !== 'ready'}
           onActivate={activate}
           className="size-[min(58vw,19rem)] sm:size-[min(44vw,23rem)]"
         />
@@ -141,15 +126,17 @@ export function CoreAwakening({ onComplete }: CoreAwakeningProps) {
         </motion.p>
       </motion.div>
 
-      <button
-        type="button"
-        onClick={skip}
-        disabled={phase === 'checking'}
-        aria-label="Skip BOFYT Core awakening"
-        className="absolute right-4 top-4 z-20 grid size-10 place-items-center rounded-full border border-white/15 text-white/45 transition-colors hover:border-gold/55 hover:text-gold-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70 disabled:pointer-events-none disabled:opacity-0 sm:right-7 sm:top-7"
-      >
-        <X aria-hidden className="size-4" />
-      </button>
+      {canSkip && (
+        <button
+          type="button"
+          onClick={skip}
+          disabled={phase === 'checking'}
+          aria-label="Skip BOFYT Core awakening"
+          className="absolute right-4 top-4 z-20 grid size-10 place-items-center rounded-full border border-white/15 bg-void/60 text-white/45 backdrop-blur transition-colors hover:border-gold/55 hover:text-gold-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70 disabled:pointer-events-none disabled:opacity-0 sm:right-7 sm:top-7"
+        >
+          <X aria-hidden className="size-4" />
+        </button>
+      )}
     </motion.div>
   )
 }

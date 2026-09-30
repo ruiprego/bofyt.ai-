@@ -18,6 +18,7 @@ interface CategoryPanelProps {
   /** Visual shade for panels further from the core: 0 is nearest. */
   shade?: number
   compact?: boolean
+  expanded?: boolean
   onSelect: () => void
   className?: string
 }
@@ -35,11 +36,12 @@ export function CategoryPanel({
   displayDescription,
   shade = 0,
   compact = false,
+  expanded = false,
   onSelect,
   className,
 }: CategoryPanelProps) {
   const modules = capability?.modules ?? category.modules
-  const capabilities = modules.slice(0, capability ? 4 : category.id === 'search' ? 5 : 4).map((module) => module.name)
+  const capabilities = modules.slice(0, capability ? (expanded ? 6 : 4) : category.id === 'search' ? 5 : 4).map((module) => module.name)
   const imageSrc = capability?.imageSrc ?? (category.id === 'search' ? '/panels/search.png' : `/panels/${category.id}.webp`)
   const panelIndex = capability?.index ?? displayIndex ?? category.index
   const panelTitle = capability?.title ?? displayTitle ?? category.title
@@ -104,6 +106,12 @@ export function CategoryPanel({
         <span className={cn('max-w-[18rem] text-[11px] leading-relaxed text-white/65', compact && 'lg:max-h-8 lg:overflow-hidden lg:text-[10px] lg:leading-tight')}>
           {panelDescription}
         </span>
+        {expanded && capability && (
+          <span className="hidden max-w-[18rem] flex-col gap-2 text-[10px] leading-relaxed text-white/55 min-[960px]:flex">
+            <span className="line-clamp-4">{capability.response}</span>
+            <span className="uppercase tracking-[0.12em] text-gold-light/70">{capability.paths.slice(0, 3).join(' · ')}</span>
+          </span>
+        )}
       </span>
 
       <span className={cn('mt-auto flex flex-col items-start gap-[clamp(0.55rem,0.9vw,0.85rem)] p-[clamp(0.55rem,0.9vw,0.875rem)]', compact && 'lg:gap-1.5 lg:p-2.5')}>

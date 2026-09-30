@@ -27,11 +27,13 @@ interface AiCoreProps {
   typingTick: number
   pulseKey: number
   onActivate?: () => void
+  ariaLabel?: string
+  disabled?: boolean
   particles?: boolean
   className?: string
 }
 
-export function AiCore({ mode, energy, typingTick, pulseKey, onActivate, particles = false, className }: AiCoreProps) {
+export function AiCore({ mode, energy, typingTick, pulseKey, onActivate, ariaLabel, disabled = false, particles = false, className }: AiCoreProps) {
   const reduceMotion = useReducedMotion()
   const gradientId = useId().replace(/:/g, '')
 
@@ -91,7 +93,8 @@ export function AiCore({ mode, energy, typingTick, pulseKey, onActivate, particl
     <motion.button
       type="button"
       onClick={onActivate}
-      aria-label="BOFYT AI Core. Activate to describe your goal"
+      disabled={disabled}
+      aria-label={ariaLabel ?? 'BOFYT AI Core. Activate to describe your goal'}
       className={cn(
         'group relative isolate shrink-0 cursor-pointer rounded-full outline-none [perspective:900px] focus-visible:ring-2 focus-visible:ring-gold/60',
         className,
