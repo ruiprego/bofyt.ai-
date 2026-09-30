@@ -1,6 +1,7 @@
 'use client'
 
 import type { RefObject } from 'react'
+import type { CategoryModule } from '@/lib/bofyt/categories'
 import { useEffect } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { LoaderCircle, Search as SearchIcon } from 'lucide-react'
@@ -18,6 +19,8 @@ interface ProductSearchProps {
   result: GoalResultData | null
   resultHandlers: GoalResultHandlers
   feedback: ProductSearchFeedback | null
+  suggestions: CategoryModule[]
+  onPickPrompt: (prompt: string) => void
   onQueryChange: (value: string) => void
   onSubmit: () => void
   onRetry: () => void
@@ -34,6 +37,8 @@ export function ProductSearch({
   result,
   resultHandlers,
   feedback,
+  suggestions,
+  onPickPrompt,
   onQueryChange,
   onSubmit,
   onRetry,
@@ -120,6 +125,28 @@ export function ProductSearch({
       </motion.form>
 
       <p className="-mt-2 text-[10px] uppercase tracking-[0.3em] text-white/35">Live products · real prices · compare options</p>
+
+      {!result && !busy && !feedback && suggestions.length > 0 && (
+        <section className="w-full max-w-2xl text-left" aria-labelledby="product-search-examples-heading">
+          <p id="product-search-examples-heading" className="text-[10px] uppercase tracking-[0.28em] text-gold-light">
+            Start with an example
+          </p>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-3" aria-label="Product search examples">
+            {suggestions.slice(0, 3).map((suggestion) => (
+              <li key={suggestion.name}>
+                <button
+                  type="button"
+                  onClick={() => onPickPrompt(suggestion.prompt)}
+                  className="group flex min-h-24 w-full flex-col justify-between rounded-xl border border-gold/25 bg-black/40 p-3 text-left transition-[border-color,background-color,transform] duration-300 hover:-translate-y-0.5 hover:border-gold/70 hover:bg-gold/[0.07] active:scale-[0.98]"
+                >
+                  <span className="text-[13px] font-medium text-white group-hover:text-gold-light">{suggestion.name}</span>
+                  <span className="mt-2 text-xs leading-relaxed text-white/55">{suggestion.description}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="flex w-full flex-col items-center empty:hidden">
         <AnimatePresence mode="wait" initial={false}>

@@ -3,6 +3,7 @@
 import type { ReactNode, RefObject } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { categoryById, type CategoryId } from '@/lib/bofyt/categories'
+import type { Capability } from '@/lib/bofyt/capabilities'
 import { cn } from '@/lib/utils'
 import type { ProductSearchFeedback } from '@/lib/products/types'
 import { AiCore, type CoreMode } from './ai-core'
@@ -37,6 +38,7 @@ interface CenterStageProps {
   pulseKey: number
   result: GoalResultData | null
   resultHandlers: GoalResultHandlers
+  capability: Capability | null
   searchInputRef: RefObject<HTMLInputElement | null>
   searchQuery: string
   searchBusy: boolean
@@ -67,6 +69,7 @@ export function CenterStage({
   pulseKey,
   result,
   resultHandlers,
+  capability,
   searchInputRef,
   searchQuery,
   searchBusy,
@@ -113,6 +116,8 @@ export function CenterStage({
               result={searchResult}
               resultHandlers={searchResultHandlers}
               feedback={searchFeedback}
+              suggestions={capability?.modules.slice(0, 3) ?? []}
+              onPickPrompt={onPickPrompt}
               onQueryChange={onSearchChange}
               onSubmit={onSearchSubmit}
               onRetry={onRetrySearch}
@@ -194,7 +199,8 @@ export function CenterStage({
               ) : goal.trim() ? (
                 <GoalEcho key="echo" goal={goal.trim()} categoryTitle={category?.title} />
               ) : category ? (
-                <CoreReply key={`reply-${category.id}`} category={category} onPickPrompt={onPickPrompt} />
+                  <CoreReply key={`reply-${category.id}`} category={category} capability={capability} onPickPrompt={onPickPrompt} />
+
               ) : null}
             </AnimatePresence>
           </div>

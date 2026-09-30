@@ -27,7 +27,7 @@ export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'fl
     : CAPABILITY_COLUMNS
   const [focusedCapability, setFocusedCapability] = useState<CapabilityId | null>(null)
   const focusedIndex = focusedCapability ? capabilities.findIndex(({ id }) => id === focusedCapability) : -1
-  const leftFocusActive = coreLayout && focusedIndex >= 0 && focusedIndex < 3
+  const leftFocusActive = coreLayout && mode === 'normal' && focusedIndex >= 0 && focusedIndex < 3
 
   useEffect(() => {
     if (!coreLayout) return
@@ -85,9 +85,9 @@ export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'fl
         {capabilities.map((capability, index) => {
           const category = categoryById[capability.categoryId]
           const mapped = highlighted.includes(capability.id)
-          const expandable = coreLayout && index < 3
+          const expandable = coreLayout && mode === 'normal' && index < 3
           const isFocused = focusedCapability === capability.id
-          const shouldFade = leftFocusActive && index < 3 && !isFocused
+          const shouldFade = leftFocusActive && !isFocused
           const baseGridColumn = index < 3 ? index + 1 : index + 2
           const slideDirection = index < focusedIndex ? -1 : 1
 
@@ -130,6 +130,7 @@ export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'fl
                 mapped={mapped}
                 dimmed={Boolean(selected) && selected !== capability.id && !isFocused}
                 expanded={isFocused}
+                disableHover={coreLayout}
                 onSelect={() => toggleFocus(capability.id, expandable)}
               />
             </motion.li>

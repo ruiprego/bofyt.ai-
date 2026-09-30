@@ -153,8 +153,16 @@ export function BofytExperience({ isPremium = false }: BofytExperienceProps = {}
   }
 
   const startFromIntroCapability = (id: CapabilityId) => {
+    const capability = capabilityById[id]
     completeIntro()
-    openCapability(id)
+    closeCapability()
+    setSheet(null)
+    setCoreOpen(false)
+    setNavActive('home')
+    setResult(null)
+    setGoal('')
+    setSelected(capability.categoryId)
+    pulse()
   }
 
   const pickFromGrid = (id: CapabilityId) => {
@@ -181,13 +189,25 @@ export function BofytExperience({ isPremium = false }: BofytExperienceProps = {}
     }
   }
 
-  const applyPrompt = (prompt: string) => {
-    if (activationTimer.current) clearTimeout(activationTimer.current)
-    setActivating(false)
-    setGoal(prompt)
+  const startPrompt = (prompt: string) => {
+    const trimmed = prompt.trim()
+    if (!trimmed) return
+
+    const intent = detectGoalIntent(trimmed)
+    const targetCategory = selected ?? intent.categoryId
     setResult(null)
+
+    if (targetCategory === 'search' || intent.kind === 'shopping') {
+      setSelected('search')
+      setGoal('')
+      setSearchQuery(trimmed)
+      setSearchFeedback(null)
+      runProductSearch(trimmed)
+    } else {
+      submitGoal(trimmed)
+    }
+
     pulse()
-    focusInput()
   }
 
   const selectCapabilityPrompt = (capabilityId: CapabilityId, prompt: string) => {
@@ -425,7 +445,8 @@ export function BofytExperience({ isPremium = false }: BofytExperienceProps = {}
 
   const highlighted = result?.areas ?? []
   const recommendedCapabilities = capabilitiesForCategories(highlighted)
-  const selectedCapability = capabilityForCategory(selected)
+  const selectedCapabilityId = capabilityForCategory(selected)
+  const selectedCapability = selectedCapabilityId ? capabilityById[selectedCapabilityId] : null
   const returning = !result ? activeGoal(goals) : null
   const expandedPresentation = expandedCapability ? capabilityById[expandedCapability] : null
 
@@ -447,11 +468,11 @@ export function BofytExperience({ isPremium = false }: BofytExperienceProps = {}
           selected={selected}
           preview={preview}
           system={null}
-          explore={<CategoryCarousel selected={selectedCapability} highlighted={recommendedCapabilities} onSelect={pickFromGrid} />}
+          explore={              <CategoryCarousel selected={selectedCapabilityId} highlighted={recommendedCapabilities} onSelect={pickFromGrid} />}
           centeredExplore={
             <CategoryCarousel
               layout="core"
-              selected={selectedCapability}
+              selected={selectedCapabilityId}
               highlighted={recommendedCapabilities}
               onSelect={pickFromGrid}
             />
@@ -463,6 +484,7 @@ export function BofytExperience({ isPremium = false }: BofytExperienceProps = {}
           pulseKey={pulseKey}
           result={result}
           resultHandlers={resultHandlers}
+          capability={selectedCapability}
           searchInputRef={searchInputRef}
           searchQuery={searchQuery}
           searchBusy={searching}
@@ -476,7 +498,7 @@ export function BofytExperience({ isPremium = false }: BofytExperienceProps = {}
             pulse()
             focusInput()
           }}
-          onPickPrompt={applyPrompt}
+          onPickPrompt={startPrompt}
           onSearchChange={setSearchQuery}
           onSearchSubmit={submitProductSearch}
           onRetrySearch={submitProductSearch}

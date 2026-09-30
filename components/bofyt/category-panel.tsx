@@ -19,6 +19,7 @@ interface CategoryPanelProps {
   shade?: number
   compact?: boolean
   expanded?: boolean
+  disableHover?: boolean
   onSelect: () => void
   className?: string
 }
@@ -37,6 +38,7 @@ export function CategoryPanel({
   shade = 0,
   compact = false,
   expanded = false,
+  disableHover = false,
   onSelect,
   className,
 }: CategoryPanelProps) {
@@ -52,18 +54,19 @@ export function CategoryPanel({
     <button
       type="button"
       aria-pressed={active}
+      aria-expanded={expanded}
       aria-describedby={descriptionId}
       onClick={onSelect}
       className={cn(
         'group relative isolate flex h-full w-full flex-col overflow-hidden rounded-md border bg-[#0a0907] text-left outline-none transition-[border-color,box-shadow,opacity,transform] duration-500',
-        'min-[960px]:group-hover:-translate-y-0.5 min-[960px]:group-hover:scale-[1.015]',
+        !disableHover && 'min-[960px]:group-hover:-translate-y-0.5 min-[960px]:group-hover:scale-[1.015]',
         'focus-visible:ring-2 focus-visible:ring-gold/70 focus-visible:ring-offset-2 focus-visible:ring-offset-void',
         active
           ? 'border-gold-light/80 shadow-[0_0_46px_-6px_rgba(226,184,101,0.75),inset_0_0_30px_-12px_rgba(246,221,161,0.5)]'
           : mapped
             ? 'border-gold/55 shadow-[0_0_30px_-12px_rgba(226,184,101,0.5)]'
-            : 'border-white/10 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.95)] hover:border-gold/45',
-        dimmed && 'opacity-55 hover:opacity-100',
+            : cn('border-white/10 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.95)]', !disableHover && 'hover:border-gold/45'),
+        dimmed && (disableHover ? 'opacity-55' : 'opacity-55 hover:opacity-100'),
       )}
     >
       <span id={descriptionId} className="sr-only">
@@ -77,7 +80,7 @@ export function CategoryPanel({
         sizes="(min-width: 960px) 12vw, 45vw"
         className={cn(
           'absolute inset-0 -z-10 object-cover object-center transition-[transform,filter] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]',
-          active ? 'scale-105 brightness-110' : 'brightness-75 group-hover:scale-[1.03] group-hover:brightness-90',
+          active ? 'scale-105 brightness-110' : cn('brightness-75', !disableHover && 'group-hover:scale-[1.03] group-hover:brightness-90'),
         )}
       />
       <span
@@ -134,7 +137,9 @@ export function CategoryPanel({
           className={cn(
             'grid size-7 place-items-center self-center rounded-full border transition-[transform,background-color,border-color,color] duration-500',
             compact && 'lg:size-6',
-            active ? 'rotate-45 border-gold-light bg-gold text-void' : 'border-white/45 text-white group-hover:border-gold/70',
+            active
+              ? 'rotate-45 border-gold-light bg-gold text-void'
+              : cn('border-white/45 text-white', !disableHover && 'group-hover:border-gold/70'),
           )}
         >
           <Plus className="size-3.5" />
