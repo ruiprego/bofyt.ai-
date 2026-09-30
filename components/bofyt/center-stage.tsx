@@ -157,6 +157,15 @@ export function CenterStage({
             />
           )}
 
+          {!result && (
+            <section
+              aria-label="Independent capability entry points"
+              className="w-full border-t border-white/10 pt-6 lg:pt-8"
+            >
+              {explore}
+            </section>
+          )}
+
           <div className="flex w-full flex-col items-center empty:hidden lg:min-h-32">
             <AnimatePresence mode="wait" initial={false}>
               {result ? (
@@ -175,27 +184,31 @@ export function CenterStage({
                 <GoalEcho key="echo" goal={goal.trim()} categoryTitle={category?.title} />
               ) : category ? (
                 <CoreReply key={`reply-${category.id}`} category={category} onPickPrompt={onPickPrompt} />
-              ) : (
-                <motion.p
-                  key="hint"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="hidden text-[11px] uppercase tracking-[0.4em] text-white/60 lg:block"
-                >
-                  Or explore the capabilities around the core
-                </motion.p>
-              )}
+              ) : null}
             </AnimatePresence>
           </div>
         </>}
 
+        {result && !isSearch && (
+          <section
+            aria-label="Independent capability entry points"
+            className="w-full border-t border-white/10 pt-6 lg:pt-8"
+          >
+            {explore}
+          </section>
+        )}
+
         {!isSearch && returning}
       </section>
 
-      <section className="mt-12 w-full max-w-6xl border-t border-white/10 pt-10 lg:mt-16 lg:pt-12" aria-label="Independent capability entry points">
-        {explore}
-      </section>
+      {isSearch && (
+        <section
+          className="mt-12 w-full max-w-6xl border-t border-white/10 pt-10 lg:mt-16 lg:pt-12"
+          aria-label="Independent capability entry points"
+        >
+          {explore}
+        </section>
+      )}
     </div>
   )
 }
