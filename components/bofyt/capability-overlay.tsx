@@ -128,6 +128,23 @@ export function CapabilityOverlay({
 
               <div ref={contentRef} className="min-h-0 overflow-y-auto overscroll-contain">
                 <div className="flex flex-col gap-6 p-5 text-left sm:gap-7 sm:p-7">
+                  {category.id === 'search' && (
+                    <div className="flex flex-col gap-3 border-b border-white/10 pb-5 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm text-white">Ready to make this your next move?</p>
+                        <p className="mt-1 text-xs leading-relaxed text-white/50">BOFYT will keep the capability connected to your goal.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={onStart}
+                        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-gold/70 bg-gold px-5 text-xs font-semibold uppercase tracking-[0.16em] text-void transition-[transform,box-shadow,background-color] hover:bg-gold-light hover:shadow-[0_0_30px_-8px_rgba(246,221,161,0.95)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-light focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+                      >
+                        Open live search
+                        <ArrowRight aria-hidden className="size-4" />
+                      </button>
+                    </div>
+                  )}
+
                   <div className="flex flex-wrap gap-2" aria-label="Capability focus areas">
                     {capability.tags.map((tag) => (
                       <span key={tag} className="rounded-full border border-gold/30 bg-gold/[0.06] px-3 py-1.5 text-[10px] uppercase tracking-[0.18em] text-gold-light/90">
@@ -223,20 +240,22 @@ export function CapabilityOverlay({
                     </ul>
                   </section>
 
-                  <div className="flex flex-col gap-3 border-t border-white/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm text-white">Ready to make this your next move?</p>
-                      <p className="mt-1 text-xs leading-relaxed text-white/50">BOFYT will keep the capability connected to your goal.</p>
+                  {category.id !== 'search' && (
+                    <div className="flex flex-col gap-3 border-t border-white/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm text-white">Ready to make this your next move?</p>
+                        <p className="mt-1 text-xs leading-relaxed text-white/50">BOFYT will keep the capability connected to your goal.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={onStart}
+                        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-gold/70 bg-gold px-5 text-xs font-semibold uppercase tracking-[0.16em] text-void transition-[transform,box-shadow,background-color] hover:bg-gold-light hover:shadow-[0_0_30px_-8px_rgba(246,221,161,0.95)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-light focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+                      >
+                        Plan with AI Core
+                        <ArrowRight aria-hidden className="size-4" />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={onStart}
-                      className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-gold/70 bg-gold px-5 text-xs font-semibold uppercase tracking-[0.16em] text-void transition-[transform,box-shadow,background-color] hover:bg-gold-light hover:shadow-[0_0_30px_-8px_rgba(246,221,161,0.95)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-light focus-visible:ring-offset-2 focus-visible:ring-offset-void"
-                    >
-                      {category.id === 'search' ? 'Open live search' : 'Plan with AI Core'}
-                      <ArrowRight aria-hidden className="size-4" />
-                    </button>
-                  </div>
+                  )}
                 </div>
               </div>
             </section>
