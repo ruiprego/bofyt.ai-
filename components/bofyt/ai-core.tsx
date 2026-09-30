@@ -103,14 +103,12 @@ export function AiCore({ mode, energy, typingTick, pulseKey, onActivate, particl
         className="absolute inset-[6%] -z-10 rounded-full bg-[radial-gradient(circle,rgba(246,221,161,0.55)_0%,rgba(226,184,101,0.25)_35%,rgba(226,184,101,0)_70%)] blur-2xl"
         style={{ opacity: haloOpacity, scale: haloScale }}
       />
-      {!reduceMotion && (
-        <motion.span
-          aria-hidden
-          className="absolute inset-[18%] -z-10 rounded-full bg-[radial-gradient(circle,rgba(255,240,205,0.35),transparent_65%)]"
-          animate={{ scale: [1, 1.08, 1], opacity: [0.6, 1, 0.6] }}
-          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      )}
+      <motion.span
+        aria-hidden
+        className="absolute inset-[18%] -z-10 rounded-full bg-[radial-gradient(circle,rgba(255,240,205,0.35),transparent_65%)]"
+        animate={{ scale: [1, 1.08, 1], opacity: [0.6, 1, 0.6] }}
+        transition={{ duration: reduceMotion ? 0 : 5, repeat: reduceMotion ? 0 : Infinity, ease: 'easeInOut' }}
+      />
 
       <motion.span
         aria-hidden
@@ -183,15 +181,17 @@ export function AiCore({ mode, energy, typingTick, pulseKey, onActivate, particl
         </motion.svg>
       </motion.span>
 
-      {(particles || mode === 'activating') && !reduceMotion && <CoreParticles fast={mode === 'activating'} />}
+      {(particles || mode === 'activating') && (
+        <CoreParticles fast={mode === 'activating'} reducedMotion={reduceMotion === true} />
+      )}
 
-      {mode === 'activating' && !reduceMotion && (
+      {mode === 'activating' && (
         <motion.span
           aria-hidden
           className="absolute inset-[22%] rounded-full border border-gold/70"
           initial={{ scale: 0.6, opacity: 0.9 }}
           animate={{ scale: 1.9, opacity: 0 }}
-          transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
+          transition={{ duration: reduceMotion ? 0 : 1.2, repeat: reduceMotion ? 0 : Infinity, ease: 'easeOut' }}
         />
       )}
     </motion.button>
@@ -210,7 +210,7 @@ const PARTICLES = Array.from({ length: 14 }, (_, index) => {
   }
 })
 
-function CoreParticles({ fast }: { fast: boolean }) {
+function CoreParticles({ fast, reducedMotion }: { fast: boolean; reducedMotion: boolean }) {
   return (
     <span aria-hidden className="pointer-events-none absolute inset-0">
       {PARTICLES.map((particle, index) => (
@@ -218,8 +218,8 @@ function CoreParticles({ fast }: { fast: boolean }) {
           key={index}
           className="absolute rounded-full bg-gold-light shadow-[0_0_8px_rgba(246,221,161,0.9)]"
           style={{ left: `${particle.left}%`, top: `${particle.top}%`, width: particle.size, height: particle.size }}
-          animate={{ opacity: [0, 0.9, 0], y: [0, particle.drift, particle.drift * 2], scale: [0.6, 1, 0.4] }}
-          transition={{ duration: fast ? 1.4 : 3.6, delay: particle.delay * (fast ? 0.4 : 1), repeat: Infinity, ease: 'easeInOut' }}
+          animate={reducedMotion ? { opacity: 0 } : { opacity: [0, 0.9, 0], y: [0, particle.drift, particle.drift * 2], scale: [0.6, 1, 0.4] }}
+          transition={{ duration: reducedMotion ? 0 : fast ? 1.4 : 3.6, delay: reducedMotion ? 0 : particle.delay * (fast ? 0.4 : 1), repeat: reducedMotion ? 0 : Infinity, ease: 'easeInOut' }}
         />
       ))}
     </span>
