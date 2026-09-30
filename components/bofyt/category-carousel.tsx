@@ -216,7 +216,8 @@ export function CategoryCarousel({
           !coreLayout && 'lg:-mx-8 lg:px-8',
           coreLayout &&
             'min-[960px]:absolute min-[960px]:left-1/2 min-[960px]:right-auto min-[960px]:top-1/2 min-[960px]:z-10 min-[960px]:mx-0 min-[960px]:grid min-[960px]:h-[min(68vh,42rem)] min-[960px]:w-[min(calc(100vw-2rem),112rem)] min-[960px]:-translate-x-1/2 min-[960px]:-translate-y-1/2 min-[960px]:grid-cols-[repeat(3,minmax(0,1fr))_minmax(clamp(20rem,calc(100vw_-_38rem),36rem),3.5fr)_repeat(3,minmax(0,1fr))] min-[960px]:gap-[clamp(0.5rem,0.65vw,0.75rem)] min-[960px]:overflow-visible min-[960px]:px-0 min-[960px]:pb-0',
-          discoveryLayout && 'min-[960px]:!h-[min(78vh,48rem)] min-[960px]:!w-[min(calc(100vw-2rem),124rem)]',
+          discoveryLayout &&
+            'min-[960px]:!h-[min(78vh,48rem)] min-[960px]:!w-[min(calc(100vw-2rem),124rem)] min-[960px]:!grid-cols-[repeat(3,minmax(0,1fr))_minmax(clamp(10rem,16vw,20rem),1fr)_repeat(3,minmax(0,1fr))] min-[960px]:!gap-[clamp(0.35rem,0.5vw,0.65rem)]',
           dragging && 'cursor-grabbing select-none',
         )}
       >
@@ -258,6 +259,7 @@ export function CategoryCarousel({
               }
               className={cn(
                 'h-[25rem] w-[min(76vw,18rem)] shrink-0 snap-center sm:h-[28rem] sm:w-52',
+                discoveryLayout && 'max-[959px]:!w-[min(80vw,20rem)] sm:!w-60 md:!w-64',
                 coreLayout ? 'min-[960px]:!h-full min-[960px]:!w-auto' : 'lg:h-[min(60vh,35rem)] lg:w-[clamp(10.5rem,14vw,14rem)]',
                 isFocused && expandable && 'max-[959px]:w-[min(86vw,24rem)]',
                 shouldFade && 'pointer-events-none',
