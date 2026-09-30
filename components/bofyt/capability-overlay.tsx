@@ -9,6 +9,9 @@ import { cn } from '@/lib/utils'
 
 interface CapabilityOverlayProps {
   category: Category | null
+  displayIndex?: string
+  displayTitle?: string
+  displayDescription?: string
   onClose: () => void
   onStart: () => void
   onSelectModule: (module: CategoryModule) => void
@@ -16,7 +19,15 @@ interface CapabilityOverlayProps {
 
 const ease = [0.22, 1, 0.36, 1] as const
 
-export function CapabilityOverlay({ category, onClose, onStart, onSelectModule }: CapabilityOverlayProps) {
+export function CapabilityOverlay({
+  category,
+  displayIndex,
+  displayTitle,
+  displayDescription,
+  onClose,
+  onStart,
+  onSelectModule,
+}: CapabilityOverlayProps) {
   const closeRef = useRef<HTMLButtonElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const open = Boolean(category)
@@ -76,13 +87,13 @@ export function CapabilityOverlay({ category, onClose, onStart, onSelectModule }
                 <div className="absolute inset-x-5 bottom-5 flex items-end justify-between gap-4 sm:inset-x-7 sm:bottom-6">
                   <div className="min-w-0 text-left">
                     <p className="text-[10px] uppercase tracking-[0.3em] text-gold-light">
-                      {category.index} · BOFYT capability
+                      {displayIndex ?? category.index} · BOFYT capability
                     </p>
                     <h2 id="capability-overlay-title" className="mt-2 max-w-2xl font-display text-[clamp(1.75rem,5vw,3.4rem)] leading-none tracking-tight text-white text-balance">
-                      {category.title}
+                      {displayTitle ?? category.title}
                     </h2>
                     <p id="capability-overlay-description" className="mt-3 max-w-2xl text-sm leading-relaxed text-white/70">
-                      {category.description}
+                      {displayDescription ?? category.description}
                     </p>
                   </div>
 

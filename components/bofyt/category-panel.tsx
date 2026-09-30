@@ -10,6 +10,9 @@ interface CategoryPanelProps {
   active: boolean
   mapped: boolean
   dimmed: boolean
+  displayIndex?: string
+  displayTitle?: string
+  displayDescription?: string
   /** Visual shade for panels further from the core: 0 is nearest. */
   shade?: number
   onSelect: () => void
@@ -18,9 +21,23 @@ interface CategoryPanelProps {
 
 const SHADE = ['opacity-0', 'opacity-20', 'opacity-35', 'opacity-50']
 
-export function CategoryPanel({ category, active, mapped, dimmed, shade = 0, onSelect, className }: CategoryPanelProps) {
+export function CategoryPanel({
+  category,
+  active,
+  mapped,
+  dimmed,
+  displayIndex,
+  displayTitle,
+  displayDescription,
+  shade = 0,
+  onSelect,
+  className,
+}: CategoryPanelProps) {
   const capabilities = category.modules.slice(0, category.id === 'search' ? 5 : 4).map((module) => module.name)
   const imageSrc = category.id === 'search' ? '/panels/search.png' : `/panels/${category.id}.webp`
+  const panelIndex = displayIndex ?? category.index
+  const panelTitle = displayTitle ?? category.title
+  const panelDescription = displayDescription ?? category.description
   const descriptionId = `panel-${category.id}-description`
 
   return (
@@ -41,7 +58,7 @@ export function CategoryPanel({ category, active, mapped, dimmed, shade = 0, onS
       )}
     >
       <span id={descriptionId} className="sr-only">
-        {category.description}
+        {panelDescription}
       </span>
 
       <Image
@@ -66,7 +83,7 @@ export function CategoryPanel({ category, active, mapped, dimmed, shade = 0, onS
 
       <span className="flex flex-col gap-2 p-3 xl:p-3.5">
         <span className={cn('text-[10px] tabular-nums tracking-[0.2em] transition-colors', active ? 'text-gold-light' : 'text-white/60')}>
-          {category.index}
+          {panelIndex}
         </span>
         <span
           className={cn(
@@ -74,9 +91,10 @@ export function CategoryPanel({ category, active, mapped, dimmed, shade = 0, onS
             active ? 'text-gold-light' : 'text-white',
           )}
         >
-          {category.title}
+          {panelTitle}
         </span>
         <span aria-hidden className={cn('h-px w-3 transition-colors', active ? 'bg-gold-light' : 'bg-white/40')} />
+        <span className="max-w-[18rem] text-[11px] leading-relaxed text-white/65">{panelDescription}</span>
       </span>
 
       <span className="mt-auto flex flex-col items-start gap-3 p-3 xl:p-3.5">

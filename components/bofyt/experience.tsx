@@ -10,11 +10,9 @@ import type { CoreMode } from './ai-core'
 import { BottomNav, type NavTarget } from './bottom-nav'
 import { BrandHeader } from './brand-header'
 import { CapabilityOverlay } from './capability-overlay'
-import { CategoryCarousel } from './category-carousel'
-import { CategoryWall, wallSideOf } from './category-wall'
+import { CAPABILITY_COLUMNS, CategoryCarousel } from './category-carousel'
 import { CenterStage } from './center-stage'
 import { CoreOverlay } from './core-overlay'
-import { CoreSystem } from './core-system'
 import { ContinueGoal } from './continue-goal'
 import { GoalResult, type GoalResultData, type GoalResultHandlers } from './goal-result'
 import { InfoSheet, type SheetKind } from './info-sheet'
@@ -379,7 +377,9 @@ export function BofytExperience() {
 
   const highlighted = result?.areas ?? []
   const returning = !result ? activeGoal(goals) : null
-  const focusId = preview ?? selected
+  const expandedPresentation = expandedCapability
+    ? CAPABILITY_COLUMNS.find((capability) => capability.categoryId === expandedCapability)
+    : null
 
   return (
     <div className="relative min-h-dvh overflow-x-clip bg-void text-white">
@@ -393,39 +393,7 @@ export function BofytExperience() {
           goal={goal}
           selected={selected}
           preview={preview}
-          system={
-            <div className="pointer-events-none absolute inset-0">
-              <CoreSystem
-                selected={selected}
-                preview={preview}
-                highlighted={highlighted}
-                onSelect={toggleCategory}
-                onPreview={setPreview}
-              />
-              <div className="absolute inset-x-0 inset-y-0 hidden items-center justify-between px-1 xl:flex 2xl:px-5">
-                <div className="pointer-events-auto w-[min(31vw,500px)] shrink-0">
-                  <CategoryWall
-                    side="left"
-                    focusId={focusId}
-                    highlighted={highlighted}
-                    receded={Boolean(focusId && wallSideOf(focusId) !== 'left')}
-                    onSelect={toggleCategory}
-                    onPreview={setPreview}
-                  />
-                </div>
-                <div className="pointer-events-auto w-[min(31vw,500px)] shrink-0">
-                  <CategoryWall
-                    side="right"
-                    focusId={focusId}
-                    highlighted={highlighted}
-                    receded={Boolean(focusId && wallSideOf(focusId) !== 'right')}
-                    onSelect={toggleCategory}
-                    onPreview={setPreview}
-                  />
-                </div>
-              </div>
-            </div>
-          }
+          system={null}
           explore={<CategoryCarousel selected={selected} highlighted={highlighted} onSelect={pickFromGrid} />}
           returning={
             returning ? <ContinueGoal entry={returning} onContinue={() => resumeGoal(returning)} /> : null
@@ -456,6 +424,9 @@ export function BofytExperience() {
 
       <CapabilityOverlay
         category={expandedCapability ? categoryById[expandedCapability] : null}
+        displayIndex={expandedPresentation?.index}
+        displayTitle={expandedPresentation?.title}
+        displayDescription={expandedPresentation?.description}
         onClose={closeCapability}
         onStart={startCapability}
         onSelectModule={(module) => {
