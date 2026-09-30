@@ -90,7 +90,7 @@ export function CoreAwakening({ onContinue }: CoreAwakeningProps) {
           animate={{ opacity: leaving ? 0 : 1, y: leaving ? 8 : 0 }}
           transition={{ duration: 0.35 }}
         >
-          {leaving ? 'Opening experiences' : 'Click the Core to continue'}
+          {leaving ? 'Opening experiences' : 'Tap or click the Core to continue'}
         </motion.p>
       </motion.div>
     </motion.div>

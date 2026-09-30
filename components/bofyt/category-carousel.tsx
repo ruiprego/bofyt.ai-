@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
 import { motion } from 'motion/react'
 import { categoryById } from '@/lib/bofyt/categories'
 import { CAPABILITY_COLUMNS, type CapabilityId } from '@/lib/bofyt/capabilities'
@@ -9,6 +10,16 @@ import { CategoryPanel } from './category-panel'
 
 const PRODUCTION_ORDER: CapabilityId[] = ['grow', 'reach', 'build', 'optimize', 'automate', 'discover']
 const FOCUS_EASE = [0.22, 1, 0.36, 1] as const
+const SWIPE_DISTANCE = 48
+const SWIPE_AXIS_THRESHOLD = 10
+
+interface SwipeGesture {
+  pointerId: number
+  startX: number
+  startY: number
+  startIndex: number
+  horizontal: boolean
+}
 
 interface CategoryCarouselProps {
   selected: CapabilityId | null
@@ -37,6 +48,116 @@ export function CategoryCarousel({
   const [focusedCapability, setFocusedCapability] = useState<CapabilityId | null>(null)
   const focusedIndex = focusedCapability ? capabilities.findIndex(({ id }) => id === focusedCapability) : -1
   const leftFocusActive = coreLayout && mode === 'normal' && focusedIndex >= 0 && focusedIndex < 3
+  const carouselRef = useRef<HTMLUListElement>(null)
+  const swipeRef = useRef<SwipeGesture | null>(null)
+  const suppressClickRef = useRef(false)
+  const [dragging, setDragging] = useState(false)
+
+  const hasScrollableCards = () => {
+    const carousel = carouselRef.current
+    return Boolean(carousel && carousel.scrollWidth > carousel.clientWidth + 4)
+  }
+
+  const nearestCardIndex = () => {
+    const carousel = carouselRef.current
+    if (!carousel) return 0
+
+    const viewport = carousel.getBoundingClientRect()
+    const center = viewport.left + viewport.width / 2
+    let nearest = 0
+    let nearestDistance = Number.POSITIVE_INFINITY
+
+    Array.from(carousel.children).forEach((child, index) => {
+      const card = child.getBoundingClientRect()
+      const distance = Math.abs(card.left + card.width / 2 - center)
+      if (distance < nearestDistance) {
+        nearest = index
+        nearestDistance = distance
+      }
+    })
+
+    return nearest
+  }
+
+  const centerCard = (index: number) => {
+    const card = carouselRef.current?.children.item(index)
+    card?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+  }
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLUListElement>) => {
+    suppressClickRef.current = false
+
+    if (!interactive || !event.isPrimary || event.pointerType === 'mouse' || !hasScrollableCards()) {
+      swipeRef.current = null
+      return
+    }
+
+    swipeRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startIndex: nearestCardIndex(),
+      horizontal: false,
+    }
+  }
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLUListElement>) => {
+    const gesture = swipeRef.current
+    if (!gesture || gesture.pointerId !== event.pointerId) return
+
+    const deltaX = event.clientX - gesture.startX
+    const deltaY = event.clientY - gesture.startY
+    const movedX = Math.abs(deltaX)
+    const movedY = Math.abs(deltaY)
+
+    if (gesture.horizontal) return
+    if (movedX < SWIPE_AXIS_THRESHOLD && movedY < SWIPE_AXIS_THRESHOLD) return
+    if (movedY > movedX) {
+      swipeRef.current = null
+      return
+    }
+
+    gesture.horizontal = true
+    suppressClickRef.current = true
+    setDragging(true)
+  }
+
+  const finishPointerGesture = (event: ReactPointerEvent<HTMLUListElement>) => {
+    const gesture = swipeRef.current
+    if (!gesture || gesture.pointerId !== event.pointerId) return
+
+    const deltaX = event.clientX - gesture.startX
+    if (gesture.horizontal) {
+      suppressClickRef.current = true
+      if (Math.abs(deltaX) >= SWIPE_DISTANCE) {
+        const lastIndex = Math.max(0, (carouselRef.current?.children.length ?? 1) - 1)
+        const direction = deltaX < 0 ? 1 : -1
+        const targetIndex = Math.max(0, Math.min(lastIndex, gesture.startIndex + direction))
+        centerCard(targetIndex)
+      }
+    }
+
+    swipeRef.current = null
+    setDragging(false)
+  }
+
+  const cancelPointerGesture = (event: ReactPointerEvent<HTMLUListElement>) => {
+    const gesture = swipeRef.current
+    if (gesture?.pointerId === event.pointerId && gesture.horizontal) suppressClickRef.current = true
+    swipeRef.current = null
+    setDragging(false)
+  }
+
+  const handleClickCapture = (event: ReactMouseEvent<HTMLUListElement>) => {
+    if (!suppressClickRef.current) return
+    event.preventDefault()
+    event.stopPropagation()
+    suppressClickRef.current = false
+  }
+
+  const handleKeyDownCapture = (event: ReactKeyboardEvent<HTMLUListElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') suppressClickRef.current = false
+  }
 
   useEffect(() => {
     if (!coreLayout) return
@@ -83,14 +204,22 @@ export function CategoryCarousel({
       )}
 
       <ul
+        ref={carouselRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={finishPointerGesture}
+        onPointerCancel={cancelPointerGesture}
+        onClickCapture={handleClickCapture}
+        onKeyDownCapture={handleKeyDownCapture}
         className={cn(
-          '-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 [scrollbar-width:none] sm:gap-4 [&::-webkit-scrollbar]:hidden',
+          '-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-smooth touch-auto px-4 pb-4 [scrollbar-width:none] sm:gap-4 [&::-webkit-scrollbar]:hidden',
           !coreLayout && 'lg:-mx-8 lg:px-8',
           coreLayout &&
             'min-[960px]:absolute min-[960px]:left-1/2 min-[960px]:right-auto min-[960px]:top-1/2 min-[960px]:z-10 min-[960px]:mx-0 min-[960px]:grid min-[960px]:h-[min(68vh,42rem)] min-[960px]:w-[min(calc(100vw-2rem),112rem)] min-[960px]:-translate-x-1/2 min-[960px]:-translate-y-1/2 min-[960px]:grid-cols-[repeat(3,minmax(0,1fr))_minmax(clamp(20rem,calc(100vw_-_38rem),36rem),3.5fr)_repeat(3,minmax(0,1fr))] min-[960px]:gap-[clamp(0.5rem,0.65vw,0.75rem)] min-[960px]:overflow-visible min-[960px]:px-0 min-[960px]:pb-0',
           discoveryLayout && 'min-[960px]:!h-[min(78vh,48rem)] min-[960px]:!w-[min(calc(100vw-2rem),124rem)]',
-          )}
-        >
+          dragging && 'cursor-grabbing select-none',
+        )}
+      >
         {capabilities.map((capability, index) => {
           const category = categoryById[capability.categoryId]
           const mapped = highlighted.includes(capability.id)
