@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { categoryById, detectCategories, type CategoryId } from '@/lib/bofyt/categories'
 import {
   capabilitiesForCategories,
@@ -12,6 +12,7 @@ import { activeGoal, goalStore, useGoals } from '@/lib/bofyt/goals'
 import { detectGoalIntent } from '@/lib/bofyt/intent'
 import { ProductSearchClientError, searchProducts } from '@/lib/products/client'
 import type { ProductSearchFeedback } from '@/lib/products/types'
+import { cn } from '@/lib/utils'
 import type { CoreMode } from './ai-core'
 import { BottomNav, type NavTarget } from './bottom-nav'
 import { BrandHeader } from './brand-header'
@@ -19,6 +20,7 @@ import { CapabilityOverlay } from './capability-overlay'
 import { CategoryCarousel } from './category-carousel'
 import { CenterStage } from './center-stage'
 import { CoreOverlay } from './core-overlay'
+import { CoreAwakening } from './core-awakening'
 import { ContinueGoal } from './continue-goal'
 import { GoalResult, type GoalResultData, type GoalResultHandlers } from './goal-result'
 import { InfoSheet, type SheetKind } from './info-sheet'
@@ -49,6 +51,7 @@ export function BofytExperience() {
   const [sheet, setSheet] = useState<SheetKind | null>(null)
   const [navActive, setNavActive] = useState<NavTarget>('home')
   const [coreOpen, setCoreOpen] = useState(false)
+  const [awakeningCompleted, setAwakeningCompleted] = useState(false)
   const [planSource, setPlanSource] = useState<GoalOutcome | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searching, setSearching] = useState(false)
@@ -58,6 +61,7 @@ export function BofytExperience() {
   const goals = useGoals()
 
   const pulse = () => setPulseKey((key) => key + 1)
+  const completeAwakening = useCallback(() => setAwakeningCompleted(true), [])
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
@@ -391,8 +395,13 @@ export function BofytExperience() {
 
   return (
     <div className="relative min-h-dvh overflow-x-clip bg-void text-white">
-      <AmbientBackdrop />
-      <BrandHeader progressCount={goals.length} onOpenSheet={setSheet} />
+      <div
+        aria-hidden={!awakeningCompleted}
+        inert={!awakeningCompleted}
+        className={cn('relative', !awakeningCompleted && 'pointer-events-none select-none')}
+      >
+        <AmbientBackdrop />
+        <BrandHeader progressCount={goals.length} onOpenSheet={setSheet} />
 
       <main className="relative z-10 flex flex-col items-center px-4 pb-32 pt-2 lg:px-8 lg:pb-12 lg:pt-2">
         <CenterStage
@@ -489,7 +498,9 @@ export function BofytExperience() {
         }}
         onOpenGoal={(entry) => resumeGoal(entry)}
       />
-      <Toast message={toast} />
+        <Toast message={toast} />
+      </div>
+      {!awakeningCompleted && <CoreAwakening onComplete={completeAwakening} />}
     </div>
   )
 }
