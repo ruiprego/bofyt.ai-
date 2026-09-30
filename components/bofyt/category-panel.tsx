@@ -3,10 +3,12 @@
 import Image from 'next/image'
 import { Plus } from 'lucide-react'
 import type { Category } from '@/lib/bofyt/categories'
+import type { Capability } from '@/lib/bofyt/capabilities'
 import { cn } from '@/lib/utils'
 
 interface CategoryPanelProps {
   category: Category
+  capability?: Capability
   active: boolean
   mapped: boolean
   dimmed: boolean
@@ -23,6 +25,7 @@ const SHADE = ['opacity-0', 'opacity-20', 'opacity-35', 'opacity-50']
 
 export function CategoryPanel({
   category,
+  capability,
   active,
   mapped,
   dimmed,
@@ -33,11 +36,12 @@ export function CategoryPanel({
   onSelect,
   className,
 }: CategoryPanelProps) {
-  const capabilities = category.modules.slice(0, category.id === 'search' ? 5 : 4).map((module) => module.name)
-  const imageSrc = category.id === 'search' ? '/panels/search.png' : `/panels/${category.id}.webp`
-  const panelIndex = displayIndex ?? category.index
-  const panelTitle = displayTitle ?? category.title
-  const panelDescription = displayDescription ?? category.description
+  const modules = capability?.modules ?? category.modules
+  const capabilities = modules.slice(0, capability ? 4 : category.id === 'search' ? 5 : 4).map((module) => module.name)
+  const imageSrc = capability?.imageSrc ?? (category.id === 'search' ? '/panels/search.png' : `/panels/${category.id}.webp`)
+  const panelIndex = capability?.index ?? displayIndex ?? category.index
+  const panelTitle = capability?.title ?? displayTitle ?? category.title
+  const panelDescription = capability?.description ?? displayDescription ?? category.description
   const descriptionId = `panel-${category.id}-description`
 
   return (

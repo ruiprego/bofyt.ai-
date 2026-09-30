@@ -2,6 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { categoryById, detectCategories, type CategoryId } from '@/lib/bofyt/categories'
+import {
+  capabilitiesForCategories,
+  capabilityById,
+  capabilityForCategory,
+  type CapabilityId,
+} from '@/lib/bofyt/capabilities'
 import { activeGoal, goalStore, useGoals } from '@/lib/bofyt/goals'
 import { detectGoalIntent } from '@/lib/bofyt/intent'
 import { ProductSearchClientError, searchProducts } from '@/lib/products/client'
@@ -10,7 +16,7 @@ import type { CoreMode } from './ai-core'
 import { BottomNav, type NavTarget } from './bottom-nav'
 import { BrandHeader } from './brand-header'
 import { CapabilityOverlay } from './capability-overlay'
-import { CAPABILITY_COLUMNS, CategoryCarousel } from './category-carousel'
+import { CategoryCarousel } from './category-carousel'
 import { CenterStage } from './center-stage'
 import { CoreOverlay } from './core-overlay'
 import { ContinueGoal } from './continue-goal'
@@ -35,7 +41,7 @@ export function BofytExperience() {
   const [goal, setGoal] = useState('')
   const [focused, setFocused] = useState(false)
   const [selected, setSelected] = useState<CategoryId | null>(null)
-  const [expandedCapability, setExpandedCapability] = useState<CategoryId | null>(null)
+  const [expandedCapability, setExpandedCapability] = useState<CapabilityId | null>(null)
   const [preview, setPreview] = useState<CategoryId | null>(null)
   const [activating, setActivating] = useState(false)
   const [result, setResult] = useState<GoalOutcome | null>(null)
@@ -101,8 +107,9 @@ export function BofytExperience() {
     setPreview(null)
   }
 
-  const openCapability = (id: CategoryId) => {
-    setSelected(id)
+  const openCapability = (id: CapabilityId) => {
+    const capability = capabilityById[id]
+    setSelected(capability.categoryId)
     setExpandedCapability(id)
     setCoreOpen(false)
     setSheet(null)
@@ -110,14 +117,14 @@ export function BofytExperience() {
     pulse()
   }
 
-  const toggleCategory = (id: CategoryId) => {
+  const toggleCapability = (id: CapabilityId) => {
     setResult(null)
     if (expandedCapability === id) closeCapability()
     else openCapability(id)
   }
 
-  const pickFromGrid = (id: CategoryId) => {
-    toggleCategory(id)
+  const pickFromGrid = (id: CapabilityId) => {
+    toggleCapability(id)
     if (!isDesktop()) headingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
@@ -149,7 +156,8 @@ export function BofytExperience() {
     focusInput()
   }
 
-  const selectCapabilityPrompt = (id: CategoryId, prompt: string) => {
+  const selectCapabilityPrompt = (capabilityId: CapabilityId, prompt: string) => {
+    const id = capabilityById[capabilityId].categoryId
     closeCapability()
     setResult(null)
     setSelected(id)
@@ -167,7 +175,7 @@ export function BofytExperience() {
 
   const startCapability = () => {
     if (!expandedCapability) return
-    const id = expandedCapability
+    const id = capabilityById[expandedCapability].categoryId
     closeCapability()
     setSelected(id)
     if (id === 'search') {
@@ -376,10 +384,10 @@ export function BofytExperience() {
   }
 
   const highlighted = result?.areas ?? []
+  const recommendedCapabilities = capabilitiesForCategories(highlighted)
+  const selectedCapability = capabilityForCategory(selected)
   const returning = !result ? activeGoal(goals) : null
-  const expandedPresentation = expandedCapability
-    ? CAPABILITY_COLUMNS.find((capability) => capability.categoryId === expandedCapability)
-    : null
+  const expandedPresentation = expandedCapability ? capabilityById[expandedCapability] : null
 
   return (
     <div className="relative min-h-dvh overflow-x-clip bg-void text-white">
@@ -394,7 +402,7 @@ export function BofytExperience() {
           selected={selected}
           preview={preview}
           system={null}
-          explore={<CategoryCarousel selected={selected} highlighted={highlighted} onSelect={pickFromGrid} />}
+          explore={<CategoryCarousel selected={selectedCapability} highlighted={recommendedCapabilities} onSelect={pickFromGrid} />}
           returning={
             returning ? <ContinueGoal entry={returning} onContinue={() => resumeGoal(returning)} /> : null
           }
@@ -423,8 +431,10 @@ export function BofytExperience() {
       </main>
 
       <CapabilityOverlay
-        category={expandedCapability ? categoryById[expandedCapability] : null}
-        displayIndex={expandedPresentation?.index}
+      category={expandedPresentation ? categoryById[expandedPresentation.categoryId] : null}
+      capability={expandedPresentation}
+      displayIndex={expandedPresentation?.index}
+
         displayTitle={expandedPresentation?.title}
         displayDescription={expandedPresentation?.description}
         onClose={closeCapability}

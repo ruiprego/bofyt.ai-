@@ -85,109 +85,117 @@ export function CenterStage({
   const isSearch = selected === 'search'
 
   return (
-    <div className="flex w-full flex-col items-center gap-5 text-center lg:gap-6">
-      <div className="relative flex w-full items-center justify-center lg:min-h-[min(54vh,520px)]">
-        {system}
-        {isSearch ? (
-          <ProductSearch
-            open={isSearch}
-            inputRef={searchInputRef}
-            headingRef={headingRef}
-            query={searchQuery}
-            busy={searchBusy}
-            result={searchResult}
-            resultHandlers={searchResultHandlers}
-            feedback={searchFeedback}
-            onQueryChange={onSearchChange}
-            onSubmit={onSearchSubmit}
-            onRetry={onRetrySearch}
-          />
-        ) : (
-          <AiCore
-            mode={coreMode}
-            energy={Math.min(goal.length / 80, 1)}
-            typingTick={goal.length}
-            pulseKey={pulseKey}
-            onActivate={onActivateCore}
-            className="size-[min(52vw,220px)] lg:size-[min(32vh,300px)]"
-          />
-        )}
-      </div>
-
-      {!isSearch && <>
-      <h1
-        ref={headingRef}
-        className="scroll-mt-6 font-display text-[clamp(2.1rem,3.4vw,3.9rem)] font-normal leading-[1.05] tracking-tight text-balance"
+    <div className="flex w-full flex-col items-center text-center">
+      <section
+        aria-label={isSearch ? 'Product discovery' : 'BOFYT goal planner'}
+        className="flex w-full flex-col items-center gap-5 lg:gap-6"
       >
-        <span className="block text-white">What do you want</span>
-        <span className="block">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.span
-              key="goal-question"
-              className="inline-block text-gold-metal"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            >
-              to achieve?
-            </motion.span>
-          </AnimatePresence>
-        </span>
-      </h1>
-
-      <p className="-mt-3 max-w-sm text-pretty text-xs leading-relaxed text-white/50">
-        BOFYT AI figures out what needs to happen next.
-      </p>
-
-      {!result && (
-        <GoalInput
-          inputRef={inputRef}
-          value={goal}
-          placeholder={placeholder}
-          busy={coreMode === 'activating'}
-          linkKey={selected}
-          onChange={onGoalChange}
-          onSubmit={onSubmit}
-          onFocusChange={onFocusChange}
-        />
-      )}
-
-      <div className="flex w-full flex-col items-center empty:hidden lg:min-h-32">
-        <AnimatePresence mode="wait" initial={false}>
-          {result ? (
-            <GoalResult
-              key={result.id}
-              goal={result.goal}
-              areas={result.areas}
-              products={result.products}
-              closestProducts={result.closestProducts}
-              priceConstraint={result.priceConstraint}
-              {...resultHandlers}
+        <div className="relative flex w-full items-center justify-center lg:min-h-[min(54vh,520px)]">
+          {system}
+          {isSearch ? (
+            <ProductSearch
+              open={isSearch}
+              inputRef={searchInputRef}
+              headingRef={headingRef}
+              query={searchQuery}
+              busy={searchBusy}
+              result={searchResult}
+              resultHandlers={searchResultHandlers}
+              feedback={searchFeedback}
+              onQueryChange={onSearchChange}
+              onSubmit={onSearchSubmit}
+              onRetry={onRetrySearch}
             />
-          ) : coreMode === 'activating' ? (
-            <GoalThinking key="thinking" />
-          ) : goal.trim() ? (
-            <GoalEcho key="echo" goal={goal.trim()} categoryTitle={category?.title} />
-          ) : category ? (
-            <CoreReply key={`reply-${category.id}`} category={category} onPickPrompt={onPickPrompt} />
           ) : (
-            <motion.p
-              key="hint"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="hidden text-[11px] uppercase tracking-[0.4em] text-white/60 lg:block"
-            >
-              Or explore the capabilities around the core
-            </motion.p>
+            <AiCore
+              mode={coreMode}
+              energy={Math.min(goal.length / 80, 1)}
+              typingTick={goal.length}
+              pulseKey={pulseKey}
+              onActivate={onActivateCore}
+              className="size-[min(52vw,220px)] lg:size-[min(32vh,300px)]"
+            />
           )}
-        </AnimatePresence>
-      </div>
-      </>}
+        </div>
 
-      {!isSearch && returning}
-      {explore}
+        {!isSearch && <>
+          <h1
+            ref={headingRef}
+            className="scroll-mt-6 font-display text-[clamp(2.1rem,3.4vw,3.9rem)] font-normal leading-[1.05] tracking-tight text-balance"
+          >
+            <span className="block text-white">What do you want</span>
+            <span className="block">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key="goal-question"
+                  className="inline-block text-gold-metal"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  to achieve?
+                </motion.span>
+              </AnimatePresence>
+            </span>
+          </h1>
+
+          <p className="-mt-3 max-w-sm text-pretty text-xs leading-relaxed text-white/50">
+            BOFYT AI figures out what needs to happen next.
+          </p>
+
+          {!result && (
+            <GoalInput
+              inputRef={inputRef}
+              value={goal}
+              placeholder={placeholder}
+              busy={coreMode === 'activating'}
+              linkKey={selected}
+              onChange={onGoalChange}
+              onSubmit={onSubmit}
+              onFocusChange={onFocusChange}
+            />
+          )}
+
+          <div className="flex w-full flex-col items-center empty:hidden lg:min-h-32">
+            <AnimatePresence mode="wait" initial={false}>
+              {result ? (
+                <GoalResult
+                  key={result.id}
+                  goal={result.goal}
+                  areas={result.areas}
+                  products={result.products}
+                  closestProducts={result.closestProducts}
+                  priceConstraint={result.priceConstraint}
+                  {...resultHandlers}
+                />
+              ) : coreMode === 'activating' ? (
+                <GoalThinking key="thinking" />
+              ) : goal.trim() ? (
+                <GoalEcho key="echo" goal={goal.trim()} categoryTitle={category?.title} />
+              ) : category ? (
+                <CoreReply key={`reply-${category.id}`} category={category} onPickPrompt={onPickPrompt} />
+              ) : (
+                <motion.p
+                  key="hint"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="hidden text-[11px] uppercase tracking-[0.4em] text-white/60 lg:block"
+                >
+                  Or explore the capabilities around the core
+                </motion.p>
+              )}
+            </AnimatePresence>
+          </div>
+        </>}
+
+        {!isSearch && returning}
+      </section>
+
+      <section className="mt-12 w-full max-w-6xl border-t border-white/10 pt-10 lg:mt-16 lg:pt-12" aria-label="Independent capability entry points">
+        {explore}
+      </section>
     </div>
   )
 }
