@@ -105,6 +105,34 @@ export function BofytExperience() {
     toastTimer.current = setTimeout(() => setToast(null), 3200)
   }
 
+  const dismissKeyboard = () => {
+    const activeElement = document.activeElement
+    if (activeElement instanceof HTMLElement) activeElement.blur()
+  }
+
+  const clearSearchExperience = () => {
+    searchAbort.current?.abort()
+    searchAbort.current = null
+    searchRequest.current += 1
+    setSearching(false)
+    setSearchQuery('')
+    setSearchResult(null)
+    setSearchCapabilityContext(null)
+    setSearchFeedback(null)
+  }
+
+  const clearTransientExperience = () => {
+    if (activationTimer.current) clearTimeout(activationTimer.current)
+    activationTimer.current = null
+    setActivating(false)
+    setResult(null)
+    setGoal('')
+    setGoalCapabilityContext(null)
+    setPreview(null)
+    setFocused(false)
+    clearSearchExperience()
+  }
+
   const coreMode: CoreMode = activating ? 'activating' : selected || preview ? 'selected' : focused || goal ? 'typing' : 'idle'
 
   const focusInput = () => {
@@ -126,38 +154,36 @@ export function BofytExperience() {
   const openCapability = (id: CapabilityId) => {
     capabilityEntryRef.current = false
     const capability = capabilityById[id]
+    clearTransientExperience()
     setSelected(capability.categoryId)
     setExpandedCapability(id)
-    setGoalCapabilityContext(null)
-    setSearchCapabilityContext(null)
     setCoreOpen(false)
     setSheet(null)
-    setPreview(null)
+    setNavActive('home')
     pulse()
   }
 
   const toggleCapability = (id: CapabilityId) => {
-    setResult(null)
     if (expandedCapability === id) closeCapability()
     else openCapability(id)
   }
 
   const startFromIntroCapability = (id: CapabilityId) => {
     completeIntro()
-    setResult(null)
-    setGoal('')
     setNavActive('home')
     openCapability(id)
   }
 
   const enterCapabilityExperience = (id: CapabilityId) => {
+    const context = contextForCapability(id)
+    clearTransientExperience()
     closeCapability()
-    setSelected(capabilityById[id].categoryId)
-    setGoalCapabilityContext(null)
-    setSearchCapabilityContext(null)
+    setSelected(context.categoryId)
     setSheet(null)
     setCoreOpen(false)
     setNavActive('home')
+    if (context.categoryId === 'search') setSearchCapabilityContext(context)
+    else setGoalCapabilityContext(context)
     pulse()
     return true
   }
@@ -170,7 +196,6 @@ export function BofytExperience() {
   }
 
   const changeGoal = (value: string) => {
-    if (!coreOpen && !result) setGoalCapabilityContext(null)
     setGoal(value)
     if (result) setResult(null)
 
@@ -208,7 +233,7 @@ export function BofytExperience() {
       setSearchFeedback(null)
       runProductSearch(trimmed, targetCategory === 'search' ? undefined : null)
     } else {
-      submitGoal(trimmed, null)
+      submitGoal(trimmed, goalCapabilityContext)
     }
 
     pulse()
@@ -216,14 +241,16 @@ export function BofytExperience() {
 
   const selectCapabilityPrompt = (capabilityId: CapabilityId, prompt: string) => {
     const context = contextForCapability(capabilityId)
+    clearTransientExperience()
     closeCapability()
     setResult(null)
     setSelected(context.categoryId)
+    setCoreOpen(false)
+    setNavActive('home')
 
     if (context.categoryId === 'search') {
       setGoalCapabilityContext(null)
       setSearchCapabilityContext(context)
-      setSearchFeedback(null)
       setSearchQuery(prompt)
       window.setTimeout(() => searchInputRef.current?.focus({ preventScroll: true }), 0)
     } else {
@@ -245,15 +272,17 @@ export function BofytExperience() {
 
     capabilityEntryRef.current = true
     const context = contextForCapability(expandedCapability)
+    clearTransientExperience()
     closeCapability()
     setSelected(context.categoryId)
+    setSheet(null)
     if (context.categoryId === 'search') {
       setGoalCapabilityContext(null)
       setSearchCapabilityContext(context)
       window.setTimeout(() => searchInputRef.current?.focus({ preventScroll: true }), 0)
     } else {
       setSearchCapabilityContext(null)
-      setGoalCapabilityContext(null)
+      setGoalCapabilityContext(context)
       setCoreOpen(true)
       setNavActive('core')
     }
@@ -263,12 +292,13 @@ export function BofytExperience() {
   const submitGoal = (goalOverride?: string, contextOverride?: CapabilitySearchContext | null) => {
     const context = contextOverride === undefined ? goalCapabilityContext : contextOverride
     const trimmed = (goalOverride ?? goal).trim()
-    if (!trimmed || activating) {
+    if (!trimmed || activationTimer.current) {
       focusInput()
       pulse()
       return
     }
 
+    dismissKeyboard()
     const intent = detectGoalIntent(trimmed)
     if (intent.kind === 'shopping' && !context) {
       setActivating(false)
@@ -296,6 +326,7 @@ export function BofytExperience() {
     setResult(null)
     pulse()
     activationTimer.current = setTimeout(() => {
+      activationTimer.current = null
       setActivating(false)
       setSelected(context?.categoryId ?? intent.categoryId)
       setResult({ id: crypto.randomUUID(), goal: trimmed, areas: goalAreas, capabilityId: context?.capabilityId })
@@ -307,12 +338,14 @@ export function BofytExperience() {
   function runProductSearch(query: string, contextOverride?: CapabilitySearchContext | null) {
     const context = contextOverride === undefined ? searchCapabilityContext : contextOverride
     const trimmed = query.trim()
-    if (!trimmed || searching) return
+    if (!trimmed) return
 
+    dismissKeyboard()
     searchAbort.current?.abort()
     const controller = new AbortController()
     const requestId = ++searchRequest.current
     searchAbort.current = controller
+    setSearchQuery(trimmed)
     setSearchCapabilityContext(context)
     setSearchFeedback(null)
     setSearching(true)
@@ -355,28 +388,24 @@ export function BofytExperience() {
       categoryId: request.categoryId,
     }
 
-    if (activationTimer.current) clearTimeout(activationTimer.current)
-    setActivating(false)
-    setResult(null)
+    clearTransientExperience()
+    dismissKeyboard()
     closeCapability()
     setSelected(request.categoryId)
     setNavActive('home')
+    setCoreOpen(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
 
     if (request.capabilityId === 'discover') {
       setGoalCapabilityContext(null)
       setGoal('')
-      setCoreOpen(false)
       setSearchQuery(request.query)
-      setSearchFeedback(null)
       runProductSearch(request.query, context)
     } else {
       setSearchCapabilityContext(null)
       setGoalCapabilityContext(context)
       setSearchResult(null)
-      setSearchFeedback(null)
       setGoal(request.query)
-      setCoreOpen(true)
-      setNavActive('core')
       submitGoal(request.query, context)
     }
 
@@ -384,35 +413,34 @@ export function BofytExperience() {
   }
 
   const reset = () => {
-    if (activationTimer.current) clearTimeout(activationTimer.current)
-    setActivating(false)
-    setResult(null)
-    setGoal('')
-    setGoalCapabilityContext(null)
-    setSearchCapabilityContext(null)
+    clearTransientExperience()
     setSelected(null)
     closeCapability()
-    setTimeout(focusInput, 0)
+    setCoreOpen(false)
+    setNavActive('home')
+    window.setTimeout(focusInput, 0)
   }
 
   const editResult = () => {
     if (!result) return
     if (activationTimer.current) clearTimeout(activationTimer.current)
+    activationTimer.current = null
     setActivating(false)
     setGoalCapabilityContext(result.capabilityId ? contextForCapability(result.capabilityId) : null)
     setGoal(result.goal)
     setResult(null)
-    setTimeout(focusInput, 0)
+    window.setTimeout(focusInput, 0)
   }
 
   const resetSearch = () => {
+    const context = searchCapabilityContext
     searchAbort.current?.abort()
     searchAbort.current = null
     searchRequest.current += 1
     setSearching(false)
     setSearchFeedback(null)
     setSearchResult(null)
-    setSearchCapabilityContext(null)
+    setSearchCapabilityContext(context)
     setSearchQuery('')
     pulse()
   }
@@ -449,11 +477,10 @@ export function BofytExperience() {
   }
 
   const resumeGoal = (entry: { id: string; goal: string; areas: CategoryId[] }) => {
+    clearTransientExperience()
     setSheet(null)
     setNavActive('home')
     setSelected(entry.areas[0] ?? null)
-    setGoalCapabilityContext(null)
-    setSearchCapabilityContext(null)
     setResult(entry)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -462,22 +489,21 @@ export function BofytExperience() {
     closeCapability()
     setNavActive(target)
     if (target === 'home') {
+      clearTransientExperience()
       setSheet(null)
       setCoreOpen(false)
-      if (selected === 'search') {
-        setSelected(null)
-        setSearchCapabilityContext(null)
-      }
+      setSelected(null)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (target === 'explore') {
+      clearTransientExperience()
       setSheet(null)
+      setCoreOpen(false)
+      setSelected(null)
       document.getElementById('explore')?.scrollIntoView({ behavior: 'smooth' })
     } else if (target === 'core') {
+      clearTransientExperience()
       setSheet(null)
-      if (selected === 'search') {
-        setSelected(null)
-        setSearchCapabilityContext(null)
-      }
+      setSelected(null)
       setCoreOpen(true)
       pulse()
     } else {

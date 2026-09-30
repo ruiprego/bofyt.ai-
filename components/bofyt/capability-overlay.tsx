@@ -256,7 +256,7 @@ export function CapabilityOverlay({
                         onClick={onStart}
                         className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-gold/70 bg-gold px-5 text-xs font-semibold uppercase tracking-[0.16em] text-void transition-[transform,box-shadow,background-color] hover:bg-gold-light hover:shadow-[0_0_30px_-8px_rgba(246,221,161,0.95)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-light focus-visible:ring-offset-2 focus-visible:ring-offset-void"
                       >
-                        Plan with AI Core
+                        Start with BOFYT
                         <ArrowRight aria-hidden className="size-4" />
                       </button>
                     </div>

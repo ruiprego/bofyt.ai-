@@ -2,7 +2,7 @@
 
 import type { RefObject } from 'react'
 import type { CategoryModule } from '@/lib/bofyt/categories'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { LoaderCircle, Search as SearchIcon } from 'lucide-react'
 import type { ProductSearchFeedback } from '@/lib/products/types'
@@ -43,17 +43,25 @@ export function ProductSearch({
   onSubmit,
   onRetry,
 }: ProductSearchProps) {
+  const focusedOnOpen = useRef(false)
+
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      focusedOnOpen.current = false
+      return
+    }
+    if (focusedOnOpen.current) return
+    if (busy || result) {
+      focusedOnOpen.current = true
+      return
+    }
+
+    focusedOnOpen.current = true
     const timer = window.setTimeout(() => {
       inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       inputRef.current?.focus({ preventScroll: true })
     }, 180)
     return () => window.clearTimeout(timer)
-  }, [inputRef, open])
-
-  useEffect(() => {
-    if (open && !result && !busy) inputRef.current?.focus({ preventScroll: true })
   }, [busy, inputRef, open, result])
 
   return (
