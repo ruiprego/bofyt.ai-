@@ -2,87 +2,73 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AiCore } from './ai-core'
 
-type AwakeningPhase = 'checking' | 'ready' | 'activating' | 'expanding'
+type AwakeningPhase = 'checking' | 'ready' | 'leaving'
 
 interface CoreAwakeningProps {
-  onAwakened: () => void
-  canSkip?: boolean
-  onSkip?: () => void
+  onContinue: () => void
 }
 
-export function CoreAwakening({ onAwakened, canSkip = false, onSkip }: CoreAwakeningProps) {
+export function CoreAwakening({ onContinue }: CoreAwakeningProps) {
   const reduceMotion = useReducedMotion() === true
+  const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [phase, setPhase] = useState<AwakeningPhase>('checking')
   const [pulseKey, setPulseKey] = useState(0)
-  const expansionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const completionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    setPhase('ready')
-  }, [])
+    const openingTimer = window.setTimeout(() => setPhase('ready'), reduceMotion ? 0 : 1500)
+    return () => window.clearTimeout(openingTimer)
+  }, [reduceMotion])
 
   useEffect(
     () => () => {
-      if (expansionTimer.current) clearTimeout(expansionTimer.current)
-      if (completionTimer.current) clearTimeout(completionTimer.current)
+      if (transitionTimer.current) clearTimeout(transitionTimer.current)
     },
     [],
   )
 
-  const finishAwakening = () => onAwakened()
-
-  const skip = () => {
-    if (!canSkip || phase === 'checking') return
-    if (expansionTimer.current) clearTimeout(expansionTimer.current)
-    if (completionTimer.current) clearTimeout(completionTimer.current)
-    onSkip?.()
-  }
-
-  const activate = () => {
+  const continueToDiscovery = () => {
     if (phase !== 'ready') return
 
     setPulseKey((key) => key + 1)
-    setPhase('activating')
-    expansionTimer.current = setTimeout(() => setPhase('expanding'), reduceMotion ? 20 : 560)
-    completionTimer.current = setTimeout(finishAwakening, reduceMotion ? 180 : 1900)
+    setPhase('leaving')
+    transitionTimer.current = setTimeout(onContinue, reduceMotion ? 0 : 520)
   }
 
-  const isActivating = phase === 'activating' || phase === 'expanding'
-  const isExpanding = phase === 'expanding'
+  const checking = phase === 'checking'
+  const leaving = phase === 'leaving'
   const motionDuration = reduceMotion ? 0.12 : 1.2
 
   return (
     <motion.div
       role="dialog"
       aria-modal="true"
-      aria-label="BOFYT Core awakening"
-      className="fixed inset-0 z-[100] isolate overflow-hidden text-white"
+      aria-label="BOFYT Core opening"
+      className="fixed inset-0 z-[100] isolate overflow-hidden bg-void text-white"
       initial={{ opacity: 1 }}
-      animate={{ opacity: 1 }}
+      animate={{ opacity: leaving ? 0 : 1 }}
+      transition={{ duration: reduceMotion ? 0 : 0.52, ease: [0.22, 1, 0.36, 1] }}
     >
       <motion.div
         aria-hidden
         className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(226,184,101,0.2),transparent_38%),radial-gradient(ellipse_at_center,#090806_0%,#020201_72%)]"
-        animate={{ opacity: isExpanding ? 0 : 1 }}
-        transition={{ duration: motionDuration, ease: [0.22, 1, 0.36, 1] }}
+        animate={{ opacity: leaving ? 0 : 1 }}
       />
 
       <motion.div
         aria-hidden
         className="absolute left-1/2 top-1/2 size-[min(76vw,24rem)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-gold/35 bg-[radial-gradient(circle,rgba(246,221,161,0.18),rgba(226,184,101,0.06)_34%,transparent_70%)] shadow-[0_0_90px_-18px_rgba(226,184,101,0.85)]"
-        initial={{ scale: 0.7, opacity: 0.25 }}
+        initial={{ scale: 0.7, opacity: 0.2 }}
         animate={
-          isExpanding
+          leaving
             ? { scale: [1.2, 8, 28], opacity: [0.85, 0.55, 0] }
-            : isActivating
-              ? { scale: [1, 1.08, 1.2], opacity: [0.45, 0.9, 0.8] }
+            : checking
+              ? { scale: [0.7, 1.05, 1], opacity: [0.2, 0.8, 0.45] }
               : { scale: 1, opacity: 0.45 }
         }
-        transition={{ duration: isExpanding ? motionDuration : isActivating ? 0.56 : 1.2, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: leaving ? motionDuration : checking ? 1.5 : 0.2, ease: [0.22, 1, 0.36, 1] }}
       />
 
       <motion.div
@@ -90,53 +76,41 @@ export function CoreAwakening({ onAwakened, canSkip = false, onSkip }: CoreAwake
         className="absolute left-1/2 top-1/2 size-[min(48vw,15rem)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-gold-light/35"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={
-          isExpanding
+          leaving
             ? { scale: [1, 14], opacity: [0.8, 0] }
-            : isActivating
-              ? { scale: [1, 1.35], opacity: [0.65, 0] }
+            : checking
+              ? { scale: [0.8, 1.2, 1], opacity: [0, 0.65, 0.18] }
               : { scale: 1, opacity: 0.18 }
         }
-        transition={{ duration: isExpanding ? motionDuration : isActivating ? 0.9 : 1.2, ease: 'easeOut' }}
+        transition={{ duration: leaving ? motionDuration : checking ? 1.3 : 0.2, ease: 'easeOut' }}
       />
 
       <motion.div
-        className={cn('absolute inset-0 flex flex-col items-center justify-center gap-7 px-6', isExpanding && 'pointer-events-none')}
-        animate={isExpanding ? { scale: [1, 1.08, 0.3], opacity: [1, 0.9, 0] } : { scale: 1, opacity: 1 }}
-        transition={{ duration: isExpanding ? motionDuration : 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className={cn('absolute inset-0 flex flex-col items-center justify-center gap-7 px-6', leaving && 'pointer-events-none')}
+        animate={leaving ? { scale: [1, 1.08, 0.3], opacity: [1, 0.9, 0] } : { scale: 1, opacity: 1 }}
+        transition={{ duration: leaving ? motionDuration : 0.4, ease: [0.22, 1, 0.36, 1] }}
       >
         <AiCore
-          mode={isActivating ? 'activating' : 'idle'}
-          energy={isActivating ? 1 : 0.2}
+          mode={leaving ? 'activating' : 'idle'}
+          energy={leaving ? 1 : checking ? 0.45 : 0.2}
           typingTick={0}
           pulseKey={pulseKey}
-          particles={phase !== 'checking'}
-          ariaLabel="BOFYT Core. Activate to awaken the system"
+          particles={!checking}
+          ariaLabel={checking ? 'BOFYT Core opening animation' : 'Continue to BOFYT experiences'}
           disabled={phase !== 'ready'}
-          onActivate={activate}
+          onActivate={continueToDiscovery}
           className="size-[min(58vw,19rem)] sm:size-[min(44vw,23rem)]"
         />
 
         <motion.p
           aria-live="polite"
           className="text-center text-[10px] uppercase tracking-[0.35em] text-gold-light/65"
-          animate={{ opacity: isExpanding ? 0 : phase === 'checking' ? 0 : 1, y: isActivating ? 8 : 0 }}
+          animate={{ opacity: leaving ? 0 : checking ? 0 : 1, y: leaving ? 8 : 0 }}
           transition={{ duration: 0.35 }}
         >
-          {isActivating ? 'BOFYT Core activating' : 'Activate the Core to begin'}
+          {leaving ? 'Opening experiences' : checking ? 'BOFYT Core awakening' : 'Click the Core to continue'}
         </motion.p>
       </motion.div>
-
-      {canSkip && (
-        <button
-          type="button"
-          onClick={skip}
-          disabled={phase === 'checking'}
-          aria-label="Skip BOFYT Core awakening"
-          className="absolute right-4 top-4 z-20 grid size-10 place-items-center rounded-full border border-white/15 bg-void/60 text-white/45 backdrop-blur transition-colors hover:border-gold/55 hover:text-gold-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70 disabled:pointer-events-none disabled:opacity-0 sm:right-7 sm:top-7"
-        >
-          <X aria-hidden className="size-4" />
-        </button>
-      )}
     </motion.div>
   )
 }

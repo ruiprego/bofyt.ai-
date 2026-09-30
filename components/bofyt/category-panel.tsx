@@ -20,6 +20,7 @@ interface CategoryPanelProps {
   compact?: boolean
   expanded?: boolean
   disableHover?: boolean
+  disabled?: boolean
   onSelect: () => void
   className?: string
 }
@@ -39,6 +40,7 @@ export function CategoryPanel({
   compact = false,
   expanded = false,
   disableHover = false,
+  disabled = false,
   onSelect,
   className,
 }: CategoryPanelProps) {
@@ -56,9 +58,10 @@ export function CategoryPanel({
       aria-pressed={active}
       aria-expanded={expanded}
       aria-describedby={descriptionId}
+      disabled={disabled}
       onClick={onSelect}
       className={cn(
-        'group relative isolate flex h-full w-full flex-col overflow-hidden rounded-md border bg-[#0a0907] text-left outline-none transition-[border-color,box-shadow,opacity,transform] duration-500',
+        'group relative isolate flex h-full w-full flex-col overflow-hidden rounded-md border bg-[#0a0907] text-left outline-none transition-[border-color,box-shadow,opacity,transform] duration-500 disabled:pointer-events-none disabled:cursor-default',
         !disableHover && 'min-[960px]:group-hover:-translate-y-0.5 min-[960px]:group-hover:scale-[1.015]',
         'focus-visible:ring-2 focus-visible:ring-gold/70 focus-visible:ring-offset-2 focus-visible:ring-offset-void',
         active

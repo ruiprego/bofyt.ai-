@@ -12,7 +12,6 @@ import { activeGoal, goalStore, useGoals } from '@/lib/bofyt/goals'
 import { detectGoalIntent } from '@/lib/bofyt/intent'
 import { ProductSearchClientError, searchProducts } from '@/lib/products/client'
 import type { ProductSearchFeedback } from '@/lib/products/types'
-import { cn } from '@/lib/utils'
 import type { CoreMode } from './ai-core'
 import { BottomNav, type NavTarget } from './bottom-nav'
 import { BrandHeader } from './brand-header'
@@ -31,14 +30,9 @@ import { Toast, type ToastMessage } from './toast'
 type GoalOutcome = GoalResultData
 type IntroStage = 'checking' | 'awakening' | 'discovery' | 'complete'
 
-const INTRO_STORAGE_KEY = 'bofyt_intro_completed'
 const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches
 
-interface BofytExperienceProps {
-  isPremium?: boolean
-}
-
-export function BofytExperience({ isPremium = false }: BofytExperienceProps = {}) {
+export function BofytExperience() {
   const inputRef = useRef<HTMLInputElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -68,24 +62,11 @@ export function BofytExperience({ isPremium = false }: BofytExperienceProps = {}
   const goals = useGoals()
 
   useEffect(() => {
-    let completed = false
-    try {
-      completed = window.localStorage.getItem(INTRO_STORAGE_KEY) === '1'
-    } catch {
-      completed = false
-    }
-    setIntroStage(completed ? 'complete' : 'awakening')
+    setIntroStage('awakening')
   }, [])
 
   const pulse = () => setPulseKey((key) => key + 1)
-  const completeIntro = useCallback(() => {
-    try {
-      window.localStorage.setItem(INTRO_STORAGE_KEY, '1')
-    } catch {
-      // The experience should remain usable when browser storage is unavailable.
-    }
-    setIntroStage('complete')
-  }, [])
+  const completeIntro = useCallback(() => setIntroStage('complete'), [])
   const completeAwakening = useCallback(() => setIntroStage('discovery'), [])
 
   useEffect(() => {
@@ -281,12 +262,6 @@ export function BofytExperience({ isPremium = false }: BofytExperienceProps = {}
     }, 1400)
   }
 
-  const startFromIntroGoal = (value: string) => {
-    completeIntro()
-    setGoal(value)
-    submitGoal(value)
-  }
-
   function runProductSearch(query: string) {
     const trimmed = query.trim()
     if (!trimmed || searching) return
@@ -452,11 +427,8 @@ export function BofytExperience({ isPremium = false }: BofytExperienceProps = {}
 
   return (
     <div className="relative min-h-dvh overflow-x-clip bg-void text-white">
-      <div
-        aria-hidden={introStage !== 'complete'}
-        inert={introStage !== 'complete'}
-        className={cn('relative', introStage !== 'complete' && 'pointer-events-none select-none')}
-      >
+      {introStage === 'complete' && (
+        <div className="relative">
         <AmbientBackdrop />
         <BrandHeader progressCount={goals.length} onOpenSheet={setSheet} />
 
@@ -556,19 +528,11 @@ export function BofytExperience({ isPremium = false }: BofytExperienceProps = {}
         }}
         onOpenGoal={(entry) => resumeGoal(entry)}
       />
-        <Toast message={toast} />
-      </div>
-      {(introStage === 'checking' || introStage === 'awakening') && (
-        <CoreAwakening onAwakened={completeAwakening} canSkip={isPremium} onSkip={completeIntro} />
+          <Toast message={toast} />
+        </div>
       )}
-      {introStage === 'discovery' && (
-        <CapabilityDiscovery
-          onSelectCapability={startFromIntroCapability}
-          onSubmitGoal={startFromIntroGoal}
-          canSkip={isPremium}
-          onSkip={completeIntro}
-        />
-      )}
+      {(introStage === 'checking' || introStage === 'awakening') && <CoreAwakening onContinue={completeAwakening} />}
+      {introStage === 'discovery' && <CapabilityDiscovery onSelectCapability={startFromIntroCapability} />}
     </div>
   )
 }

@@ -17,9 +17,18 @@ interface CategoryCarouselProps {
   layout?: 'flow' | 'core'
   mode?: 'normal' | 'discovery'
   showIntro?: boolean
+  interactive?: boolean
 }
 
-export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'flow', mode = 'normal', showIntro = true }: CategoryCarouselProps) {
+export function CategoryCarousel({
+  selected,
+  highlighted,
+  onSelect,
+  layout = 'flow',
+  mode = 'normal',
+  showIntro = true,
+  interactive = true,
+}: CategoryCarouselProps) {
   const coreLayout = layout === 'core'
   const discoveryLayout = coreLayout && mode === 'discovery'
   const capabilities = coreLayout
@@ -95,16 +104,19 @@ export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'fl
             <motion.li
               key={capability.id}
               layout={coreLayout}
-              initial={false}
+              initial={discoveryLayout ? { opacity: 0, y: 28, scale: 0.94 } : false}
               animate={
-                shouldFade
-                  ? { opacity: 0, scale: 0.84, x: slideDirection * 36 }
-                  : { opacity: 1, scale: 1, x: 0 }
+                discoveryLayout
+                  ? { opacity: 1, scale: 1, x: 0, y: 0 }
+                  : shouldFade
+                    ? { opacity: 0, scale: 0.84, x: slideDirection * 36 }
+                    : { opacity: 1, scale: 1, x: 0 }
               }
               transition={{
                 layout: { duration: 0.56, ease: FOCUS_EASE },
-                opacity: { duration: 0.34, ease: FOCUS_EASE },
-                scale: { duration: 0.48, ease: FOCUS_EASE },
+                opacity: { duration: discoveryLayout ? 0.5 : 0.34, ease: FOCUS_EASE, delay: discoveryLayout ? index * 0.12 : 0 },
+                scale: { duration: discoveryLayout ? 0.6 : 0.48, ease: FOCUS_EASE, delay: discoveryLayout ? index * 0.12 : 0 },
+                y: { duration: 0.6, ease: FOCUS_EASE, delay: discoveryLayout ? index * 0.12 : 0 },
                 x: { duration: 0.48, ease: FOCUS_EASE },
               }}
               style={
@@ -131,7 +143,10 @@ export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'fl
                 dimmed={Boolean(selected) && selected !== capability.id && !isFocused}
                 expanded={isFocused}
                 disableHover={coreLayout}
-                onSelect={() => toggleFocus(capability.id, expandable)}
+                disabled={!interactive}
+                onSelect={() => {
+                  if (interactive) toggleFocus(capability.id, expandable)
+                }}
               />
             </motion.li>
           )
