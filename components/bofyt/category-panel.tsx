@@ -17,6 +17,7 @@ interface CategoryPanelProps {
   displayDescription?: string
   /** Visual shade for panels further from the core: 0 is nearest. */
   shade?: number
+  compact?: boolean
   onSelect: () => void
   className?: string
 }
@@ -33,6 +34,7 @@ export function CategoryPanel({
   displayTitle,
   displayDescription,
   shade = 0,
+  compact = false,
   onSelect,
   className,
 }: CategoryPanelProps) {
@@ -85,7 +87,7 @@ export function CategoryPanel({
         className={cn('absolute inset-0 z-10 bg-void transition-opacity duration-500', active ? 'opacity-0' : SHADE[shade])}
       />
 
-      <span className="flex flex-col gap-2 p-3 xl:p-3.5">
+      <span className={cn('flex flex-col gap-2 p-3 xl:p-3.5', compact && 'lg:gap-1 lg:p-2.5')}>
         <span className={cn('text-[10px] tabular-nums tracking-[0.2em] transition-colors', active ? 'text-gold-light' : 'text-white/60')}>
           {panelIndex}
         </span>
@@ -98,16 +100,19 @@ export function CategoryPanel({
           {panelTitle}
         </span>
         <span aria-hidden className={cn('h-px w-3 transition-colors', active ? 'bg-gold-light' : 'bg-white/40')} />
-        <span className="max-w-[18rem] text-[11px] leading-relaxed text-white/65">{panelDescription}</span>
+        <span className={cn('max-w-[18rem] text-[11px] leading-relaxed text-white/65', compact && 'lg:max-h-8 lg:overflow-hidden lg:text-[10px] lg:leading-tight')}>
+          {panelDescription}
+        </span>
       </span>
 
-      <span className="mt-auto flex flex-col items-start gap-3 p-3 xl:p-3.5">
-        <span className="flex flex-col gap-1">
+      <span className={cn('mt-auto flex flex-col items-start gap-3 p-3 xl:p-3.5', compact && 'lg:gap-1.5 lg:p-2.5')}>
+        <span className={cn('flex flex-col gap-1', compact && 'lg:gap-0')}>
           {capabilities.map((name) => (
             <span
               key={name}
               className={cn(
                 'text-[9px] uppercase leading-snug tracking-[0.16em] transition-colors duration-500',
+                compact && 'lg:text-[8px] lg:tracking-[0.12em]',
                 active ? 'text-gold-light' : 'text-white/70',
               )}
             >
@@ -119,6 +124,7 @@ export function CategoryPanel({
           aria-hidden
           className={cn(
             'grid size-7 place-items-center self-center rounded-full border transition-[transform,background-color,border-color,color] duration-500',
+            compact && 'lg:size-6',
             active ? 'rotate-45 border-gold-light bg-gold text-void' : 'border-white/45 text-white group-hover:border-gold/70',
           )}
         >

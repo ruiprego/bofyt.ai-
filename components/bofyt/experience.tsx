@@ -403,6 +403,14 @@ export function BofytExperience() {
           preview={preview}
           system={null}
           explore={<CategoryCarousel selected={selectedCapability} highlighted={recommendedCapabilities} onSelect={pickFromGrid} />}
+          centeredExplore={
+            <CategoryCarousel
+              layout="core"
+              selected={selectedCapability}
+              highlighted={recommendedCapabilities}
+              onSelect={pickFromGrid}
+            />
+          }
           returning={
             returning ? <ContinueGoal entry={returning} onContinue={() => resumeGoal(returning)} /> : null
           }

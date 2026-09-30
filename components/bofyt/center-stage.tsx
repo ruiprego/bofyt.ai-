@@ -3,6 +3,7 @@
 import type { ReactNode, RefObject } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { categoryById, type CategoryId } from '@/lib/bofyt/categories'
+import { cn } from '@/lib/utils'
 import type { ProductSearchFeedback } from '@/lib/products/types'
 import { AiCore, type CoreMode } from './ai-core'
 import { CoreReply } from './core-reply'
@@ -30,6 +31,7 @@ interface CenterStageProps {
   preview: CategoryId | null
   system: ReactNode
   explore: ReactNode
+  centeredExplore: ReactNode
   returning?: ReactNode
   coreMode: CoreMode
   pulseKey: number
@@ -59,6 +61,7 @@ export function CenterStage({
   preview,
   system,
   explore,
+  centeredExplore,
   returning,
   coreMode,
   pulseKey,
@@ -88,9 +91,17 @@ export function CenterStage({
     <div className="flex w-full flex-col items-center text-center">
       <section
         aria-label={isSearch ? 'Product discovery' : 'BOFYT goal planner'}
-        className="flex w-full flex-col items-center gap-5 lg:gap-6"
+        className={cn(
+          'relative flex w-full flex-col items-center gap-5 lg:gap-6',
+          !isSearch && !result && 'lg:min-h-[42rem]',
+        )}
       >
-        <div className="relative flex w-full items-center justify-center lg:min-h-[min(54vh,520px)]">
+        <div
+          className={cn(
+            'relative flex w-full items-center justify-center',
+            isSearch ? 'lg:min-h-[min(54vh,520px)]' : 'lg:min-h-[min(40vh,300px)]',
+          )}
+        >
           {system}
           {isSearch ? (
             <ProductSearch
@@ -113,7 +124,7 @@ export function CenterStage({
               typingTick={goal.length}
               pulseKey={pulseKey}
               onActivate={onActivateCore}
-              className="size-[min(52vw,220px)] lg:size-[min(32vh,300px)]"
+              className="size-[min(52vw,220px)] lg:size-[min(28vw,280px)]"
             />
           )}
         </div>
@@ -160,9 +171,9 @@ export function CenterStage({
           {!result && (
             <section
               aria-label="Independent capability entry points"
-              className="w-full border-t border-white/10 pt-6 lg:pt-8"
+              className="w-full border-t border-white/10 pt-6 lg:absolute lg:inset-0 lg:z-0 lg:border-t-0 lg:pt-0"
             >
-              {explore}
+              {centeredExplore}
             </section>
           )}
 
