@@ -109,6 +109,10 @@ export function BofytExperience() {
     if (result) setResult(null)
 
     const intent = detectGoalIntent(value)
+    if (intent.kind === 'shopping') {
+      setPreview(null)
+      return
+    }
     if (selected === 'search') setSelected(null)
     if (intent.kind !== 'category') {
       setPreview(null)
@@ -137,6 +141,20 @@ export function BofytExperience() {
     }
 
     const intent = detectGoalIntent(trimmed)
+    if (intent.kind === 'shopping') {
+      setActivating(false)
+      setResult(null)
+      setGoal('')
+      setPreview(null)
+      setSelected('search')
+      setCoreOpen(false)
+      setSearchQuery(trimmed)
+      setSearchFeedback(null)
+      runProductSearch(trimmed)
+      pulse()
+      return
+    }
+
     const preferredArea = intent.categoryId ?? (intent.kind === 'category' && selected !== 'search' ? selected : null)
     const areas = detectCategories(trimmed, preferredArea).filter((id) => id !== 'search')
     const goalAreas: CategoryId[] = areas.length ? areas : ['personal']
@@ -153,8 +171,8 @@ export function BofytExperience() {
     }, 1400)
   }
 
-  const submitProductSearch = () => {
-    const trimmed = searchQuery.trim()
+  function runProductSearch(query: string) {
+    const trimmed = query.trim()
     if (!trimmed || searching) return
 
     searchAbort.current?.abort()
@@ -192,6 +210,8 @@ export function BofytExperience() {
         pulse()
       })
   }
+
+  const submitProductSearch = () => runProductSearch(searchQuery)
 
   const reset = () => {
     if (activationTimer.current) clearTimeout(activationTimer.current)

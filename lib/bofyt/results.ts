@@ -213,6 +213,10 @@ export function buildResult(
     }
   }
 
+  if (intent.kind === 'shopping') {
+    return buildResult(goal, areas, [])
+  }
+
   if (intent.kind !== 'category') {
     return buildIntentResult(goal, intent.kind, areas)
   }
@@ -254,7 +258,7 @@ export function buildResult(
   }
 }
 
-type ActionIntentKind = Exclude<GoalIntentKind, 'category'>
+type ActionIntentKind = Exclude<GoalIntentKind, 'category' | 'shopping'>
 
 type IntentOptionSeed = {
   name: string
