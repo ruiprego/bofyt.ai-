@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import { categoryById } from '@/lib/bofyt/categories'
 import { CAPABILITY_COLUMNS, type CapabilityId } from '@/lib/bofyt/capabilities'
@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { CategoryPanel } from './category-panel'
 
 const PRODUCTION_ORDER: CapabilityId[] = ['grow', 'reach', 'build', 'optimize', 'automate', 'discover']
-const HOVER_EASE = [0.22, 1, 0.36, 1] as const
+const FOCUS_EASE = [0.22, 1, 0.36, 1] as const
 
 interface CategoryCarouselProps {
   selected: CapabilityId | null
@@ -25,9 +25,30 @@ export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'fl
   const capabilities = coreLayout
     ? [...CAPABILITY_COLUMNS].sort((a, b) => PRODUCTION_ORDER.indexOf(a.id) - PRODUCTION_ORDER.indexOf(b.id))
     : CAPABILITY_COLUMNS
-  const [hoveredCapability, setHoveredCapability] = useState<CapabilityId | null>(null)
-  const hoveredIndex = hoveredCapability ? capabilities.findIndex(({ id }) => id === hoveredCapability) : -1
-  const desktopHovering = coreLayout && hoveredIndex >= 0
+  const [focusedCapability, setFocusedCapability] = useState<CapabilityId | null>(null)
+  const focusedIndex = focusedCapability ? capabilities.findIndex(({ id }) => id === focusedCapability) : -1
+  const leftFocusActive = coreLayout && focusedIndex >= 0 && focusedIndex < 3
+
+  useEffect(() => {
+    if (!coreLayout) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setFocusedCapability(null)
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [coreLayout])
+
+  const toggleFocus = (id: CapabilityId, expandable: boolean) => {
+    if (!expandable) {
+      setFocusedCapability(null)
+      onSelect(id)
+      return
+    }
+
+    setFocusedCapability((current) => (current === id ? null : id))
+  }
 
   return (
     <section
@@ -58,17 +79,17 @@ export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'fl
           !coreLayout && 'lg:-mx-8 lg:px-8',
           coreLayout &&
             'min-[960px]:absolute min-[960px]:left-1/2 min-[960px]:right-auto min-[960px]:top-1/2 min-[960px]:z-10 min-[960px]:mx-0 min-[960px]:grid min-[960px]:h-[min(68vh,42rem)] min-[960px]:w-[min(calc(100vw-2rem),112rem)] min-[960px]:-translate-x-1/2 min-[960px]:-translate-y-1/2 min-[960px]:grid-cols-[repeat(3,minmax(0,1fr))_minmax(clamp(20rem,calc(100vw_-_38rem),36rem),3.5fr)_repeat(3,minmax(0,1fr))] min-[960px]:gap-[clamp(0.5rem,0.65vw,0.75rem)] min-[960px]:overflow-visible min-[960px]:px-0 min-[960px]:pb-0',
-          desktopHovering && 'min-[960px]:!z-30',
           discoveryLayout && 'min-[960px]:!h-[min(78vh,48rem)] min-[960px]:!w-[min(calc(100vw-2rem),124rem)]',
           )}
         >
         {capabilities.map((capability, index) => {
           const category = categoryById[capability.categoryId]
           const mapped = highlighted.includes(capability.id)
-          const isFocused = hoveredCapability === capability.id
-          const shouldFade = desktopHovering && !isFocused
+          const expandable = coreLayout && index < 3
+          const isFocused = focusedCapability === capability.id
+          const shouldFade = leftFocusActive && index < 3 && !isFocused
           const baseGridColumn = index < 3 ? index + 1 : index + 2
-          const slideDirection = index < hoveredIndex ? -1 : 1
+          const slideDirection = index < focusedIndex ? -1 : 1
 
           return (
             <motion.li
@@ -81,25 +102,15 @@ export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'fl
                   : { opacity: 1, scale: 1, x: 0 }
               }
               transition={{
-                layout: { duration: 0.56, ease: HOVER_EASE },
-                opacity: { duration: 0.34, ease: HOVER_EASE },
-                scale: { duration: 0.48, ease: HOVER_EASE },
-                x: { duration: 0.48, ease: HOVER_EASE },
-              }}
-              onPointerEnter={(event) => {
-                if (coreLayout && event.pointerType === 'mouse' && window.matchMedia('(min-width: 960px)').matches) {
-                  setHoveredCapability(capability.id)
-                }
-              }}
-              onPointerLeave={(event) => {
-                if (coreLayout && event.pointerType === 'mouse' && window.matchMedia('(min-width: 960px)').matches) {
-                  setHoveredCapability(null)
-                }
+                layout: { duration: 0.56, ease: FOCUS_EASE },
+                opacity: { duration: 0.34, ease: FOCUS_EASE },
+                scale: { duration: 0.48, ease: FOCUS_EASE },
+                x: { duration: 0.48, ease: FOCUS_EASE },
               }}
               style={
                 coreLayout
                   ? {
-                      gridColumn: isFocused && desktopHovering ? '1 / -1' : String(baseGridColumn),
+                      gridColumn: isFocused ? '1 / 4' : String(baseGridColumn),
                       gridRow: '1',
                     }
                   : undefined
@@ -107,18 +118,19 @@ export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'fl
               className={cn(
                 'h-[25rem] w-[min(76vw,18rem)] shrink-0 snap-center sm:h-[28rem] sm:w-52',
                 coreLayout ? 'min-[960px]:!h-full min-[960px]:!w-auto' : 'lg:h-[min(60vh,35rem)] lg:w-[clamp(10.5rem,14vw,14rem)]',
-                shouldFade && 'min-[960px]:pointer-events-none',
-                desktopHovering && isFocused && 'min-[960px]:z-30',
+                isFocused && expandable && 'max-[959px]:w-[min(86vw,24rem)]',
+                shouldFade && 'pointer-events-none',
+                leftFocusActive && isFocused && 'z-30',
               )}
             >
               <CategoryPanel
                 category={category}
                 capability={capability}
-                active={selected === capability.id}
+                active={selected === capability.id || isFocused}
                 mapped={mapped}
-                dimmed={Boolean(selected) && selected !== capability.id}
-                expanded={discoveryLayout && isFocused}
-                onSelect={() => onSelect(capability.id)}
+                dimmed={Boolean(selected) && selected !== capability.id && !isFocused}
+                expanded={isFocused}
+                onSelect={() => toggleFocus(capability.id, expandable)}
               />
             </motion.li>
           )
