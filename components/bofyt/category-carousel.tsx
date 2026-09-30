@@ -1,27 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import { motion } from 'motion/react'
 import { categoryById } from '@/lib/bofyt/categories'
 import { CAPABILITY_COLUMNS, type CapabilityId } from '@/lib/bofyt/capabilities'
 import { cn } from '@/lib/utils'
 import { CategoryPanel } from './category-panel'
 
 const PRODUCTION_ORDER: CapabilityId[] = ['grow', 'reach', 'build', 'optimize', 'automate', 'discover']
-const HOVERED_TRACK = 2.3
-const HOVERED_SIDE_TOTAL = 3.7
-const COMPRESSED_TRACK = (HOVERED_SIDE_TOTAL - HOVERED_TRACK) / 2
-
-function createHoveredGridTemplate(capabilities: Array<{ id: CapabilityId }>, hovered: CapabilityId) {
-  const hoveredIndex = capabilities.findIndex(({ id }) => id === hovered)
-  const hoveredOnLeft = hoveredIndex < 3
-  const tracks = capabilities.map(({ id }, index) => {
-    const sameSide = (index < 3) === hoveredOnLeft
-    const weight = id === hovered ? HOVERED_TRACK : sameSide ? COMPRESSED_TRACK : 1
-    return `minmax(0, ${weight}fr)`
-  })
-
-  return `${tracks.slice(0, 3).join(' ')} minmax(clamp(20rem,calc(100vw - 38rem),36rem),3.5fr) ${tracks.slice(3).join(' ')}`
-}
+const HOVER_EASE = [0.22, 1, 0.36, 1] as const
 
 interface CategoryCarouselProps {
   selected: CapabilityId | null
@@ -39,7 +26,8 @@ export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'fl
     ? [...CAPABILITY_COLUMNS].sort((a, b) => PRODUCTION_ORDER.indexOf(a.id) - PRODUCTION_ORDER.indexOf(b.id))
     : CAPABILITY_COLUMNS
   const [hoveredCapability, setHoveredCapability] = useState<CapabilityId | null>(null)
-  const hoveredGrid = coreLayout && hoveredCapability ? createHoveredGridTemplate(capabilities, hoveredCapability) : undefined
+  const hoveredIndex = hoveredCapability ? capabilities.findIndex(({ id }) => id === hoveredCapability) : -1
+  const desktopHovering = coreLayout && hoveredIndex >= 0
 
   return (
     <section
@@ -69,27 +57,58 @@ export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'fl
           '-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 [scrollbar-width:none] sm:gap-4 [&::-webkit-scrollbar]:hidden',
           !coreLayout && 'lg:-mx-8 lg:px-8',
           coreLayout &&
-            'min-[960px]:absolute min-[960px]:left-1/2 min-[960px]:right-auto min-[960px]:top-1/2 min-[960px]:z-10 min-[960px]:mx-0 min-[960px]:grid min-[960px]:h-[min(68vh,42rem)] min-[960px]:w-[min(calc(100vw-2rem),112rem)] min-[960px]:-translate-x-1/2 min-[960px]:-translate-y-1/2 min-[960px]:grid-cols-[repeat(3,minmax(0,1fr))_minmax(clamp(20rem,calc(100vw_-_38rem),36rem),3.5fr)_repeat(3,minmax(0,1fr))] min-[960px]:gap-[clamp(0.5rem,0.65vw,0.75rem)] min-[960px]:overflow-visible min-[960px]:px-0 min-[960px]:pb-0 min-[960px]:transition-[grid-template-columns] min-[960px]:duration-500 min-[960px]:ease-[cubic-bezier(0.22,1,0.36,1)]',
+            'min-[960px]:absolute min-[960px]:left-1/2 min-[960px]:right-auto min-[960px]:top-1/2 min-[960px]:z-10 min-[960px]:mx-0 min-[960px]:grid min-[960px]:h-[min(68vh,42rem)] min-[960px]:w-[min(calc(100vw-2rem),112rem)] min-[960px]:-translate-x-1/2 min-[960px]:-translate-y-1/2 min-[960px]:grid-cols-[repeat(3,minmax(0,1fr))_minmax(clamp(20rem,calc(100vw_-_38rem),36rem),3.5fr)_repeat(3,minmax(0,1fr))] min-[960px]:gap-[clamp(0.5rem,0.65vw,0.75rem)] min-[960px]:overflow-visible min-[960px]:px-0 min-[960px]:pb-0',
+          desktopHovering && 'min-[960px]:!z-30',
           discoveryLayout && 'min-[960px]:!h-[min(78vh,48rem)] min-[960px]:!w-[min(calc(100vw-2rem),124rem)]',
           )}
-          style={hoveredGrid ? { gridTemplateColumns: hoveredGrid } : undefined}
         >
         {capabilities.map((capability, index) => {
           const category = categoryById[capability.categoryId]
           const mapped = highlighted.includes(capability.id)
+          const isFocused = hoveredCapability === capability.id
+          const shouldFade = desktopHovering && !isFocused
+          const baseGridColumn = index < 3 ? index + 1 : index + 2
+          const slideDirection = index < hoveredIndex ? -1 : 1
+
           return (
-            <li
+            <motion.li
               key={capability.id}
+              layout={coreLayout}
+              initial={false}
+              animate={
+                shouldFade
+                  ? { opacity: 0, scale: 0.84, x: slideDirection * 36 }
+                  : { opacity: 1, scale: 1, x: 0 }
+              }
+              transition={{
+                layout: { duration: 0.56, ease: HOVER_EASE },
+                opacity: { duration: 0.34, ease: HOVER_EASE },
+                scale: { duration: 0.48, ease: HOVER_EASE },
+                x: { duration: 0.48, ease: HOVER_EASE },
+              }}
               onPointerEnter={(event) => {
-                if (coreLayout && event.pointerType === 'mouse') setHoveredCapability(capability.id)
+                if (coreLayout && event.pointerType === 'mouse' && window.matchMedia('(min-width: 960px)').matches) {
+                  setHoveredCapability(capability.id)
+                }
               }}
               onPointerLeave={(event) => {
-                if (coreLayout && event.pointerType === 'mouse') setHoveredCapability(null)
+                if (coreLayout && event.pointerType === 'mouse' && window.matchMedia('(min-width: 960px)').matches) {
+                  setHoveredCapability(null)
+                }
               }}
+              style={
+                coreLayout
+                  ? {
+                      gridColumn: isFocused && desktopHovering ? '1 / -1' : String(baseGridColumn),
+                      gridRow: '1',
+                    }
+                  : undefined
+              }
               className={cn(
                 'h-[25rem] w-[min(76vw,18rem)] shrink-0 snap-center sm:h-[28rem] sm:w-52',
                 coreLayout ? 'min-[960px]:!h-full min-[960px]:!w-auto' : 'lg:h-[min(60vh,35rem)] lg:w-[clamp(10.5rem,14vw,14rem)]',
-                coreLayout && index === 3 && 'min-[960px]:col-start-5',
+                shouldFade && 'min-[960px]:pointer-events-none',
+                desktopHovering && isFocused && 'min-[960px]:z-30',
               )}
             >
               <CategoryPanel
@@ -98,10 +117,10 @@ export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'fl
                 active={selected === capability.id}
                 mapped={mapped}
                 dimmed={Boolean(selected) && selected !== capability.id}
-                expanded={discoveryLayout && hoveredCapability === capability.id}
+                expanded={discoveryLayout && isFocused}
                 onSelect={() => onSelect(capability.id)}
               />
-            </li>
+            </motion.li>
           )
         })}
       </ul>
