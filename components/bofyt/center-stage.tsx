@@ -171,7 +171,7 @@ export function CenterStage({
           {!result && (
             <section
               aria-label="Independent capability entry points"
-              className="w-full border-t border-white/10 pt-6 xl:absolute xl:inset-0 xl:z-0 xl:border-t-0 xl:pt-0"
+              className="w-full border-t border-white/10 pt-6 min-[960px]:absolute min-[960px]:inset-0 min-[960px]:z-0 min-[960px]:border-t-0 min-[960px]:pt-0"
             >
               {centeredExplore}
             </section>
