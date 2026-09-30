@@ -28,7 +28,7 @@ import { PlanSheet } from './plan-sheet'
 import { Toast, type ToastMessage } from './toast'
 
 type GoalOutcome = GoalResultData
-type IntroStage = 'checking' | 'awakening' | 'discovery' | 'complete'
+type IntroStage = 'awakening' | 'discovery' | 'complete'
 
 const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches
 
@@ -52,7 +52,7 @@ export function BofytExperience() {
   const [sheet, setSheet] = useState<SheetKind | null>(null)
   const [navActive, setNavActive] = useState<NavTarget>('home')
   const [coreOpen, setCoreOpen] = useState(false)
-  const [introStage, setIntroStage] = useState<IntroStage>('checking')
+  const [introStage, setIntroStage] = useState<IntroStage>('awakening')
   const [planSource, setPlanSource] = useState<GoalOutcome | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searching, setSearching] = useState(false)
@@ -60,10 +60,6 @@ export function BofytExperience() {
   const [searchFeedback, setSearchFeedback] = useState<ProductSearchFeedback | null>(null)
   const [toast, setToast] = useState<ToastMessage | null>(null)
   const goals = useGoals()
-
-  useEffect(() => {
-    setIntroStage('awakening')
-  }, [])
 
   const pulse = () => setPulseKey((key) => key + 1)
   const completeIntro = useCallback(() => setIntroStage('complete'), [])
@@ -531,7 +527,7 @@ export function BofytExperience() {
           <Toast message={toast} />
         </div>
       )}
-      {(introStage === 'checking' || introStage === 'awakening') && <CoreAwakening onContinue={completeAwakening} />}
+      {introStage === 'awakening' && <CoreAwakening onContinue={completeAwakening} />}
       {introStage === 'discovery' && <CapabilityDiscovery onSelectCapability={startFromIntroCapability} />}
     </div>
   )

@@ -5,7 +5,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import type { CapabilityId } from '@/lib/bofyt/capabilities'
 import { CategoryCarousel } from './category-carousel'
 
-type DiscoveryPhase = 'revealing' | 'ready' | 'leaving'
+type DiscoveryPhase = 'ready' | 'leaving'
 
 interface CapabilityDiscoveryProps {
   onSelectCapability: (id: CapabilityId) => void
@@ -14,13 +14,8 @@ interface CapabilityDiscoveryProps {
 export function CapabilityDiscovery({ onSelectCapability }: CapabilityDiscoveryProps) {
   const reduceMotion = useReducedMotion() === true
   const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [phase, setPhase] = useState<DiscoveryPhase>('revealing')
+  const [phase, setPhase] = useState<DiscoveryPhase>('ready')
   const [selectedCapability, setSelectedCapability] = useState<CapabilityId | null>(null)
-
-  useEffect(() => {
-    const revealTimer = window.setTimeout(() => setPhase('ready'), reduceMotion ? 0 : 1700)
-    return () => window.clearTimeout(revealTimer)
-  }, [reduceMotion])
 
   useEffect(
     () => () => {

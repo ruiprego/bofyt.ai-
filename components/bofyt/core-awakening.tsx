@@ -5,7 +5,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import { cn } from '@/lib/utils'
 import { AiCore } from './ai-core'
 
-type AwakeningPhase = 'checking' | 'ready' | 'leaving'
+type AwakeningPhase = 'ready' | 'leaving'
 
 interface CoreAwakeningProps {
   onContinue: () => void
@@ -14,13 +14,8 @@ interface CoreAwakeningProps {
 export function CoreAwakening({ onContinue }: CoreAwakeningProps) {
   const reduceMotion = useReducedMotion() === true
   const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [phase, setPhase] = useState<AwakeningPhase>('checking')
+  const [phase, setPhase] = useState<AwakeningPhase>('ready')
   const [pulseKey, setPulseKey] = useState(0)
-
-  useEffect(() => {
-    const openingTimer = window.setTimeout(() => setPhase('ready'), reduceMotion ? 0 : 1500)
-    return () => window.clearTimeout(openingTimer)
-  }, [reduceMotion])
 
   useEffect(
     () => () => {
@@ -37,7 +32,6 @@ export function CoreAwakening({ onContinue }: CoreAwakeningProps) {
     transitionTimer.current = setTimeout(onContinue, reduceMotion ? 0 : 520)
   }
 
-  const checking = phase === 'checking'
   const leaving = phase === 'leaving'
   const motionDuration = reduceMotion ? 0.12 : 1.2
 
@@ -61,28 +55,16 @@ export function CoreAwakening({ onContinue }: CoreAwakeningProps) {
         aria-hidden
         className="absolute left-1/2 top-1/2 size-[min(76vw,24rem)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-gold/35 bg-[radial-gradient(circle,rgba(246,221,161,0.18),rgba(226,184,101,0.06)_34%,transparent_70%)] shadow-[0_0_90px_-18px_rgba(226,184,101,0.85)]"
         initial={{ scale: 0.7, opacity: 0.2 }}
-        animate={
-          leaving
-            ? { scale: [1.2, 8, 28], opacity: [0.85, 0.55, 0] }
-            : checking
-              ? { scale: [0.7, 1.05, 1], opacity: [0.2, 0.8, 0.45] }
-              : { scale: 1, opacity: 0.45 }
-        }
-        transition={{ duration: leaving ? motionDuration : checking ? 1.5 : 0.2, ease: [0.22, 1, 0.36, 1] }}
+        animate={leaving ? { scale: [1.2, 8, 28], opacity: [0.85, 0.55, 0] } : { scale: 1, opacity: 0.45 }}
+        transition={{ duration: leaving ? motionDuration : 0.2, ease: [0.22, 1, 0.36, 1] }}
       />
 
       <motion.div
         aria-hidden
         className="absolute left-1/2 top-1/2 size-[min(48vw,15rem)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-gold-light/35"
         initial={{ scale: 0.8, opacity: 0 }}
-        animate={
-          leaving
-            ? { scale: [1, 14], opacity: [0.8, 0] }
-            : checking
-              ? { scale: [0.8, 1.2, 1], opacity: [0, 0.65, 0.18] }
-              : { scale: 1, opacity: 0.18 }
-        }
-        transition={{ duration: leaving ? motionDuration : checking ? 1.3 : 0.2, ease: 'easeOut' }}
+        animate={leaving ? { scale: [1, 14], opacity: [0.8, 0] } : { scale: 1, opacity: 0.18 }}
+        transition={{ duration: leaving ? motionDuration : 0.2, ease: 'easeOut' }}
       />
 
       <motion.div
@@ -92,11 +74,11 @@ export function CoreAwakening({ onContinue }: CoreAwakeningProps) {
       >
         <AiCore
           mode={leaving ? 'activating' : 'idle'}
-          energy={leaving ? 1 : checking ? 0.45 : 0.2}
+          energy={leaving ? 1 : 0.2}
           typingTick={0}
           pulseKey={pulseKey}
-          particles={!checking}
-          ariaLabel={checking ? 'BOFYT Core opening animation' : 'Continue to BOFYT experiences'}
+          particles
+          ariaLabel={leaving ? 'Opening BOFYT experiences' : 'Continue to BOFYT experiences'}
           disabled={phase !== 'ready'}
           onActivate={continueToDiscovery}
           className="size-[min(58vw,19rem)] sm:size-[min(44vw,23rem)]"
@@ -105,10 +87,10 @@ export function CoreAwakening({ onContinue }: CoreAwakeningProps) {
         <motion.p
           aria-live="polite"
           className="text-center text-[10px] uppercase tracking-[0.35em] text-gold-light/65"
-          animate={{ opacity: leaving ? 0 : checking ? 0 : 1, y: leaving ? 8 : 0 }}
+          animate={{ opacity: leaving ? 0 : 1, y: leaving ? 8 : 0 }}
           transition={{ duration: 0.35 }}
         >
-          {leaving ? 'Opening experiences' : checking ? 'BOFYT Core awakening' : 'Click the Core to continue'}
+          {leaving ? 'Opening experiences' : 'Click the Core to continue'}
         </motion.p>
       </motion.div>
     </motion.div>
