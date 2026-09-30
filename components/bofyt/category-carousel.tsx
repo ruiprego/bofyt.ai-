@@ -43,7 +43,7 @@ export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'fl
           '-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 [scrollbar-width:none] sm:gap-4 [&::-webkit-scrollbar]:hidden',
           !coreLayout && 'lg:-mx-8 lg:px-8',
           coreLayout &&
-            'lg:relative lg:z-10 lg:mx-auto lg:grid lg:h-full lg:w-full lg:max-w-[78rem] lg:grid-cols-[minmax(12rem,16rem)_minmax(12rem,16rem)] lg:grid-rows-[repeat(3,minmax(0,1fr))] lg:justify-between lg:gap-x-6 lg:gap-y-4 lg:overflow-visible lg:px-8 lg:pt-14',
+            'lg:relative lg:z-10 lg:mx-auto lg:grid lg:w-full lg:max-w-[78rem] lg:grid-cols-[minmax(12rem,16rem)_minmax(12rem,16rem)] lg:grid-rows-3 lg:justify-between lg:gap-x-6 lg:gap-y-4 lg:overflow-visible lg:px-8 lg:pt-14',
         )}
       >
         {CAPABILITY_COLUMNS.map((capability) => {
@@ -54,7 +54,7 @@ export function CategoryCarousel({ selected, highlighted, onSelect, layout = 'fl
               key={capability.id}
               className={cn(
                 'h-[25rem] w-[min(76vw,18rem)] shrink-0 snap-center sm:h-[28rem] sm:w-52',
-                coreLayout ? 'lg:h-auto lg:w-full' : 'lg:h-[min(60vh,35rem)] lg:w-[clamp(10.5rem,14vw,14rem)]',
+                coreLayout ? 'lg:h-44 lg:w-full' : 'lg:h-[min(60vh,35rem)] lg:w-[clamp(10.5rem,14vw,14rem)]',
               )}
             >
               <CategoryPanel

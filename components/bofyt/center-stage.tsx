@@ -93,7 +93,7 @@ export function CenterStage({
         aria-label={isSearch ? 'Product discovery' : 'BOFYT goal planner'}
         className={cn(
           'relative flex w-full flex-col items-center gap-5 lg:gap-6',
-          !isSearch && !result && 'lg:min-h-[48rem]',
+          !isSearch && !result && 'lg:min-h-[42rem]',
         )}
       >
         <div
