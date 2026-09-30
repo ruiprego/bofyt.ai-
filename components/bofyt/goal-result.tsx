@@ -177,7 +177,7 @@ export function GoalResult({
       {/* 2. User's goal */}
       <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/50 py-2 pl-4 pr-2">
         <p className="min-w-0 flex-1">
-          <span className="block text-[10px] uppercase tracking-[0.3em] text-white/45">Your goal</span>
+          <span className="block text-[10px] uppercase tracking-[0.3em] text-white/45">{isProduct ? 'Your search' : 'Your goal'}</span>
           <span className="block truncate text-base text-white">{`“${toGoalTitle(goal)}”`}</span>
         </p>
         <button

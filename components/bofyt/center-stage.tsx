@@ -8,7 +8,7 @@ import { AiCore, type CoreMode } from './ai-core'
 import { CoreReply } from './core-reply'
 import { GoalInput } from './goal-input'
 import { GoalResult, type GoalResultData, type GoalResultHandlers } from './goal-result'
-import { ProductSearchStatus } from './product-search-status'
+import { ProductSearch } from './product-search'
 import { GoalThinking } from './goal-thinking'
 
 export const PLACEHOLDERS: Record<CategoryId, string> = {
@@ -35,13 +35,20 @@ interface CenterStageProps {
   pulseKey: number
   result: GoalResultData | null
   resultHandlers: GoalResultHandlers
-  productFeedback: ProductSearchFeedback | null
+  searchInputRef: RefObject<HTMLInputElement | null>
+  searchQuery: string
+  searchBusy: boolean
+  searchResult: GoalResultData | null
+  searchResultHandlers: GoalResultHandlers
+  searchFeedback: ProductSearchFeedback | null
   onGoalChange: (value: string) => void
   onSubmit: () => void
   onFocusChange: (focused: boolean) => void
   onActivateCore: () => void
   onPickPrompt: (prompt: string) => void
-  onRetryProductSearch: () => void
+  onSearchChange: (value: string) => void
+  onSearchSubmit: () => void
+  onRetrySearch: () => void
 }
 
 export function CenterStage({
@@ -57,32 +64,57 @@ export function CenterStage({
   pulseKey,
   result,
   resultHandlers,
-  productFeedback,
+  searchInputRef,
+  searchQuery,
+  searchBusy,
+  searchResult,
+  searchResultHandlers,
+  searchFeedback,
   onGoalChange,
   onSubmit,
   onFocusChange,
   onActivateCore,
   onPickPrompt,
-  onRetryProductSearch,
+  onSearchChange,
+  onSearchSubmit,
+  onRetrySearch,
 }: CenterStageProps) {
   const category = selected ? categoryById[selected] : null
   const contextId = selected ?? preview
   const placeholder = contextId ? PLACEHOLDERS[contextId] : 'e.g. I want to grow my Instagram'
+  const isSearch = selected === 'search'
 
   return (
     <div className="flex w-full flex-col items-center gap-5 text-center lg:gap-6">
-      <div className="relative flex w-full items-center justify-center lg:h-[min(54vh,520px)]">
+      <div className="relative flex w-full items-center justify-center lg:min-h-[min(54vh,520px)]">
         {system}
-        <AiCore
-          mode={coreMode}
-          energy={Math.min(goal.length / 80, 1)}
-          typingTick={goal.length}
-          pulseKey={pulseKey}
-          onActivate={onActivateCore}
-          className="size-[min(52vw,220px)] lg:size-[min(32vh,300px)]"
-        />
+        {isSearch ? (
+          <ProductSearch
+            open={isSearch}
+            inputRef={searchInputRef}
+            headingRef={headingRef}
+            query={searchQuery}
+            busy={searchBusy}
+            result={searchResult}
+            resultHandlers={searchResultHandlers}
+            feedback={searchFeedback}
+            onQueryChange={onSearchChange}
+            onSubmit={onSearchSubmit}
+            onRetry={onRetrySearch}
+          />
+        ) : (
+          <AiCore
+            mode={coreMode}
+            energy={Math.min(goal.length / 80, 1)}
+            typingTick={goal.length}
+            pulseKey={pulseKey}
+            onActivate={onActivateCore}
+            className="size-[min(52vw,220px)] lg:size-[min(32vh,300px)]"
+          />
+        )}
       </div>
 
+      {!isSearch && <>
       <h1
         ref={headingRef}
         className="scroll-mt-6 font-display text-[clamp(2.1rem,3.4vw,3.9rem)] font-normal leading-[1.05] tracking-tight text-balance"
@@ -135,8 +167,6 @@ export function CenterStage({
             />
           ) : coreMode === 'activating' ? (
             <GoalThinking key="thinking" />
-          ) : productFeedback ? (
-            <ProductSearchStatus key="product-search-status" message={productFeedback.message} onRetry={onRetryProductSearch} />
           ) : goal.trim() ? (
             <GoalEcho key="echo" goal={goal.trim()} categoryTitle={category?.title} />
           ) : category ? (
@@ -154,8 +184,9 @@ export function CenterStage({
           )}
         </AnimatePresence>
       </div>
+      </>}
 
-      {returning}
+      {!isSearch && returning}
       {explore}
     </div>
   )

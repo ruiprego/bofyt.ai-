@@ -162,7 +162,7 @@ export function buildResult(
 ): GoalResultModel {
   const intent = detectGoalIntent(goal)
 
-  if (intent.kind === 'shopping' || products !== undefined) {
+  if (products !== undefined) {
     const liveProducts = products ?? []
     const items = liveProducts.map((product) => toProductResultItem(product, areas[0]))
     const closestItems = (closestProducts ?? []).map((product) => toProductResultItem(product, areas[0]))
@@ -254,7 +254,7 @@ export function buildResult(
   }
 }
 
-type ActionIntentKind = Exclude<GoalIntentKind, 'shopping' | 'category'>
+type ActionIntentKind = Exclude<GoalIntentKind, 'category'>
 
 type IntentOptionSeed = {
   name: string

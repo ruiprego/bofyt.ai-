@@ -3,15 +3,17 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 
-const STEPS = ['Understanding your goal…', 'Mapping your focus areas…', 'Structuring your path…']
+const GOAL_STEPS = ['Understanding your goal…', 'Mapping your focus areas…', 'Structuring your path…']
+const SEARCH_STEPS = ['Reading your search…', 'Finding live products…', 'Preparing your options…']
 
-export function GoalThinking() {
+export function GoalThinking({ mode = 'goal' }: { mode?: 'goal' | 'search' }) {
+  const steps = mode === 'search' ? SEARCH_STEPS : GOAL_STEPS
   const [step, setStep] = useState(0)
-
   useEffect(() => {
-    const timer = setInterval(() => setStep((current) => Math.min(current + 1, STEPS.length - 1)), 700)
+    setStep(0)
+    const timer = setInterval(() => setStep((current) => Math.min(current + 1, steps.length - 1)), 700)
     return () => clearInterval(timer)
-  }, [])
+  }, [steps])
 
   return (
     <motion.div
@@ -32,12 +34,12 @@ export function GoalThinking() {
             transition={{ duration: 0.3 }}
             className="text-[11px] uppercase tracking-[0.4em] text-gold/90"
           >
-            {STEPS[step]}
+            {steps[step]}
           </motion.p>
         </AnimatePresence>
       </div>
       <div aria-hidden className="flex gap-1.5">
-        {STEPS.map((label, index) => (
+        {steps.map((label, index) => (
           <span
             key={label}
             className={`h-px w-8 transition-colors duration-500 ${index <= step ? 'bg-gold' : 'bg-white/15'}`}

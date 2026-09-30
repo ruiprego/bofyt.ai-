@@ -26,10 +26,11 @@ const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches
 
 export function BofytExperience() {
   const inputRef = useRef<HTMLInputElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const activationTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const productAbort = useRef<AbortController | null>(null)
-  const productRequest = useRef(0)
+  const searchAbort = useRef<AbortController | null>(null)
+  const searchRequest = useRef(0)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [goal, setGoal] = useState('')
@@ -43,7 +44,10 @@ export function BofytExperience() {
   const [navActive, setNavActive] = useState<NavTarget>('home')
   const [coreOpen, setCoreOpen] = useState(false)
   const [planSource, setPlanSource] = useState<GoalOutcome | null>(null)
-  const [productFeedback, setProductFeedback] = useState<ProductSearchFeedback | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searching, setSearching] = useState(false)
+  const [searchResult, setSearchResult] = useState<GoalOutcome | null>(null)
+  const [searchFeedback, setSearchFeedback] = useState<ProductSearchFeedback | null>(null)
   const [toast, setToast] = useState<ToastMessage | null>(null)
   const goals = useGoals()
 
@@ -64,7 +68,7 @@ export function BofytExperience() {
   useEffect(
     () => () => {
       if (activationTimer.current) clearTimeout(activationTimer.current)
-      if (productAbort.current) productAbort.current.abort()
+      if (searchAbort.current) searchAbort.current.abort()
       if (toastTimer.current) clearTimeout(toastTimer.current)
     },
     [],
@@ -87,7 +91,6 @@ export function BofytExperience() {
   const selectCategory = (id: CategoryId) => {
     setSelected(id)
     pulse()
-    if (id === 'search') setTimeout(focusInput, 0)
   }
 
   const toggleCategory = (id: CategoryId) => {
@@ -102,17 +105,11 @@ export function BofytExperience() {
   }
 
   const changeGoal = (value: string) => {
-    if (productAbort.current) {
-      productAbort.current.abort()
-      productAbort.current = null
-      productRequest.current += 1
-      setActivating(false)
-    }
-    setProductFeedback(null)
     setGoal(value)
     if (result) setResult(null)
 
     const intent = detectGoalIntent(value)
+    if (selected === 'search') setSelected(null)
     if (intent.kind !== 'category') {
       setPreview(null)
       if (intent.categoryId !== selected) setSelected(intent.categoryId)
@@ -123,11 +120,8 @@ export function BofytExperience() {
   }
 
   const applyPrompt = (prompt: string) => {
-    productAbort.current?.abort()
-    productAbort.current = null
-    productRequest.current += 1
+    if (activationTimer.current) clearTimeout(activationTimer.current)
     setActivating(false)
-    setProductFeedback(null)
     setGoal(prompt)
     setResult(null)
     pulse()
@@ -143,70 +137,65 @@ export function BofytExperience() {
     }
 
     const intent = detectGoalIntent(trimmed)
-    const preferredArea = intent.categoryId ?? (intent.kind === 'category' ? selected : null)
-    const areas = detectCategories(trimmed, preferredArea)
-    if (intent.kind === 'shopping') {
-      productAbort.current?.abort()
-      const controller = new AbortController()
-      const requestId = ++productRequest.current
-      productAbort.current = controller
-      setProductFeedback(null)
-      setActivating(true)
-      setResult(null)
-      pulse()
+    const preferredArea = intent.categoryId ?? (intent.kind === 'category' && selected !== 'search' ? selected : null)
+    const areas = detectCategories(trimmed, preferredArea).filter((id) => id !== 'search')
+    const goalAreas: CategoryId[] = areas.length ? areas : ['personal']
 
-      void searchProducts(trimmed, controller.signal)
-        .then((response) => {
-          if (controller.signal.aborted || requestId !== productRequest.current) return
-          productAbort.current = null
-          setActivating(false)
-          setSelected(intent.categoryId ?? (intent.kind === 'category' ? areas[0] : null))
-          setResult({
-            id: crypto.randomUUID(),
-            goal: trimmed,
-            areas,
-            products: response.products,
-            closestProducts: response.closestProducts,
-            priceConstraint: response.priceConstraint,
-          })
-          setGoal('')
-          pulse()
-        })
-        .catch((error: unknown) => {
-          if (controller.signal.aborted || requestId !== productRequest.current) return
-          productAbort.current = null
-          setActivating(false)
-          setProductFeedback({
-            kind: error instanceof ProductSearchClientError && error.code === 'CONFIGURATION' ? 'configuration' : 'error',
-            message: error instanceof Error ? error.message : 'The live product search could not be reached. Try again.',
-          })
-          pulse()
-        })
-      return
-    }
-
-    productAbort.current?.abort()
-    productAbort.current = null
-    productRequest.current += 1
-    setProductFeedback(null)
     setActivating(true)
     setResult(null)
     pulse()
     activationTimer.current = setTimeout(() => {
       setActivating(false)
-      setSelected(intent.categoryId ?? (intent.kind === 'category' ? areas[0] : null))
-      setResult({ id: crypto.randomUUID(), goal: trimmed, areas })
+      setSelected(intent.categoryId)
+      setResult({ id: crypto.randomUUID(), goal: trimmed, areas: goalAreas })
       setGoal('')
       pulse()
     }, 1400)
   }
 
+  const submitProductSearch = () => {
+    const trimmed = searchQuery.trim()
+    if (!trimmed || searching) return
+
+    searchAbort.current?.abort()
+    const controller = new AbortController()
+    const requestId = ++searchRequest.current
+    searchAbort.current = controller
+    setSearchFeedback(null)
+    setSearching(true)
+    setSearchResult(null)
+    pulse()
+
+    void searchProducts(trimmed, controller.signal)
+      .then((response) => {
+        if (controller.signal.aborted || requestId !== searchRequest.current) return
+        searchAbort.current = null
+        setSearching(false)
+        setSearchResult({
+          id: crypto.randomUUID(),
+          goal: trimmed,
+          areas: ['search'],
+          products: response.products,
+          closestProducts: response.closestProducts,
+          priceConstraint: response.priceConstraint,
+        })
+        pulse()
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted || requestId !== searchRequest.current) return
+        searchAbort.current = null
+        setSearching(false)
+        setSearchFeedback({
+          kind: error instanceof ProductSearchClientError && error.code === 'CONFIGURATION' ? 'configuration' : 'error',
+          message: error instanceof Error ? error.message : 'The live product search could not be reached. Try again.',
+        })
+        pulse()
+      })
+  }
+
   const reset = () => {
-    productAbort.current?.abort()
-    productAbort.current = null
-    productRequest.current += 1
+    if (activationTimer.current) clearTimeout(activationTimer.current)
     setActivating(false)
-    setProductFeedback(null)
     setResult(null)
     setGoal('')
     setSelected(null)
@@ -215,14 +204,34 @@ export function BofytExperience() {
 
   const editResult = () => {
     if (!result) return
-    productAbort.current?.abort()
-    productAbort.current = null
-    productRequest.current += 1
+    if (activationTimer.current) clearTimeout(activationTimer.current)
     setActivating(false)
-    setProductFeedback(null)
     setGoal(result.goal)
     setResult(null)
     setTimeout(focusInput, 0)
+  }
+
+  const resetSearch = () => {
+    searchAbort.current?.abort()
+    searchAbort.current = null
+    searchRequest.current += 1
+    setSearching(false)
+    setSearchFeedback(null)
+    setSearchResult(null)
+    setSearchQuery('')
+    pulse()
+  }
+
+  const editSearch = () => {
+    if (!searchResult) return
+    searchAbort.current?.abort()
+    searchAbort.current = null
+    searchRequest.current += 1
+    setSearching(false)
+    setSearchFeedback(null)
+    setSearchQuery(searchResult.goal)
+    setSearchResult(null)
+    pulse()
   }
 
   const saveResult = () => {
@@ -257,12 +266,14 @@ export function BofytExperience() {
     if (target === 'home') {
       setSheet(null)
       setCoreOpen(false)
+      if (selected === 'search') setSelected(null)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (target === 'explore') {
       setSheet(null)
       document.getElementById('explore')?.scrollIntoView({ behavior: 'smooth' })
     } else if (target === 'core') {
       setSheet(null)
+      if (selected === 'search') setSelected(null)
       setCoreOpen(true)
       pulse()
     } else {
@@ -279,6 +290,21 @@ export function BofytExperience() {
     onOpenProgress: openProgress,
     onNotify: notify,
   }
+
+  const searchResultHandlers: GoalResultHandlers = {
+    saved: Boolean(searchResult && goals.some((entry) => entry.id === searchResult.id)),
+    onEdit: editSearch,
+    onReset: resetSearch,
+    onBuildPlan: () => searchResult && setPlanSource(searchResult),
+    onSave: () => {
+      if (!searchResult) return
+      goalStore.save(searchResult)
+      notify('Search saved to progress')
+    },
+    onOpenProgress: openProgress,
+    onNotify: notify,
+  }
+
   const highlighted = result?.areas ?? []
   const returning = !result ? activeGoal(goals) : null
   const focusId = preview ?? selected
@@ -336,7 +362,12 @@ export function BofytExperience() {
           pulseKey={pulseKey}
           result={result}
           resultHandlers={resultHandlers}
-          productFeedback={productFeedback}
+          searchInputRef={searchInputRef}
+          searchQuery={searchQuery}
+          searchBusy={searching}
+          searchResult={searchResult}
+          searchResultHandlers={searchResultHandlers}
+          searchFeedback={searchFeedback}
           onGoalChange={changeGoal}
           onSubmit={submitGoal}
           onFocusChange={setFocused}
@@ -345,23 +376,23 @@ export function BofytExperience() {
             focusInput()
           }}
           onPickPrompt={applyPrompt}
-          onRetryProductSearch={submitGoal}
+          onSearchChange={setSearchQuery}
+          onSearchSubmit={submitProductSearch}
+          onRetrySearch={submitProductSearch}
         />
       </main>
 
       <CoreOverlay
         open={coreOpen}
-        category={selected ? categoryById[selected] : null}
+        category={selected && selected !== 'search' ? categoryById[selected] : null}
         goal={goal}
         activating={activating}
         pulseKey={pulseKey}
         result={result}
         resultHandlers={resultHandlers}
-        productFeedback={productFeedback}
         onGoalChange={changeGoal}
         onSubmit={submitGoal}
         onPulse={pulse}
-        onRetryProductSearch={submitGoal}
         onClose={() => {
           setCoreOpen(false)
           setNavActive('home')
@@ -373,7 +404,7 @@ export function BofytExperience() {
       <BottomNav
         active={coreOpen ? 'core' : (sheet ?? navActive)}
         progressCount={goals.length}
-        category={selected ? categoryById[selected] : null}
+        category={selected && selected !== 'search' ? categoryById[selected] : null}
         hasGoal={Boolean(goal.trim()) || Boolean(result)}
         onNavigate={navigate}
       />

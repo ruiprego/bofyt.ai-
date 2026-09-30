@@ -1,7 +1,7 @@
 import { isProductSearchQuery } from '../products/parse'
 import { categoryById, detectPrimary, type CategoryId } from './categories'
 
-export type GoalIntentKind = 'shopping' | 'travel' | 'fitness' | 'finance' | 'career' | 'category'
+export type GoalIntentKind = 'travel' | 'fitness' | 'finance' | 'career' | 'category'
 
 export interface GoalIntent {
   kind: GoalIntentKind
@@ -10,7 +10,7 @@ export interface GoalIntent {
 }
 
 type IntentRule = Omit<GoalIntent, 'kind'> & {
-  kind: Exclude<GoalIntentKind, 'shopping' | 'category'>
+  kind: Exclude<GoalIntentKind, 'category'>
   pattern: RegExp
 }
 
@@ -46,18 +46,18 @@ export function detectGoalIntent(text: string): GoalIntent {
   if (!query) return { kind: 'category', label: 'Goal', categoryId: null }
 
   if (isProductSearchQuery(query)) {
-    return { kind: 'shopping', label: 'Shopping / Product discovery', categoryId: null }
+    return { kind: 'category', label: 'Goal', categoryId: null }
   }
 
   const rule = INTENT_RULES.find((candidate) => candidate.pattern.test(query))
-  if (rule) {
-    return { kind: rule.kind, label: rule.label, categoryId: rule.categoryId }
-  }
+  if (rule) return { kind: rule.kind, label: rule.label, categoryId: rule.categoryId }
 
   const categoryId = detectPrimary(query)
+  const goalCategoryId = categoryId === 'search' ? null : categoryId
   return {
     kind: 'category',
-    label: categoryId ? categoryById[categoryId].title : 'Goal',
-    categoryId,
+    label: goalCategoryId ? categoryById[goalCategoryId].title : 'Goal',
+    categoryId: goalCategoryId,
   }
+
 }

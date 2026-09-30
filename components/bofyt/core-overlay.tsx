@@ -4,13 +4,11 @@ import { useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { X } from 'lucide-react'
 import type { Category, CategoryId } from '@/lib/bofyt/categories'
-import type { ProductSearchFeedback } from '@/lib/products/types'
 import { AiCore, type CoreMode } from './ai-core'
 import { PLACEHOLDERS } from './center-stage'
 import { GoalInput } from './goal-input'
 import { GoalResult, type GoalResultData, type GoalResultHandlers } from './goal-result'
 import { GoalThinking } from './goal-thinking'
-import { ProductSearchStatus } from './product-search-status'
 
 interface CoreOverlayProps {
   open: boolean
@@ -20,11 +18,9 @@ interface CoreOverlayProps {
   pulseKey: number
   result: GoalResultData | null
   resultHandlers: GoalResultHandlers
-  productFeedback: ProductSearchFeedback | null
   onGoalChange: (value: string) => void
   onSubmit: () => void
   onPulse: () => void
-  onRetryProductSearch: () => void
   onClose: () => void
 }
 
@@ -38,11 +34,9 @@ export function CoreOverlay({
   pulseKey,
   result,
   resultHandlers,
-  productFeedback,
   onGoalChange,
   onSubmit,
   onPulse,
-  onRetryProductSearch,
   onClose,
 }: CoreOverlayProps) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -158,11 +152,7 @@ export function CoreOverlay({
                     />
                   </div>
                   <div className="min-h-10">
-                    {activating ? (
-                      <GoalThinking />
-                    ) : productFeedback ? (
-                      <ProductSearchStatus message={productFeedback.message} onRetry={onRetryProductSearch} />
-                    ) : null}
+                    {activating ? <GoalThinking /> : null}
                   </div>
                 </motion.div>
               )}
