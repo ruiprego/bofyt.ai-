@@ -10,7 +10,7 @@ interface GoalInputProps {
   placeholder: string
   busy: boolean
   onChange: (value: string) => void
-  onSubmit: () => void
+  onSubmit: (value: string) => void
   onFocusChange: (focused: boolean) => void
   id?: string
   linkKey?: string | null
@@ -34,7 +34,7 @@ export function GoalInput({
       className="w-full max-w-xl min-[960px]:max-w-[clamp(20rem,calc(100vw_-_38rem),36rem)]"
       onSubmit={(event) => {
         event.preventDefault()
-        onSubmit()
+        onSubmit(value)
       }}
     >
       <div

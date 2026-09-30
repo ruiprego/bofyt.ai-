@@ -314,7 +314,7 @@ export function BofytExperience() {
       })
   }
 
-  const submitProductSearch = () => runProductSearch(searchQuery)
+  const submitProductSearch = (queryOverride?: string) => runProductSearch(queryOverride ?? searchQuery)
 
   const reset = () => {
     if (activationTimer.current) clearTimeout(activationTimer.current)

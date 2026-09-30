@@ -22,7 +22,7 @@ interface ProductSearchProps {
   suggestions: CategoryModule[]
   onPickPrompt: (prompt: string) => void
   onQueryChange: (value: string) => void
-  onSubmit: () => void
+  onSubmit: (query: string) => void
   onRetry: () => void
 }
 
@@ -85,7 +85,7 @@ export function ProductSearch({
         aria-label="Search products"
         onSubmit={(event) => {
           event.preventDefault()
-          onSubmit()
+          onSubmit(query)
         }}
         initial={{ opacity: 0, y: 12, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}

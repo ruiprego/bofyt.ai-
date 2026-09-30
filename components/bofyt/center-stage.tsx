@@ -46,12 +46,12 @@ interface CenterStageProps {
   searchResultHandlers: GoalResultHandlers
   searchFeedback: ProductSearchFeedback | null
   onGoalChange: (value: string) => void
-  onSubmit: () => void
+  onSubmit: (value?: string) => void
   onFocusChange: (focused: boolean) => void
   onActivateCore: () => void
   onPickPrompt: (prompt: string) => void
   onSearchChange: (value: string) => void
-  onSearchSubmit: () => void
+  onSearchSubmit: (query?: string) => void
   onRetrySearch: () => void
 }
 

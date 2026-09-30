@@ -19,7 +19,7 @@ interface CoreOverlayProps {
   result: GoalResultData | null
   resultHandlers: GoalResultHandlers
   onGoalChange: (value: string) => void
-  onSubmit: () => void
+  onSubmit: (value?: string) => void
   onPulse: () => void
   onClose: () => void
 }
