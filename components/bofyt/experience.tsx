@@ -141,7 +141,21 @@ export function BofytExperience() {
     inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
-  const selectCategory = (id: CategoryId) => {
+  const selectCategory = (id: CategoryId, options: { preserveGoal?: boolean } = {}) => {
+    if (selected !== id) {
+      clearSearchExperience()
+
+      if (!options.preserveGoal) {
+        if (activationTimer.current) clearTimeout(activationTimer.current)
+        activationTimer.current = null
+        setActivating(false)
+        setResult(null)
+        setGoal('')
+        setGoalCapabilityContext(null)
+        setFocused(false)
+      }
+    }
+
     setSelected(id)
     pulse()
   }
@@ -214,7 +228,7 @@ export function BofytExperience() {
       if (intent.categoryId !== selected) setSelected(intent.categoryId)
     } else if (intent.categoryId && intent.categoryId !== selected) {
       setPreview(null)
-      selectCategory(intent.categoryId)
+      selectCategory(intent.categoryId, { preserveGoal: true })
     }
   }
 
@@ -224,14 +238,16 @@ export function BofytExperience() {
 
     const intent = detectGoalIntent(trimmed)
     const targetCategory = selected ?? intent.categoryId
+    const productContext = targetCategory === 'search' ? searchCapabilityContext : goalCapabilityContext
     setResult(null)
 
     if (targetCategory === 'search' || intent.kind === 'shopping') {
       setSelected('search')
       setGoal('')
+      setGoalCapabilityContext(null)
       setSearchQuery(trimmed)
       setSearchFeedback(null)
-      runProductSearch(trimmed, targetCategory === 'search' ? undefined : null)
+      runProductSearch(trimmed, productContext)
     } else {
       submitGoal(trimmed, goalCapabilityContext)
     }
@@ -300,7 +316,7 @@ export function BofytExperience() {
 
     dismissKeyboard()
     const intent = detectGoalIntent(trimmed)
-    if (intent.kind === 'shopping' && !context) {
+    if (intent.kind === 'shopping') {
       setActivating(false)
       setGoalCapabilityContext(null)
       setResult(null)
@@ -311,7 +327,7 @@ export function BofytExperience() {
       setCoreOpen(false)
       setSearchQuery(trimmed)
       setSearchFeedback(null)
-      runProductSearch(trimmed, null)
+      runProductSearch(trimmed, context)
       pulse()
       return
     }
