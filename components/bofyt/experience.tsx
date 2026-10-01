@@ -241,7 +241,7 @@ export function BofytExperience() {
     const productContext = targetCategory === 'search' ? searchCapabilityContext : goalCapabilityContext
     setResult(null)
 
-    if (targetCategory === 'search' || intent.kind === 'shopping') {
+    if (intent.kind === 'shopping') {
       setSelected('search')
       setGoal('')
       setGoalCapabilityContext(null)
@@ -257,14 +257,20 @@ export function BofytExperience() {
 
   const selectCapabilityPrompt = (capabilityId: CapabilityId, prompt: string) => {
     const context = contextForCapability(capabilityId)
+    const intent = detectGoalIntent(prompt)
+    const inferredCategory =
+      context.categoryId === 'search' && intent.kind !== 'shopping'
+        ? intent.categoryId ?? detectCategories(prompt).find((id) => id !== 'search') ?? 'personal'
+        : context.categoryId
+
     clearTransientExperience()
     closeCapability()
     setResult(null)
-    setSelected(context.categoryId)
+    setSelected(inferredCategory)
     setCoreOpen(false)
     setNavActive('home')
 
-    if (context.categoryId === 'search') {
+    if (context.categoryId === 'search' && intent.kind === 'shopping') {
       setGoalCapabilityContext(null)
       setSearchCapabilityContext(context)
       setSearchQuery(prompt)
@@ -332,9 +338,14 @@ export function BofytExperience() {
       return
     }
 
-    const preferredArea = context?.categoryId ?? intent.categoryId ?? (intent.kind === 'category' && selected !== 'search' ? selected : null)
+    if (selected === 'search' || context?.categoryId === 'search') clearSearchExperience()
+
+    const preferredArea = context?.categoryId && context.categoryId !== 'search'
+      ? context.categoryId
+      : intent.categoryId ?? (intent.kind === 'category' && selected !== 'search' ? selected : null)
     const areas = detectCategories(trimmed, preferredArea).filter((id) => id !== 'search')
-    const goalAreas: CategoryId[] = areas.length ? areas : [context?.categoryId ?? 'personal']
+    const fallbackArea = context?.categoryId && context.categoryId !== 'search' ? context.categoryId : 'personal'
+    const goalAreas: CategoryId[] = areas.length ? areas : [fallbackArea]
 
     setGoalCapabilityContext(context)
     setSearchCapabilityContext(null)
@@ -344,7 +355,7 @@ export function BofytExperience() {
     activationTimer.current = setTimeout(() => {
       activationTimer.current = null
       setActivating(false)
-      setSelected(context?.categoryId ?? intent.categoryId)
+      setSelected(goalAreas[0] ?? intent.categoryId ?? null)
       setResult({ id: crypto.randomUUID(), goal: trimmed, areas: goalAreas, capabilityId: context?.capabilityId })
       setGoal('')
       pulse()
@@ -412,18 +423,11 @@ export function BofytExperience() {
     setCoreOpen(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
 
-    if (request.capabilityId === 'discover') {
-      setGoalCapabilityContext(null)
-      setGoal('')
-      setSearchQuery(request.query)
-      runProductSearch(request.query, context)
-    } else {
-      setSearchCapabilityContext(null)
-      setGoalCapabilityContext(context)
-      setSearchResult(null)
-      setGoal(request.query)
-      submitGoal(request.query, context)
-    }
+    setSearchCapabilityContext(null)
+    setGoalCapabilityContext(context)
+    setSearchResult(null)
+    setGoal(request.query)
+    submitGoal(request.query, context)
 
     pulse()
   }
@@ -591,6 +595,7 @@ export function BofytExperience() {
           result={result}
           resultHandlers={resultHandlers}
           capability={selectedCapability}
+          searchAutoFocus={!expandedCapability}
           searchInputRef={searchInputRef}
           searchQuery={searchQuery}
           searchBusy={searching}

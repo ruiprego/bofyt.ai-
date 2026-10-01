@@ -39,6 +39,7 @@ interface CenterStageProps {
   result: GoalResultData | null
   resultHandlers: GoalResultHandlers
   capability: Capability | null
+  searchAutoFocus: boolean
   searchInputRef: RefObject<HTMLInputElement | null>
   searchQuery: string
   searchBusy: boolean
@@ -70,6 +71,7 @@ export function CenterStage({
   result,
   resultHandlers,
   capability,
+  searchAutoFocus,
   searchInputRef,
   searchQuery,
   searchBusy,
@@ -109,6 +111,7 @@ export function CenterStage({
           {isSearch ? (
             <ProductSearch
               open={isSearch}
+              autoFocus={searchAutoFocus}
               inputRef={searchInputRef}
               headingRef={headingRef}
               query={searchQuery}

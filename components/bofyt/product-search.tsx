@@ -12,6 +12,7 @@ import { ProductSearchStatus } from './product-search-status'
 
 interface ProductSearchProps {
   open: boolean
+  autoFocus: boolean
   inputRef: RefObject<HTMLInputElement | null>
   headingRef: RefObject<HTMLHeadingElement | null>
   query: string
@@ -30,6 +31,7 @@ const ease = [0.22, 1, 0.36, 1] as const
 
 export function ProductSearch({
   open,
+  autoFocus,
   inputRef,
   headingRef,
   query,
@@ -46,7 +48,7 @@ export function ProductSearch({
   const focusedOnOpen = useRef(false)
 
   useEffect(() => {
-    if (!open) {
+    if (!open || !autoFocus) {
       focusedOnOpen.current = false
       return
     }
@@ -62,7 +64,7 @@ export function ProductSearch({
       inputRef.current?.focus({ preventScroll: true })
     }, 180)
     return () => window.clearTimeout(timer)
-  }, [busy, inputRef, open, result])
+  }, [autoFocus, busy, inputRef, open, result])
 
   return (
     <section

@@ -277,9 +277,9 @@ export function CategoryCarousel({
                   : undefined
               }
               className={cn(
-                'h-[25rem] w-[min(76vw,18rem)] shrink-0 snap-center sm:h-[28rem] sm:w-52',
-                discoveryLayout && 'max-[959px]:!w-[min(80vw,20rem)] sm:!w-60 md:!w-64',
-                coreLayout ? 'min-[960px]:!h-full min-[960px]:!w-auto' : 'lg:h-[min(60vh,35rem)] lg:w-[clamp(10.5rem,14vw,14rem)]',
+                'h-[25rem] w-[min(76vw,18rem)] min-w-0 shrink-0 snap-center sm:h-[28rem] sm:w-52',
+                discoveryLayout && 'max-[959px]:!w-[min(80vw,20rem)] sm:w-60 md:w-64',
+                coreLayout ? 'min-[960px]:!h-full min-[960px]:!w-full' : 'lg:h-[min(60vh,35rem)] lg:w-[clamp(10.5rem,14vw,14rem)]',
                 isFocused && expandable && 'max-[959px]:w-[min(86vw,24rem)]',
                 shouldFade && 'pointer-events-none',
                 leftFocusActive && isFocused && 'z-30',

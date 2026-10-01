@@ -220,7 +220,12 @@ function CoreParticles({ fast, reducedMotion }: { fast: boolean; reducedMotion: 
         <motion.span
           key={index}
           className="absolute rounded-full bg-gold-light shadow-[0_0_8px_rgba(246,221,161,0.9)]"
-          style={{ left: `${particle.left}%`, top: `${particle.top}%`, width: particle.size, height: particle.size }}
+          style={{
+            left: `${particle.left.toFixed(3)}%`,
+            top: `${particle.top.toFixed(3)}%`,
+            width: `${particle.size}px`,
+            height: `${particle.size}px`,
+          }}
           animate={reducedMotion ? { opacity: 0 } : { opacity: [0, 0.9, 0], y: [0, particle.drift, particle.drift * 2], scale: [0.6, 1, 0.4] }}
           transition={{ duration: reducedMotion ? 0 : fast ? 1.4 : 3.6, delay: reducedMotion ? 0 : particle.delay * (fast ? 0.4 : 1), repeat: reducedMotion ? 0 : Infinity, ease: 'easeInOut' }}
         />
