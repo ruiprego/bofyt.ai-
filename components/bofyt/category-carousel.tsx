@@ -1,10 +1,15 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
-import { motion } from 'motion/react'
+import type {
+  KeyboardEvent as ReactKeyboardEvent,
+  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
+  WheelEvent as ReactWheelEvent,
+} from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { categoryById } from '@/lib/bofyt/categories'
-import { CAPABILITY_COLUMNS, type CapabilityId } from '@/lib/bofyt/capabilities'
+import { CAPABILITY_COLUMNS, type Capability, type CapabilityId } from '@/lib/bofyt/capabilities'
 import { cn } from '@/lib/utils'
 import { CategoryPanel } from './category-panel'
 
@@ -199,6 +204,17 @@ export function CategoryCarousel({
     setFocusedCapability((current) => (current === id ? null : id))
   }
 
+  if (discoveryLayout) {
+    return (
+      <FocusedCapabilityCarousel
+        capabilities={capabilities}
+        interactive={interactive}
+        showIntro={showIntro}
+        onSelect={onSelect}
+      />
+    )
+  }
+
   return (
     <section
       id={showIntro ? 'explore' : undefined}
@@ -302,6 +318,268 @@ export function CategoryCarousel({
           )
         })}
       </ul>
+    </section>
+  )
+}
+
+interface FocusedCapabilityCarouselProps {
+  capabilities: Capability[]
+  interactive: boolean
+  showIntro: boolean
+  onSelect: (id: CapabilityId) => void
+}
+
+interface FocusedPointerGesture {
+  pointerId: number
+  startX: number
+  startY: number
+  horizontal: boolean
+}
+
+function FocusedCapabilityCarousel({
+  capabilities,
+  interactive,
+  showIntro,
+  onSelect,
+}: FocusedCapabilityCarouselProps) {
+  const reduceMotion = useReducedMotion() === true
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [dragX, setDragX] = useState(0)
+  const [dragging, setDragging] = useState(false)
+  const [direction, setDirection] = useState(1)
+  const gestureRef = useRef<FocusedPointerGesture | null>(null)
+  const suppressClickRef = useRef(false)
+  const suppressClickResetRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const wheelDeltaRef = useRef(0)
+  const wheelLockUntilRef = useRef(0)
+  const activeCapability = capabilities[activeIndex]
+
+  useEffect(
+    () => () => {
+      if (suppressClickResetRef.current) clearTimeout(suppressClickResetRef.current)
+    },
+    [],
+  )
+
+  if (!activeCapability) return null
+
+  const move = (step: number) => {
+    if (!interactive || capabilities.length < 2) return
+
+    setDirection(step > 0 ? 1 : -1)
+    setActiveIndex((current) => Math.max(0, Math.min(capabilities.length - 1, current + step)))
+    setDragX(0)
+  }
+
+  const resetSuppressedClickSoon = () => {
+    if (suppressClickResetRef.current) clearTimeout(suppressClickResetRef.current)
+    suppressClickResetRef.current = setTimeout(() => {
+      suppressClickRef.current = false
+      suppressClickResetRef.current = null
+    }, 0)
+  }
+
+  const releasePointer = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+  }
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    suppressClickRef.current = false
+    if (suppressClickResetRef.current) {
+      clearTimeout(suppressClickResetRef.current)
+      suppressClickResetRef.current = null
+    }
+    wheelDeltaRef.current = 0
+
+    if (!interactive || !event.isPrimary || capabilities.length < 2) {
+      gestureRef.current = null
+      return
+    }
+
+    gestureRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      horizontal: false,
+    }
+  }
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const gesture = gestureRef.current
+    if (!gesture || gesture.pointerId !== event.pointerId) return
+
+    const deltaX = event.clientX - gesture.startX
+    const deltaY = event.clientY - gesture.startY
+    const movedX = Math.abs(deltaX)
+    const movedY = Math.abs(deltaY)
+
+    if (!gesture.horizontal && movedX < SWIPE_AXIS_THRESHOLD && movedY < SWIPE_AXIS_THRESHOLD) return
+
+    if (!gesture.horizontal && movedY > movedX) {
+      releasePointer(event)
+      gestureRef.current = null
+      setDragging(false)
+      setDragX(0)
+      return
+    }
+
+    const startedHorizontal = !gesture.horizontal
+    gesture.horizontal = true
+    if (startedHorizontal) event.currentTarget.setPointerCapture(event.pointerId)
+    event.preventDefault()
+    setDragging(true)
+    setDragX(Math.max(-220, Math.min(220, deltaX * 0.88)))
+  }
+
+  const finishPointerGesture = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const gesture = gestureRef.current
+    if (!gesture || gesture.pointerId !== event.pointerId) return
+
+    const deltaX = event.clientX - gesture.startX
+    if (gesture.horizontal) {
+      suppressClickRef.current = true
+      resetSuppressedClickSoon()
+      if (Math.abs(deltaX) >= SWIPE_DISTANCE) {
+        move(deltaX < 0 ? 1 : -1)
+      } else {
+        setDragX(0)
+      }
+    }
+
+    gestureRef.current = null
+    setDragging(false)
+    releasePointer(event)
+  }
+
+  const cancelPointerGesture = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const gesture = gestureRef.current
+    if (gesture?.pointerId === event.pointerId && gesture.horizontal) {
+      suppressClickRef.current = true
+      resetSuppressedClickSoon()
+    }
+    gestureRef.current = null
+    setDragging(false)
+    setDragX(0)
+    releasePointer(event)
+  }
+
+  const handleClickCapture = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!suppressClickRef.current) return
+    event.preventDefault()
+    event.stopPropagation()
+    suppressClickRef.current = false
+    if (suppressClickResetRef.current) {
+      clearTimeout(suppressClickResetRef.current)
+      suppressClickResetRef.current = null
+    }
+  }
+
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault()
+      move(-1)
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault()
+      move(1)
+    }
+  }
+
+  const handleWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
+    const deltaX = event.deltaMode === 1 ? event.deltaX * 16 : event.deltaX
+    if (!interactive || Math.abs(deltaX) <= Math.abs(event.deltaY) || Math.abs(deltaX) < 4) {
+      if (Math.abs(event.deltaY) > Math.abs(deltaX)) wheelDeltaRef.current = 0
+      return
+    }
+
+    event.preventDefault()
+    if (Date.now() < wheelLockUntilRef.current) return
+
+    wheelDeltaRef.current += deltaX
+    if (Math.abs(wheelDeltaRef.current) < 36) return
+
+    const step = wheelDeltaRef.current < 0 ? 1 : -1
+    wheelDeltaRef.current = 0
+    wheelLockUntilRef.current = Date.now() + 450
+    move(step)
+  }
+
+  return (
+    <section
+      id={showIntro ? 'explore' : undefined}
+      aria-label={showIntro ? undefined : 'BOFYT capabilities'}
+      aria-labelledby={showIntro ? 'explore-heading' : undefined}
+      className="relative flex min-h-[min(68vh,42rem)] w-full flex-1 scroll-mt-24 flex-col gap-3 pb-4"
+    >
+      {showIntro && (
+        <div className="flex flex-col items-center gap-3">
+          <span aria-hidden className="h-8 w-px bg-gradient-to-b from-transparent to-gold/50" />
+          <h2 id="explore-heading" className="text-[11px] uppercase tracking-[0.35em] text-white/70">
+            Explore any capability
+          </h2>
+          <p className="max-w-md text-xs leading-relaxed text-white/45">
+            Six independent entry points. Start wherever the next useful move is.
+          </p>
+        </div>
+      )}
+
+      <div
+        role="region"
+        aria-roledescription="carousel"
+        aria-label="BOFYT capability deck"
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={finishPointerGesture}
+        onPointerCancel={cancelPointerGesture}
+        onClickCapture={handleClickCapture}
+        onWheel={handleWheel}
+        className={cn(
+          'relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-hidden px-1 py-2 outline-none sm:px-4',
+          dragging && 'cursor-grabbing select-none',
+        )}
+        style={{ touchAction: 'pan-y' }}
+      >
+        <p className="relative z-10 text-center text-[10px] uppercase tracking-[0.24em] text-white/35">
+          {interactive ? 'Swipe horizontally · tap to enter' : 'Opening your experience'}
+        </p>
+
+        <div className="relative flex min-h-0 w-full flex-1 items-center justify-center">
+          <AnimatePresence initial={false} mode="wait">
+            <motion.div
+              key={activeCapability.id}
+              initial={{ opacity: 0, x: direction * 96, scale: 0.94 }}
+              animate={{ opacity: 1, x: dragX, scale: dragging ? 0.985 : 1 }}
+              exit={{ opacity: 0, x: direction * -96, scale: 0.94 }}
+              transition={{
+                duration: dragging ? 0 : reduceMotion ? 0 : 0.48,
+                ease: FOCUS_EASE,
+              }}
+              className="relative z-10 h-[min(62dvh,34rem)] w-[min(86vw,30rem)] min-w-0 sm:h-[min(66dvh,38rem)] sm:w-[min(72vw,34rem)] lg:h-[min(68vh,42rem)] lg:w-[min(36vw,36rem)]"
+            >
+              <CategoryPanel
+                category={categoryById[activeCapability.categoryId]}
+                capability={activeCapability}
+                active
+                mapped={false}
+                dimmed={false}
+                expanded={false}
+                disableHover
+                disabled={!interactive}
+                onSelect={() => {
+                  if (interactive) onSelect(activeCapability.id)
+                }}
+              />
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        <p aria-live="polite" className="relative z-10 text-center text-[10px] uppercase tracking-[0.24em] text-gold-light/75">
+          {activeIndex + 1} / {capabilities.length}
+        </p>
+      </div>
     </section>
   )
 }
