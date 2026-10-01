@@ -8,12 +8,14 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { categories, categoryById, type CategoryId } from '@/lib/bofyt/categories'
 import { progressOf, type GoalEntry } from '@/lib/bofyt/goals'
+import type { UserProfile } from '@/lib/bofyt/user-data'
 
 export type SheetKind = 'progress' | 'profile'
 
 interface InfoSheetProps {
   kind: SheetKind | null
   goals: GoalEntry[]
+  profile: UserProfile | null
   user: User | null
   onSignedOut: () => void
   onClose: () => void
@@ -21,7 +23,7 @@ interface InfoSheetProps {
   onAdvance: (id: string) => void
 }
 
-export function InfoSheet({ kind, goals, user, onSignedOut, onClose, onOpenGoal, onAdvance }: InfoSheetProps) {
+export function InfoSheet({ kind, goals, profile, user, onSignedOut, onClose, onOpenGoal, onAdvance }: InfoSheetProps) {
   return (
     <AnimatePresence>
       {kind && (
@@ -59,7 +61,11 @@ export function InfoSheet({ kind, goals, user, onSignedOut, onClose, onOpenGoal,
                 <X aria-hidden className="size-4" />
               </button>
             </div>
-            {kind === 'progress' ? <ProgressView goals={goals} onOpenGoal={onOpenGoal} onAdvance={onAdvance} /> : <ProfileView goals={goals} user={user} onSignedOut={onSignedOut} />}
+            {kind === 'progress' ? (
+              <ProgressView goals={goals} onOpenGoal={onOpenGoal} onAdvance={onAdvance} />
+            ) : (
+              <ProfileView goals={goals} profile={profile} user={user} onSignedOut={onSignedOut} />
+            )}
           </motion.div>
         </>
       )}
@@ -125,7 +131,17 @@ function ProgressView({
   )
 }
 
-function ProfileView({ goals, user, onSignedOut }: { goals: GoalEntry[]; user: User | null; onSignedOut: () => void }) {
+function ProfileView({
+  goals,
+  profile,
+  user,
+  onSignedOut,
+}: {
+  goals: GoalEntry[]
+  profile: UserProfile | null
+  user: User | null
+  onSignedOut: () => void
+}) {
   const [isSigningOut, setIsSigningOut] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const counts = categories.map((category) => ({
@@ -166,7 +182,8 @@ function ProfileView({ goals, user, onSignedOut }: { goals: GoalEntry[]; user: U
   }
 
   const memberSince = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(user.created_at))
-  const displayName = typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : 'BOFYT member'
+  const metadataName = typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : null
+  const displayName = profile?.displayName ?? metadataName ?? 'BOFYT member'
 
   return (
     <div className="mt-6">
@@ -176,6 +193,11 @@ function ProfileView({ goals, user, onSignedOut }: { goals: GoalEntry[]; user: U
         <p className="mt-3 text-[10px] uppercase tracking-[0.18em] text-gold-light/75">Member since {memberSince}</p>
       </div>
       <p className="mt-6 text-[11px] uppercase tracking-[0.3em] text-white/45">Focus areas</p>
+      {profile?.focusAreas.length ? (
+        <p className="mt-2 text-xs leading-relaxed text-gold-light/75">
+          Saved focus: {profile.focusAreas.map((id) => categoryById[id].shortTitle).join(' · ')}
+        </p>
+      ) : null}
       <ul className="mt-4 flex flex-col gap-3">
         {counts.map(({ category, count }) => (
           <li key={category.id} className="flex items-center gap-3">

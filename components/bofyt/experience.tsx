@@ -9,12 +9,15 @@ import {
   type CapabilityId,
   type CapabilitySearchRequest,
 } from '@/lib/bofyt/capabilities'
-import { activeGoal, goalStore, useGoals } from '@/lib/bofyt/goals'
+import { activeGoal, planActions, type GoalEntry } from '@/lib/bofyt/goals'
 import { detectGoalIntent } from '@/lib/bofyt/intent'
-import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js'
+import { deleteSavedProduct, insertGoal, insertGoalActivity, insertSavedProduct, updateGoalProgress, upsertFocusAreas } from '@/lib/bofyt/persistence'
+import type { ResultItem } from '@/lib/bofyt/results'
 import { ProductSearchClientError, searchProducts } from '@/lib/products/client'
 import { createClient } from '@/lib/supabase/client'
+import { savedItemKey, type UserProfile } from '@/lib/bofyt/user-data'
 import type { ProductSearchFeedback } from '@/lib/products/types'
+import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js'
 import type { CoreMode } from './ai-core'
 import { BottomNav, type NavTarget } from './bottom-nav'
 import { BrandHeader } from './brand-header'
@@ -25,7 +28,7 @@ import { CenterStage } from './center-stage'
 import { CoreOverlay } from './core-overlay'
 import { CoreAwakening } from './core-awakening'
 import { ContinueGoal } from './continue-goal'
-import { GoalResult, type GoalResultData, type GoalResultHandlers } from './goal-result'
+import type { GoalResultData, GoalResultHandlers } from './goal-result'
 import { InfoSheet, type SheetKind } from './info-sheet'
 import { PlanSheet } from './plan-sheet'
 import { Toast, type ToastMessage } from './toast'
@@ -41,7 +44,17 @@ const contextForCapability = (capabilityId: CapabilityId): CapabilitySearchConte
   categoryId: capabilityById[capabilityId].categoryId,
 })
 
-export function BofytExperience({ initialUser }: { initialUser: User | null }) {
+export function BofytExperience({
+  initialUser,
+  initialGoals,
+  initialProfile,
+  initialSavedItemKeys,
+}: {
+  initialUser: User | null
+  initialGoals: GoalEntry[]
+  initialProfile: UserProfile | null
+  initialSavedItemKeys: string[]
+}) {
   const inputRef = useRef<HTMLInputElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -50,6 +63,7 @@ export function BofytExperience({ initialUser }: { initialUser: User | null }) {
   const searchAbort = useRef<AbortController | null>(null)
   const searchRequest = useRef(0)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const userIdRef = useRef<string | null>(initialUser?.id ?? null)
 
   const [goal, setGoal] = useState('')
   const [goalCapabilityContext, setGoalCapabilityContext] = useState<CapabilitySearchContext | null>(null)
@@ -72,13 +86,21 @@ export function BofytExperience({ initialUser }: { initialUser: User | null }) {
   const [searchFeedback, setSearchFeedback] = useState<ProductSearchFeedback | null>(null)
   const [toast, setToast] = useState<ToastMessage | null>(null)
   const [user, setUser] = useState<User | null>(initialUser)
-  const goals = useGoals()
+  const [goals, setGoals] = useState<GoalEntry[]>(initialGoals)
+  const [profile, setProfile] = useState<UserProfile | null>(initialProfile)
+  const [savedItemIds, setSavedItemIds] = useState<string[]>(initialSavedItemKeys)
 
   useEffect(() => {
     const supabase = createClient()
-        const { data } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) =>
- {
-      setUser(session?.user ?? null)
+    const { data } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
+      const nextUser = session?.user ?? null
+      if (nextUser?.id !== userIdRef.current) {
+        userIdRef.current = nextUser?.id ?? null
+        setGoals([])
+        setProfile(null)
+        setSavedItemIds([])
+      }
+      setUser(nextUser)
     })
 
     return () => data.subscription.unsubscribe()
@@ -490,10 +512,105 @@ export function BofytExperience({ initialUser }: { initialUser: User | null }) {
     pulse()
   }
 
+  const saveGoal = (entry: GoalOutcome, successMessage: string) => {
+    if (goals.some((savedGoal) => savedGoal.id === entry.id)) {
+      notify(successMessage)
+      return
+    }
+
+    const persistedEntry: GoalEntry = {
+      id: entry.id,
+      goal: entry.goal,
+      areas: entry.areas,
+      capabilityId: entry.capabilityId,
+      createdAt: Date.now(),
+      done: 0,
+      status: 'active',
+    }
+    const previousProfile = profile
+    const nextFocusAreas = Array.from(
+      new Set([...(profile?.focusAreas ?? []), ...entry.areas.filter((area) => area !== 'search')]),
+    )
+
+    setGoals((current) => [persistedEntry, ...current])
+    if (user) {
+      const now = new Date().toISOString()
+      setProfile({
+        userId: user.id,
+        displayName: profile?.displayName ?? null,
+        focusAreas: nextFocusAreas,
+        createdAt: profile?.createdAt ?? now,
+        updatedAt: now,
+      })
+    }
+    notify(successMessage)
+
+    if (!user) return
+
+    void (async () => {
+      const goalSync = await insertGoal(user.id, persistedEntry)
+      if (goalSync.error) {
+        setGoals((current) => current.filter((savedGoal) => savedGoal.id !== persistedEntry.id))
+        setProfile(previousProfile)
+        notify('Unable to sync this goal. Please try again.')
+        return
+      }
+
+      const profileSync = await upsertFocusAreas(user.id, nextFocusAreas)
+      if (profileSync.error) notify('Goal saved, but your focus profile could not sync.')
+    })()
+  }
+
+  const toggleSavedItem = (item: ResultItem) => {
+    const itemKey = savedItemKey(item)
+    const wasSaved = savedItemIds.includes(itemKey)
+    setSavedItemIds((current) => (wasSaved ? current.filter((id) => id !== itemKey) : [...current, itemKey]))
+    notify(wasSaved ? `Removed ${item.name} from saved products` : `${item.name} saved`)
+
+    if (!user || !item.productUrl) return
+
+    void (async () => {
+      const sync = wasSaved ? await deleteSavedProduct(user.id, itemKey) : await insertSavedProduct(user.id, item)
+      if (!sync.error) return
+
+      setSavedItemIds((current) =>
+        wasSaved ? Array.from(new Set([...current, itemKey])) : current.filter((id) => id !== itemKey),
+      )
+      notify('Unable to sync this saved product. Please try again.')
+    })()
+  }
+
+  const advanceGoal = (id: string) => {
+    const entry = goals.find((goalEntry) => goalEntry.id === id)
+    if (!entry) return
+
+    const actions = planActions(entry)
+    const nextDone = Math.min(entry.done + 1, actions.length)
+    if (nextDone === entry.done) return
+    const nextStatus = nextDone >= actions.length ? 'completed' : 'active'
+    const updatedEntry = { ...entry, done: nextDone, status: nextStatus as GoalEntry['status'] }
+
+    setGoals((current) => current.map((goalEntry) => (goalEntry.id === id ? updatedEntry : goalEntry)))
+    notify('Next action completed')
+
+    if (!user) return
+
+    void (async () => {
+      const goalSync = await updateGoalProgress(user.id, id, nextDone, nextStatus)
+      if (goalSync.error) {
+        setGoals((current) => current.map((goalEntry) => (goalEntry.id === id ? entry : goalEntry)))
+        notify('Unable to sync progress. Please try again.')
+        return
+      }
+
+      const activitySync = await insertGoalActivity(user.id, id, nextDone)
+      if (activitySync.error) notify('Progress saved, but the activity record could not sync.')
+    })()
+  }
+
   const saveResult = () => {
     if (!result) return
-    goalStore.save(result)
-    notify('Goal saved to progress')
+    saveGoal(result, 'Goal saved to progress')
   }
 
   const openProgress = () => {
@@ -502,11 +619,10 @@ export function BofytExperience({ initialUser }: { initialUser: User | null }) {
   }
 
   const startPlan = () => {
-    if (planSource) goalStore.save(planSource)
+    if (planSource) saveGoal(planSource, 'Plan added to progress')
     setPlanSource(null)
     setCoreOpen(false)
     openProgress()
-    notify('Plan added to progress')
   }
 
   const resumeGoal = (entry: { id: string; goal: string; areas: CategoryId[] }) => {
@@ -546,24 +662,27 @@ export function BofytExperience({ initialUser }: { initialUser: User | null }) {
 
   const resultHandlers: GoalResultHandlers = {
     saved: Boolean(result && goals.some((entry) => entry.id === result.id)),
+    savedItemIds,
     onEdit: editResult,
     onReset: reset,
     onBuildPlan: () => result && setPlanSource(result),
     onSave: saveResult,
+    onToggleSavedItem: toggleSavedItem,
     onOpenProgress: openProgress,
     onNotify: notify,
   }
 
   const searchResultHandlers: GoalResultHandlers = {
     saved: Boolean(searchResult && goals.some((entry) => entry.id === searchResult.id)),
+    savedItemIds,
     onEdit: editSearch,
     onReset: resetSearch,
     onBuildPlan: () => searchResult && setPlanSource(searchResult),
     onSave: () => {
       if (!searchResult) return
-      goalStore.save(searchResult)
-      notify('Search saved to progress')
+      saveGoal(searchResult, 'Search saved to progress')
     },
+    onToggleSavedItem: toggleSavedItem,
     onOpenProgress: openProgress,
     onNotify: notify,
   }
@@ -678,17 +797,19 @@ export function BofytExperience({ initialUser }: { initialUser: User | null }) {
       <InfoSheet
         kind={sheet}
         goals={goals}
+        profile={profile}
         user={user}
         onSignedOut={() => {
+          userIdRef.current = null
           setUser(null)
+          setGoals([])
+          setProfile(null)
+          setSavedItemIds([])
           setSheet(null)
           notify('Signed out')
         }}
         onClose={() => setSheet(null)}
-        onAdvance={(id) => {
-          goalStore.advance(id)
-          notify('Next action completed')
-        }}
+        onAdvance={advanceGoal}
         onOpenGoal={(entry) => resumeGoal(entry)}
       />
           <Toast message={toast} />

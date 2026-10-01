@@ -22,16 +22,19 @@ import type { CapabilityId } from '@/lib/bofyt/capabilities'
 import type { Product, ProductPriceConstraint } from '@/lib/products/types'
 import { toGoalTitle } from '@/lib/bofyt/plan'
 import { buildResult, reasonFor, refineItems, type ResultItem } from '@/lib/bofyt/results'
+import { savedItemKey } from '@/lib/bofyt/user-data'
 import { cn } from '@/lib/utils'
 import { EyeMark } from './logo'
 import { MetaRow, openDirections, openProduct, ResultSheet, type ResultSheetState } from './result-sheet'
 
 export interface GoalResultHandlers {
   saved: boolean
+  savedItemIds: string[]
   onEdit: () => void
   onReset: () => void
   onBuildPlan: () => void
   onSave: () => void
+  onToggleSavedItem: (item: ResultItem) => void
   onOpenProgress: () => void
   onNotify: (text: string) => void
 }
@@ -81,10 +84,12 @@ export function GoalResult({
   closestProducts,
   priceConstraint,
   saved,
+  savedItemIds,
   onEdit,
   onReset,
   onBuildPlan,
   onSave,
+  onToggleSavedItem,
   onOpenProgress,
   onNotify,
 }: GoalResultProps) {
@@ -94,7 +99,6 @@ export function GoalResult({
   )
   const [refinement, setRefinement] = useState(model.defaultRefinement)
   const [compared, setCompared] = useState<string[]>([])
-  const [savedItems, setSavedItems] = useState<string[]>([])
   const [sheet, setSheet] = useState<ResultSheetState>(null)
   const [productPanel, setProductPanel] = useState<ProductPanel>(null)
   const [productFilters, setProductFilters] = useState<ProductFilterState>({})
@@ -134,13 +138,7 @@ export function GoalResult({
   }
 
   const toggleSavedItem = (item: ResultItem) => {
-    if (savedItems.includes(item.id)) {
-      setSavedItems((ids) => ids.filter((id) => id !== item.id))
-      onNotify(`Removed ${item.name} from saved products`)
-    } else {
-      setSavedItems((ids) => [...ids, item.id])
-      onNotify(`${item.name} saved`)
-    }
+    onToggleSavedItem(item)
   }
 
   const choose = (item: ResultItem) => {
@@ -277,7 +275,7 @@ export function GoalResult({
               isPlaces={isPlaces}
               isProduct={isProduct}
               isCompared={compared.includes(top.id)}
-              isSaved={savedItems.includes(top.id)}
+              isSaved={savedItemIds.includes(savedItemKey(top))}
               onView={() => setSheet({ type: 'view', item: top })}
               onCompare={() => toggleCompare(top)}
               onSaveItem={() => toggleSavedItem(top)}
@@ -324,7 +322,7 @@ export function GoalResult({
                     isPlaces={isPlaces}
                     isProduct={isProduct}
                     isCompared={compared.includes(item.id)}
-                    isSaved={savedItems.includes(item.id)}
+                    isSaved={savedItemIds.includes(savedItemKey(item))}
                     onView={() => setSheet({ type: 'view', item })}
                     onCompare={() => toggleCompare(item)}
                     onSaveItem={() => toggleSavedItem(item)}
@@ -391,7 +389,7 @@ export function GoalResult({
                       isPlaces={false}
                       isProduct
                       isCompared={compared.includes(item.id)}
-                      isSaved={savedItems.includes(item.id)}
+                      isSaved={savedItemIds.includes(savedItemKey(item))}
                       onView={() => setSheet({ type: 'view', item })}
                       onCompare={() => toggleCompare(item)}
                       onSaveItem={() => toggleSavedItem(item)}

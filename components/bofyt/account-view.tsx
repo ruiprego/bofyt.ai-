@@ -1,10 +1,12 @@
 import { ArrowLeft, ShieldCheck } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
 import Link from 'next/link'
+import type { UserProfile } from '@/lib/bofyt/user-data'
+import { categoryById } from '@/lib/bofyt/categories'
 import { SignOutButton } from './sign-out-button'
 import { Logo } from './logo'
 
-export function AccountView({ user }: { user: User }) {
+export function AccountView({ user, profile }: { user: User; profile: UserProfile | null }) {
   const memberSince = new Intl.DateTimeFormat('en-US', {
     month: 'short',
     year: 'numeric',
@@ -33,6 +35,18 @@ export function AccountView({ user }: { user: User }) {
                 Your account keeps your BOFYT identity ready across sessions. Your progress stays in this browser until synced to your account data layer.
               </p>
             </div>
+
+            {profile && (profile.displayName || profile.focusAreas.length > 0) && (
+              <div className="rounded-2xl border border-gold/20 bg-gold/[0.04] p-4">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-gold-light">Persisted profile</p>
+                <p className="mt-2 text-sm text-white">{profile.displayName ?? 'BOFYT member'}</p>
+                {profile.focusAreas.length > 0 && (
+                  <p className="mt-2 text-sm leading-relaxed text-white/60">
+                    Focus areas: {profile.focusAreas.map((id) => categoryById[id].shortTitle).join(' · ')}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
