@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import {
   ArrowDownUp,
@@ -98,6 +98,17 @@ export function GoalResult({
   const [sheet, setSheet] = useState<ResultSheetState>(null)
   const [productPanel, setProductPanel] = useState<ProductPanel>(null)
   const [productFilters, setProductFilters] = useState<ProductFilterState>({})
+  const resultHeadingRef = useRef<HTMLHeadingElement>(null)
+
+  useEffect(() => {
+    if (!window.matchMedia('(max-width: 1023px)').matches) return
+
+    const frame = window.requestAnimationFrame(() => {
+      resultHeadingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [])
 
   const isPlaces = model.kind === 'places'
   const isProduct = model.kind === 'products'
@@ -230,7 +241,7 @@ export function GoalResult({
         />
       )}
 
-      <h2 id="result-heading" className="mt-3 font-display text-2xl leading-tight text-white md:text-3xl">
+      <h2 ref={resultHeadingRef} id="result-heading" className="mt-3 scroll-mt-24 font-display text-2xl leading-tight text-white md:text-3xl">
         Your results
         <span className="mt-1 block font-sans text-sm text-white/55">{model.heading}</span>
       </h2>
