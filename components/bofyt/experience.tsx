@@ -11,7 +11,9 @@ import {
 } from '@/lib/bofyt/capabilities'
 import { activeGoal, goalStore, useGoals } from '@/lib/bofyt/goals'
 import { detectGoalIntent } from '@/lib/bofyt/intent'
+import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js'
 import { ProductSearchClientError, searchProducts } from '@/lib/products/client'
+import { createClient } from '@/lib/supabase/client'
 import type { ProductSearchFeedback } from '@/lib/products/types'
 import type { CoreMode } from './ai-core'
 import { BottomNav, type NavTarget } from './bottom-nav'
@@ -39,7 +41,7 @@ const contextForCapability = (capabilityId: CapabilityId): CapabilitySearchConte
   categoryId: capabilityById[capabilityId].categoryId,
 })
 
-export function BofytExperience() {
+export function BofytExperience({ initialUser }: { initialUser: User | null }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -69,7 +71,18 @@ export function BofytExperience() {
   const [searchCapabilityContext, setSearchCapabilityContext] = useState<CapabilitySearchContext | null>(null)
   const [searchFeedback, setSearchFeedback] = useState<ProductSearchFeedback | null>(null)
   const [toast, setToast] = useState<ToastMessage | null>(null)
+  const [user, setUser] = useState<User | null>(initialUser)
   const goals = useGoals()
+
+  useEffect(() => {
+    const supabase = createClient()
+        const { data } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) =>
+ {
+      setUser(session?.user ?? null)
+    })
+
+    return () => data.subscription.unsubscribe()
+  }, [])
 
   const pulse = () => setPulseKey((key) => key + 1)
   const completeIntro = useCallback(() => setIntroStage('complete'), [])
@@ -665,6 +678,12 @@ export function BofytExperience() {
       <InfoSheet
         kind={sheet}
         goals={goals}
+        user={user}
+        onSignedOut={() => {
+          setUser(null)
+          setSheet(null)
+          notify('Signed out')
+        }}
         onClose={() => setSheet(null)}
         onAdvance={(id) => {
           goalStore.advance(id)
