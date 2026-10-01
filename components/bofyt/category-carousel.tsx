@@ -351,12 +351,27 @@ function FocusedCapabilityCarousel({
   const suppressClickRef = useRef(false)
   const suppressClickResetRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const wheelDeltaRef = useRef(0)
-  const wheelLockUntilRef = useRef(0)
+  const wheelGestureHandledRef = useRef(false)
+  const wheelResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const activeCapability = capabilities[activeIndex]
+
+  const resetWheelGesture = () => {
+    wheelDeltaRef.current = 0
+    wheelGestureHandledRef.current = false
+  }
+
+  const scheduleWheelReset = () => {
+    if (wheelResetTimerRef.current) clearTimeout(wheelResetTimerRef.current)
+    wheelResetTimerRef.current = setTimeout(() => {
+      resetWheelGesture()
+      wheelResetTimerRef.current = null
+    }, 180)
+  }
 
   useEffect(
     () => () => {
       if (suppressClickResetRef.current) clearTimeout(suppressClickResetRef.current)
+      if (wheelResetTimerRef.current) clearTimeout(wheelResetTimerRef.current)
     },
     [],
   )
@@ -391,9 +406,14 @@ function FocusedCapabilityCarousel({
       clearTimeout(suppressClickResetRef.current)
       suppressClickResetRef.current = null
     }
-    wheelDeltaRef.current = 0
+    resetWheelGesture()
 
-    if (!interactive || !event.isPrimary || capabilities.length < 2) {
+    if (
+      !interactive ||
+      !event.isPrimary ||
+      (event.pointerType === 'mouse' && event.button !== 0) ||
+      capabilities.length < 2
+    ) {
       gestureRef.current = null
       return
     }
@@ -404,6 +424,7 @@ function FocusedCapabilityCarousel({
       startY: event.clientY,
       horizontal: false,
     }
+
   }
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -427,7 +448,9 @@ function FocusedCapabilityCarousel({
 
     const startedHorizontal = !gesture.horizontal
     gesture.horizontal = true
-    if (startedHorizontal) event.currentTarget.setPointerCapture(event.pointerId)
+    if (startedHorizontal && !event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.setPointerCapture(event.pointerId)
+    }
     event.preventDefault()
     setDragging(true)
     setDragX(Math.max(-220, Math.min(220, deltaX * 0.88)))
@@ -487,21 +510,28 @@ function FocusedCapabilityCarousel({
   }
 
   const handleWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
-    const deltaX = event.deltaMode === 1 ? event.deltaX * 16 : event.deltaX
-    if (!interactive || Math.abs(deltaX) <= Math.abs(event.deltaY) || Math.abs(deltaX) < 4) {
-      if (Math.abs(event.deltaY) > Math.abs(deltaX)) wheelDeltaRef.current = 0
+    const scaleX = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerWidth : 1
+    const scaleY = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1
+    const deltaX = event.deltaX * scaleX
+    const deltaY = event.deltaY * scaleY
+    const movedX = Math.abs(deltaX)
+    const movedY = Math.abs(deltaY)
+
+    if (!interactive || movedX < 2 || movedY > movedX * 2) {
+      if (movedY > movedX) resetWheelGesture()
       return
     }
 
     event.preventDefault()
-    if (Date.now() < wheelLockUntilRef.current) return
+    scheduleWheelReset()
+    if (wheelGestureHandledRef.current) return
 
     wheelDeltaRef.current += deltaX
     if (Math.abs(wheelDeltaRef.current) < 36) return
 
-    const step = wheelDeltaRef.current < 0 ? 1 : -1
+    wheelGestureHandledRef.current = true
+    const step = wheelDeltaRef.current > 0 ? 1 : -1
     wheelDeltaRef.current = 0
-    wheelLockUntilRef.current = Date.now() + 450
     move(step)
   }
 
