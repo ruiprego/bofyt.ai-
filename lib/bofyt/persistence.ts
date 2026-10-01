@@ -64,6 +64,23 @@ export async function upsertFocusAreas(userId: string, focusAreas: string[]): Pr
   return mutationResult(error)
 }
 
+export async function upsertProfileSettings(
+  userId: string,
+  settings: { displayName: string | null; focusAreas: string[] },
+): Promise<MutationResult> {
+  const { error } = await createClient().from('profiles').upsert(
+    {
+      user_id: userId,
+      display_name: settings.displayName,
+      focus_areas: settings.focusAreas,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id' },
+  )
+
+  return mutationResult(error)
+}
+
 export async function insertSavedProduct(userId: string, item: ResultItem): Promise<MutationResult> {
   const { error } = await createClient().from('saved_items').insert({
     user_id: userId,
