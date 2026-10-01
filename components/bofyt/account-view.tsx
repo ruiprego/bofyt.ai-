@@ -118,16 +118,6 @@ export function AccountView({
           <SignOutButton />
         </section>
 
-        {profile?.focusAreas.length ? (
-          <p className="sr-only">
-            Saved focus areas: {profile.focusAreas.map((id) => {
-              const categoryMap: Record<string, { shortTitle: string }> = {
-                // Focus area categories mapping would go here
-              }
-              return categoryMap[id]?.shortTitle ?? id
-            }).join(', ')}
-          </p>
-        ) : null}
       </div>
     </main>
   )

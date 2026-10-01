@@ -1,15 +1,31 @@
 import type { User } from '@supabase/supabase-js'
 import { BofytExperience } from '@/components/bofyt/experience'
 import { goalFromRow, profileFromRow, savedItemKeysFromRows } from '@/lib/bofyt/user-data'
+import { parseReturnState } from '@/lib/bofyt/return-location'
 import { createClient } from '@/lib/supabase/server'
 
-export default async function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const initialReturn = parseReturnState(await searchParams)
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return <BofytExperience initialUser={null} initialGoals={[]} initialProfile={null} initialSavedItemKeys={[]} />
+  if (!user) {
+    return (
+      <BofytExperience
+        initialUser={null}
+        initialGoals={[]}
+        initialProfile={null}
+        initialSavedItemKeys={[]}
+        initialReturn={initialReturn}
+      />
+    )
+  }
 
   const [{ data: goalRows }, { data: profileRow }, { data: savedItemRows }] = await Promise.all([
     supabase
@@ -30,6 +46,7 @@ export default async function Page() {
       })}
       initialProfile={profileFromRow(profileRow)}
       initialSavedItemKeys={savedItemKeysFromRows(savedItemRows)}
+      initialReturn={initialReturn}
     />
   )
 }

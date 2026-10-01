@@ -13,6 +13,7 @@ import { activeGoal, planActions, type GoalEntry } from '@/lib/bofyt/goals'
 import { detectGoalIntent } from '@/lib/bofyt/intent'
 import { deleteSavedProduct, insertGoal, insertGoalActivity, insertSavedProduct, updateGoalProgress, upsertFocusAreas } from '@/lib/bofyt/persistence'
 import type { ResultItem } from '@/lib/bofyt/results'
+import { accountHrefFor, type BofytReturnState } from '@/lib/bofyt/return-location'
 import { ProductSearchClientError, searchProducts } from '@/lib/products/client'
 import { createClient } from '@/lib/supabase/client'
 import { savedItemKey, type UserProfile } from '@/lib/bofyt/user-data'
@@ -49,12 +50,24 @@ export function BofytExperience({
   initialGoals,
   initialProfile,
   initialSavedItemKeys,
+  initialReturn = null,
 }: {
   initialUser: User | null
   initialGoals: GoalEntry[]
   initialProfile: UserProfile | null
   initialSavedItemKeys: string[]
+  initialReturn?: BofytReturnState | null
 }) {
+  const returnCapability = initialReturn?.kind === 'capability' ? initialReturn.capability : null
+  const returnCapabilityContext =
+    initialReturn?.kind === 'capability' && !initialReturn.overlay ? contextForCapability(initialReturn.capability) : null
+  const returnSelected =
+    initialReturn?.kind === 'category'
+      ? initialReturn.category
+      : returnCapability
+        ? capabilityById[returnCapability].categoryId
+        : null
+
   const inputRef = useRef<HTMLInputElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -66,10 +79,14 @@ export function BofytExperience({
   const userIdRef = useRef<string | null>(initialUser?.id ?? null)
 
   const [goal, setGoal] = useState('')
-  const [goalCapabilityContext, setGoalCapabilityContext] = useState<CapabilitySearchContext | null>(null)
+  const [goalCapabilityContext, setGoalCapabilityContext] = useState<CapabilitySearchContext | null>(
+    returnCapabilityContext && returnCapabilityContext.categoryId !== 'search' ? returnCapabilityContext : null,
+  )
   const [focused, setFocused] = useState(false)
-  const [selected, setSelected] = useState<CategoryId | null>(null)
-  const [expandedCapability, setExpandedCapability] = useState<CapabilityId | null>(null)
+  const [selected, setSelected] = useState<CategoryId | null>(returnSelected)
+  const [expandedCapability, setExpandedCapability] = useState<CapabilityId | null>(
+    initialReturn?.kind === 'capability' && initialReturn.overlay ? initialReturn.capability : null,
+  )
   const [preview, setPreview] = useState<CategoryId | null>(null)
   const [activating, setActivating] = useState(false)
   const [result, setResult] = useState<GoalOutcome | null>(null)
@@ -77,12 +94,14 @@ export function BofytExperience({
   const [sheet, setSheet] = useState<SheetKind | null>(null)
   const [navActive, setNavActive] = useState<NavTarget>('home')
   const [coreOpen, setCoreOpen] = useState(false)
-  const [introStage, setIntroStage] = useState<IntroStage>('awakening')
+  const [introStage, setIntroStage] = useState<IntroStage>(initialReturn ? 'complete' : 'awakening')
   const [planSource, setPlanSource] = useState<GoalOutcome | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searching, setSearching] = useState(false)
   const [searchResult, setSearchResult] = useState<GoalOutcome | null>(null)
-  const [searchCapabilityContext, setSearchCapabilityContext] = useState<CapabilitySearchContext | null>(null)
+  const [searchCapabilityContext, setSearchCapabilityContext] = useState<CapabilitySearchContext | null>(
+    returnCapabilityContext?.categoryId === 'search' ? returnCapabilityContext : null,
+  )
   const [searchFeedback, setSearchFeedback] = useState<ProductSearchFeedback | null>(null)
   const [toast, setToast] = useState<ToastMessage | null>(null)
   const [user, setUser] = useState<User | null>(initialUser)
@@ -105,6 +124,11 @@ export function BofytExperience({
 
     return () => data.subscription.unsubscribe()
   }, [])
+
+  useEffect(() => {
+    // Strip the restore params so a later reload still plays the normal entry experience.
+    if (initialReturn) window.history.replaceState(window.history.state, '', '/')
+  }, [initialReturn])
 
   const pulse = () => setPulseKey((key) => key + 1)
   const completeIntro = useCallback(() => setIntroStage('complete'), [])
@@ -693,6 +717,14 @@ export function BofytExperience({
   const selectedCapability = selectedCapabilityId ? capabilityById[selectedCapabilityId] : null
   const returning = !result ? activeGoal(goals) : null
   const expandedPresentation = expandedCapability ? capabilityById[expandedCapability] : null
+  const enteredCapability = (goalCapabilityContext ?? searchCapabilityContext)?.capabilityId ?? null
+  const currentReturnState: BofytReturnState = expandedCapability
+    ? { kind: 'capability', capability: expandedCapability, overlay: true }
+    : enteredCapability
+      ? { kind: 'capability', capability: enteredCapability, overlay: false }
+      : selected
+        ? { kind: 'category', category: selected }
+        : { kind: 'home' }
 
   return (
     <div className="relative min-h-dvh overflow-x-clip bg-void text-white">
@@ -799,6 +831,7 @@ export function BofytExperience({
         goals={goals}
         profile={profile}
         user={user}
+        accountHref={accountHrefFor(currentReturnState)}
         onSignedOut={() => {
           userIdRef.current = null
           setUser(null)

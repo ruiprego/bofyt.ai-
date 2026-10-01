@@ -17,13 +17,14 @@ interface InfoSheetProps {
   goals: GoalEntry[]
   profile: UserProfile | null
   user: User | null
+  accountHref: string
   onSignedOut: () => void
   onClose: () => void
   onOpenGoal: (entry: GoalEntry) => void
   onAdvance: (id: string) => void
 }
 
-export function InfoSheet({ kind, goals, profile, user, onSignedOut, onClose, onOpenGoal, onAdvance }: InfoSheetProps) {
+export function InfoSheet({ kind, goals, profile, user, accountHref, onSignedOut, onClose, onOpenGoal, onAdvance }: InfoSheetProps) {
   return (
     <AnimatePresence>
       {kind && (
@@ -64,7 +65,7 @@ export function InfoSheet({ kind, goals, profile, user, onSignedOut, onClose, on
             {kind === 'progress' ? (
               <ProgressView goals={goals} onOpenGoal={onOpenGoal} onAdvance={onAdvance} />
             ) : (
-              <ProfileView goals={goals} profile={profile} user={user} onSignedOut={onSignedOut} />
+              <ProfileView goals={goals} profile={profile} user={user} accountHref={accountHref} onSignedOut={onSignedOut} />
             )}
           </motion.div>
         </>
@@ -135,11 +136,13 @@ function ProfileView({
   goals,
   profile,
   user,
+  accountHref,
   onSignedOut,
 }: {
   goals: GoalEntry[]
   profile: UserProfile | null
   user: User | null
+  accountHref: string
   onSignedOut: () => void
 }) {
   const [isSigningOut, setIsSigningOut] = useState(false)
@@ -216,7 +219,7 @@ function ProfileView({
         Your focus profile adapts as you set goals across areas.
       </p>
       <div className="mt-6 flex flex-col gap-3 border-t border-white/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
-        <Link href="/account" onClick={onSignedOut} className="text-[10px] uppercase tracking-[0.18em] text-gold-light hover:text-gold">
+        <Link href={accountHref} className="text-[10px] uppercase tracking-[0.18em] text-gold-light hover:text-gold">
           Open account settings
         </Link>
         <button type="button" onClick={handleSignOut} disabled={isSigningOut} className="min-h-11 rounded-full border border-white/20 px-4 text-[10px] uppercase tracking-[0.16em] text-white/70 transition-colors hover:border-gold/60 hover:text-gold-light disabled:opacity-50">
