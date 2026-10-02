@@ -30,7 +30,6 @@ interface CategoryCarouselProps {
   selected: CapabilityId | null
   highlighted: CapabilityId[]
   onSelect: (id: CapabilityId) => void
-  onEnter?: (id: CapabilityId) => boolean
   layout?: 'flow' | 'core'
   mode?: 'normal' | 'discovery'
   showIntro?: boolean
@@ -41,7 +40,6 @@ export function CategoryCarousel({
   selected,
   highlighted,
   onSelect,
-  onEnter,
   layout = 'flow',
   mode = 'normal',
   showIntro = true,
@@ -52,13 +50,9 @@ export function CategoryCarousel({
   const capabilities = coreLayout
     ? [...CAPABILITY_COLUMNS].sort((a, b) => PRODUCTION_ORDER.indexOf(a.id) - PRODUCTION_ORDER.indexOf(b.id))
     : CAPABILITY_COLUMNS
-  const [focusedCapability, setFocusedCapability] = useState<CapabilityId | null>(null)
-  const focusedIndex = focusedCapability ? capabilities.findIndex(({ id }) => id === focusedCapability) : -1
-  const leftFocusActive = coreLayout && mode === 'normal' && focusedIndex >= 0 && focusedIndex < 3
   const carouselRef = useRef<HTMLUListElement>(null)
   const swipeRef = useRef<SwipeGesture | null>(null)
   const suppressClickRef = useRef(false)
-  const enteringCapabilityRef = useRef(false)
   const [dragging, setDragging] = useState(false)
 
   const hasScrollableCards = () => {
@@ -167,43 +161,6 @@ export function CategoryCarousel({
     if (event.key === 'Enter' || event.key === ' ') suppressClickRef.current = false
   }
 
-  useEffect(() => {
-    if (!coreLayout) return
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setFocusedCapability(null)
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [coreLayout])
-
-  useEffect(() => {
-    if (!focusedCapability) enteringCapabilityRef.current = false
-  }, [focusedCapability])
-
-  const toggleFocus = (id: CapabilityId, expandable: boolean, event?: ReactMouseEvent<HTMLButtonElement>) => {
-    if (!expandable) {
-      setFocusedCapability(null)
-      onSelect(id)
-      return
-    }
-
-    const clickedClose = event?.target instanceof Element && Boolean(event.target.closest('[data-card-close]'))
-    if (focusedCapability === id && !clickedClose && onEnter) {
-      if (enteringCapabilityRef.current) return
-      enteringCapabilityRef.current = true
-      const entered = onEnter(id)
-      if (entered) {
-        setFocusedCapability(null)
-        return
-      }
-      enteringCapabilityRef.current = false
-    }
-
-    setFocusedCapability((current) => (current === id ? null : id))
-  }
-
   if (discoveryLayout) {
     return (
       <FocusedCapabilityCarousel
@@ -259,24 +216,14 @@ export function CategoryCarousel({
         {capabilities.map((capability, index) => {
           const category = categoryById[capability.categoryId]
           const mapped = highlighted.includes(capability.id)
-          const expandable = coreLayout && mode === 'normal' && index < 3
-          const isFocused = focusedCapability === capability.id
-          const shouldFade = leftFocusActive && !isFocused
           const baseGridColumn = index < 3 ? index + 1 : index + 2
-          const slideDirection = index < focusedIndex ? -1 : 1
 
           return (
             <motion.li
               key={capability.id}
               layout={coreLayout}
               initial={discoveryLayout ? { opacity: 0, y: 28, scale: 0.94 } : false}
-              animate={
-                discoveryLayout
-                  ? { opacity: 1, scale: 1, x: 0, y: 0 }
-                  : shouldFade
-                    ? { opacity: 0, scale: 0.84, x: slideDirection * 36 }
-                    : { opacity: 1, scale: 1, x: 0 }
-              }
+              animate={discoveryLayout ? { opacity: 1, scale: 1, x: 0, y: 0 } : { opacity: 1, scale: 1, x: 0 }}
               transition={{
                 layout: { duration: 0.56, ease: FOCUS_EASE },
                 opacity: { duration: discoveryLayout ? 0.5 : 0.34, ease: FOCUS_EASE, delay: discoveryLayout ? index * 0.12 : 0 },
@@ -287,7 +234,7 @@ export function CategoryCarousel({
               style={
                 coreLayout
                   ? {
-                      gridColumn: isFocused ? '1 / 4' : String(baseGridColumn),
+                      gridColumn: String(baseGridColumn),
                       gridRow: '1',
                     }
                   : undefined
@@ -296,22 +243,19 @@ export function CategoryCarousel({
                 'h-[25rem] w-[min(76vw,18rem)] min-w-0 shrink-0 snap-center sm:h-[28rem] sm:w-52',
                 discoveryLayout && 'max-[959px]:!w-[min(80vw,20rem)] sm:w-60 md:w-64',
                 coreLayout ? 'min-[960px]:!h-full min-[960px]:!w-full' : 'lg:h-[min(60vh,35rem)] lg:w-[clamp(10.5rem,14vw,14rem)]',
-                isFocused && expandable && 'max-[959px]:w-[min(86vw,24rem)]',
-                shouldFade && 'pointer-events-none',
-                leftFocusActive && isFocused && 'z-30',
               )}
             >
               <CategoryPanel
                 category={category}
                 capability={capability}
-                active={selected === capability.id || isFocused}
+                active={selected === capability.id}
                 mapped={mapped}
-                dimmed={Boolean(selected) && selected !== capability.id && !isFocused}
-                expanded={isFocused}
+                dimmed={Boolean(selected) && selected !== capability.id}
+                expanded={false}
                 disableHover={coreLayout}
                 disabled={!interactive}
-                onSelect={(event) => {
-                  if (interactive) toggleFocus(capability.id, expandable, event)
+                onSelect={() => {
+                  if (interactive) onSelect(capability.id)
                 }}
               />
             </motion.li>

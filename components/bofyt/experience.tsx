@@ -38,8 +38,6 @@ type GoalOutcome = GoalResultData
 type IntroStage = 'awakening' | 'discovery' | 'complete'
 type CapabilitySearchContext = Pick<CapabilitySearchRequest, 'capabilityId' | 'categoryId'>
 
-const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches
-
 const contextForCapability = (capabilityId: CapabilityId): CapabilitySearchContext => ({
   capabilityId,
   categoryId: capabilityById[capabilityId].categoryId,
@@ -236,11 +234,6 @@ export function BofytExperience({
     pulse()
   }
 
-  const toggleCapability = (id: CapabilityId) => {
-    if (expandedCapability === id) closeCapability()
-    else openCapability(id)
-  }
-
   const startFromIntroCapability = (id: CapabilityId) => {
     completeIntro()
     setNavActive('home')
@@ -261,11 +254,8 @@ export function BofytExperience({
     return true
   }
 
-  const enterExpandedCapability = (id: CapabilityId) => enterCapabilityExperience(id)
-
-  const pickFromGrid = (id: CapabilityId) => {
-    toggleCapability(id)
-    if (!isDesktop()) headingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const openCapabilityFromCard = (id: CapabilityId) => {
+    openCapability(id)
   }
 
   const changeGoal = (value: string) => {
@@ -741,14 +731,13 @@ export function BofytExperience({
           selected={selected}
           preview={preview}
           system={null}
-          explore={              <CategoryCarousel selected={selectedCapabilityId} highlighted={recommendedCapabilities} onSelect={pickFromGrid} />}
+          explore={              <CategoryCarousel selected={selectedCapabilityId} highlighted={recommendedCapabilities} onSelect={openCapabilityFromCard} />}
           centeredExplore={
             <CategoryCarousel
               layout="core"
               selected={selectedCapabilityId}
               highlighted={recommendedCapabilities}
-              onSelect={pickFromGrid}
-              onEnter={enterExpandedCapability}
+              onSelect={openCapabilityFromCard}
             />
           }
           returning={

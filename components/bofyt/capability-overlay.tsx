@@ -50,16 +50,36 @@ export function CapabilityOverlay({
   useEffect(() => {
     if (!open) return
 
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    contentRef.current?.scrollTo({ top: 0 })
-    const timer = window.setTimeout(() => closeRef.current?.focus(), 260)
+    const root = document.documentElement
+    const body = document.body
+    const scrollX = window.scrollX
+    const scrollY = window.scrollY
+    const scrollbarWidth = window.innerWidth - root.clientWidth
+    const previousStyles = {
+      bodyOverflow: body.style.overflow,
+      bodyPaddingRight: body.style.paddingRight,
+      rootOverflow: root.style.overflow,
+    }
+
+    root.style.overflow = 'hidden'
+    body.style.overflow = 'hidden'
+    body.style.paddingRight = scrollbarWidth > 0 ? `${scrollbarWidth}px` : previousStyles.bodyPaddingRight
+
+    const timer = window.setTimeout(() => closeRef.current?.focus({ preventScroll: true }), 260)
 
     return () => {
-      document.body.style.overflow = previousOverflow
+      root.style.overflow = previousStyles.rootOverflow
+      body.style.overflow = previousStyles.bodyOverflow
+      body.style.paddingRight = previousStyles.bodyPaddingRight
+      window.scrollTo(scrollX, scrollY)
       window.clearTimeout(timer)
     }
-  }, [open, category?.id, capability?.id])
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    contentRef.current?.scrollTo({ left: 0, top: 0, behavior: 'auto' })
+  }, [open, capability?.id])
 
   return (
     <div className={cn('contents', !open && 'pointer-events-none')}>
