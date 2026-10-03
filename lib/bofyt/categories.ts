@@ -68,7 +68,7 @@ export const categories: Category[] = [
       { name: 'Customers', description: 'Your first paying clients', prompt: 'I want to get my first 100 paying customers.' },
       { name: 'Scaling', description: 'Grow without burning out', prompt: 'I want my business to reach €10,000 in monthly revenue.' },
     ],
-    keywords: ['business', 'startup', 'company', 'customer', 'client', 'revenue', 'sales', 'launch', 'entrepreneur', 'shop', 'agency', 'side hustle', 'profit', 'product'],
+    keywords: ['business', 'startup', 'company', 'customer', 'client', 'revenue', 'sales', 'launch', 'entrepreneur', 'shop', 'agency', 'side hustle', 'profit', 'product', 'store', 'ecommerce', 'e-commerce', 'sell'],
   },
   {
     id: 'marketing',

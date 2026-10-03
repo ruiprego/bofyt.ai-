@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test:intent": "tsx --test tests/intent-routing.test.ts"
+    "test:intent": "tsx --test tests/intent-routing.test.ts tests/recommendation-quality.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
