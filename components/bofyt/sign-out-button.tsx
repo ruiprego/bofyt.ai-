@@ -27,7 +27,7 @@ export function SignOutButton() {
 
   return (
     <div className="flex flex-col items-start gap-3">
-      <Button type="button" variant="outline" disabled={isLoading} onClick={handleSignOut} className="h-11 rounded-xl border-white/20 bg-transparent px-5 text-white hover:bg-white/10">
+      <Button type="button" variant="outline" disabled={isLoading} onClick={handleSignOut} className="bofyt-secondary-action h-11 rounded-xl px-5">
         {isLoading ? 'Signing out…' : 'Sign out'}
       </Button>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}

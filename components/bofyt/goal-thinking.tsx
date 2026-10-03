@@ -32,7 +32,7 @@ export function GoalThinking({ mode = 'goal' }: { mode?: 'goal' | 'search' }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.3 }}
-            className="text-[11px] uppercase tracking-[0.4em] text-gold/90"
+            className="text-[11px] uppercase tracking-[0.4em] text-tech-cyan/90"
           >
             {steps[step]}
           </motion.p>
@@ -42,7 +42,7 @@ export function GoalThinking({ mode = 'goal' }: { mode?: 'goal' | 'search' }) {
         {steps.map((label, index) => (
           <span
             key={label}
-            className={`h-px w-8 transition-colors duration-500 ${index <= step ? 'bg-gold' : 'bg-white/15'}`}
+            className={`h-px w-8 transition-colors duration-500 ${index <= step ? 'bg-tech-cyan' : 'bg-white/15'}`}
           />
         ))}
       </div>

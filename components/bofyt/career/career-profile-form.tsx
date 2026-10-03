@@ -78,7 +78,7 @@ export function CareerProfileForm({ initial, onSaved, onNotify }: Props) {
             <select
               value={profile.remotePreference}
               onChange={(e) => set('remotePreference', e.target.value as CareerProfile['remotePreference'])}
-              className="w-full rounded-xl border border-white/10 bg-void/60 px-3 py-2.5 text-sm text-white focus:border-gold/60 focus:outline-none"
+              className="bofyt-auth-input w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
             >
               <option value="any">Any</option>
               <option value="remote">Remote</option>
@@ -187,7 +187,7 @@ function EntryList<T extends { id: string }>({
     >
       {items.length === 0 && <p className="text-sm text-white/40">Nothing added yet.</p>}
       {items.map((entry, index) => (
-        <div key={entry.id} className="flex flex-col gap-3 rounded-xl border border-white/[0.07] p-3">
+        <div key={entry.id} className="bofyt-glass-panel flex flex-col gap-3 rounded-xl p-3">
           <div className="flex items-center justify-between">
             <span className="text-xs text-white/40">
               {title} {index + 1}

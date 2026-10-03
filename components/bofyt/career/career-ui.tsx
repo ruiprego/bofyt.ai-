@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 
 export function Panel({ title, eyebrow, action, children, className }: { title?: string; eyebrow?: string; action?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={cn('flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5', className)}>
+    <section className={cn('bofyt-glass-panel flex flex-col gap-4 rounded-2xl p-4 sm:p-5', className)}>
       {(title || eyebrow || action) && (
         <header className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
@@ -29,8 +29,8 @@ export function CareerButton({ tone = 'ghost', busy, className, children, disabl
       disabled={disabled || busy}
       className={cn(
         'inline-flex min-h-10 items-center justify-center gap-2 rounded-full px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 disabled:cursor-not-allowed disabled:opacity-50',
-        tone === 'gold' && 'bg-gold text-void hover:bg-gold-light',
-        tone === 'ghost' && 'border border-white/15 text-white hover:border-gold/50 hover:text-gold-light',
+        tone === 'gold' && 'bofyt-primary-action',
+        tone === 'ghost' && 'bofyt-secondary-action',
         tone === 'quiet' && 'text-white/60 hover:text-white',
         className,
       )}
@@ -42,7 +42,7 @@ export function CareerButton({ tone = 'ghost', busy, className, children, disabl
 }
 
 const fieldClass =
-  'w-full rounded-xl border border-white/10 bg-void/60 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-gold/60 focus:outline-none focus:ring-1 focus:ring-gold/40'
+  'bofyt-auth-input w-full rounded-xl px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none'
 
 export function TextField({ label, hint, className, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string }) {
   return (

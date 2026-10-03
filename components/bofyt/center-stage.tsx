@@ -179,7 +179,7 @@ export function CenterStage({
           {!result && (
             <section
               aria-label="Independent capability entry points"
-              className="w-full border-t border-white/10 pt-6 min-[960px]:absolute min-[960px]:inset-0 min-[960px]:z-0 min-[960px]:border-t-0 min-[960px]:pt-0"
+              className="w-full border-t border-tech-cyan/15 pt-6 min-[960px]:absolute min-[960px]:inset-0 min-[960px]:z-0 min-[960px]:border-t-0 min-[960px]:pt-0"
             >
               {centeredExplore}
             </section>
@@ -212,7 +212,7 @@ export function CenterStage({
         {result && !isSearch && (
           <section
             aria-label="Independent capability entry points"
-            className="w-full border-t border-white/10 pt-6 lg:pt-8"
+            className="w-full border-t border-tech-cyan/15 pt-6 lg:pt-8"
           >
             {explore}
           </section>
@@ -223,7 +223,7 @@ export function CenterStage({
 
       {isSearch && (
         <section
-          className="mt-12 w-full max-w-6xl border-t border-white/10 pt-10 lg:mt-16 lg:pt-12"
+          className="mt-12 w-full max-w-6xl border-t border-tech-cyan/15 pt-10 lg:mt-16 lg:pt-12"
           aria-label="Independent capability entry points"
         >
           {explore}

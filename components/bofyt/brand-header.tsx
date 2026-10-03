@@ -9,7 +9,7 @@ interface BrandHeaderProps {
 export function BrandHeader({ progressCount, onOpenSheet }: BrandHeaderProps) {
   return (
     <header className="relative z-20 grid grid-cols-1 items-start px-6 pt-7 lg:grid-cols-[1fr_auto_1fr] lg:px-10 lg:pt-8">
-      <p className="hidden border-l border-white/40 pl-4 text-[10px] uppercase leading-[1.9] tracking-[0.35em] text-white/80 lg:block">
+      <p className="hidden border-l border-tech-cyan/35 pl-4 text-[10px] uppercase leading-[1.9] tracking-[0.35em] text-white/70 lg:block">
         A smarter you
         <br />a brighter tomorrow
         <span aria-hidden className="mt-3 block h-px w-4 bg-white/50" />

@@ -9,9 +9,10 @@ type DiscoveryPhase = 'ready' | 'leaving'
 
 interface CapabilityDiscoveryProps {
   onSelectCapability: (id: CapabilityId) => void
+  onActivateCore?: () => void
 }
 
-export function CapabilityDiscovery({ onSelectCapability }: CapabilityDiscoveryProps) {
+export function CapabilityDiscovery({ onSelectCapability, onActivateCore }: CapabilityDiscoveryProps) {
   const reduceMotion = useReducedMotion() === true
   const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [phase, setPhase] = useState<DiscoveryPhase>('ready')
@@ -40,13 +41,13 @@ export function CapabilityDiscovery({ onSelectCapability }: CapabilityDiscoveryP
       role="dialog"
       aria-modal="true"
       aria-labelledby="capability-discovery-title"
-      className="fixed inset-0 z-[90] isolate overflow-hidden bg-void text-white"
+      className="bofyt-app-shell fixed inset-0 z-[90] isolate overflow-hidden text-white"
       initial={{ opacity: 0 }}
       animate={{ opacity: leaving ? 0 : 1 }}
       transition={{ duration: reduceMotion ? 0 : 0.45, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div aria-hidden className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_center,rgba(226,184,101,0.15),transparent_34%),radial-gradient(ellipse_at_center,#090806_0%,#020201_72%)]" />
-      <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 h-40 bg-[linear-gradient(to_bottom,rgba(246,221,161,0.08),transparent)]" />
+      <div aria-hidden className="bofyt-discovery-field pointer-events-none fixed inset-0" />
+      <div aria-hidden className="bofyt-discovery-edge pointer-events-none fixed inset-x-0 top-0 h-40" />
 
       <div className="relative mx-auto flex min-h-dvh w-full max-w-[124rem] flex-col px-3 pb-6 pt-5 sm:px-5 lg:px-8 lg:pt-7">
         <header className="relative z-30 shrink-0 text-center">
@@ -79,6 +80,7 @@ export function CapabilityDiscovery({ onSelectCapability }: CapabilityDiscoveryP
               highlighted={[]}
               interactive={ready}
               onSelect={selectCapability}
+              onActivateCore={onActivateCore}
             />
           </div>
         </div>

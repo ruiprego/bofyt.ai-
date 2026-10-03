@@ -44,7 +44,7 @@ export function CapabilitySearch({ capability, onSubmit }: CapabilitySearchProps
   return (
     <section
       aria-labelledby={`${capability.id}-contextual-search-heading`}
-      className="rounded-2xl border border-gold/25 bg-gold/[0.035] p-4 sm:p-5"
+      className="bofyt-glass-panel-gold rounded-2xl p-4 sm:p-5"
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
         <div>

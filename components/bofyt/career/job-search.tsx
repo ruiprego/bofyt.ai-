@@ -32,7 +32,7 @@ export function JobSearch({ initialQuery, configured, onSelect }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <form onSubmit={submit} role="search" className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] p-1.5 pl-4 focus-within:border-gold/50">
+      <form onSubmit={submit} role="search" className="bofyt-input-shell flex items-center gap-2 rounded-full p-1.5 pl-4">
         <Search aria-hidden className="size-4 shrink-0 text-white/40" />
         <label htmlFor="career-job-query" className="sr-only">
           Job search
@@ -72,7 +72,7 @@ export function JobSearch({ initialQuery, configured, onSelect }: Props) {
                 <button
                   type="button"
                   onClick={() => onSelect(job)}
-                  className="group flex w-full flex-col gap-2 rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-left transition-colors hover:border-gold/40 hover:bg-gold/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60"
+                  className="bofyt-result-item group flex w-full flex-col gap-2 rounded-2xl p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tech-cyan/60"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 flex-col gap-0.5">

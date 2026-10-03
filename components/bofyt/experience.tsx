@@ -213,6 +213,11 @@ export function BofytExperience({
     inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
+  const activateCore = () => {
+    pulse()
+    focusInput()
+  }
+
   const selectCategory = (id: CategoryId, options: { preserveGoal?: boolean } = {}) => {
     if (selected !== id) {
       clearSearchExperience()
@@ -766,13 +771,13 @@ export function BofytExperience({
         : { kind: 'home' }
 
   return (
-    <div className="relative min-h-dvh overflow-x-clip bg-void text-white">
+    <div className="bofyt-app-shell relative min-h-dvh overflow-x-clip text-white">
       {introStage === 'complete' && (
         <div className="relative">
         <AmbientBackdrop />
         <BrandHeader progressCount={goals.length} onOpenSheet={setSheet} />
 
-      <main className="relative z-10 flex flex-col items-center px-4 pb-32 pt-2 lg:px-8 lg:pb-12 lg:pt-2">
+      <main className="bofyt-main-stage relative z-10 flex flex-col items-center px-4 pb-32 pt-2 lg:px-8 lg:pb-12 lg:pt-2">
         <CenterStage
           inputRef={inputRef}
           headingRef={headingRef}
@@ -780,13 +785,21 @@ export function BofytExperience({
           selected={selected}
           preview={preview}
           system={null}
-          explore={              <CategoryCarousel selected={selectedCapabilityId} highlighted={recommendedCapabilities} onSelect={openCapabilityFromCard} />}
+          explore={
+            <CategoryCarousel
+              selected={selectedCapabilityId}
+              highlighted={recommendedCapabilities}
+              onSelect={openCapabilityFromCard}
+              onActivateCore={activateCore}
+            />
+          }
           centeredExplore={
             <CategoryCarousel
               layout="core"
               selected={selectedCapabilityId}
               highlighted={recommendedCapabilities}
               onSelect={openCapabilityFromCard}
+              onActivateCore={activateCore}
             />
           }
           returning={
@@ -807,10 +820,7 @@ export function BofytExperience({
           onGoalChange={changeGoal}
           onSubmit={submitGoalOrCareer}
           onFocusChange={setFocused}
-          onActivateCore={() => {
-            pulse()
-            focusInput()
-          }}
+          onActivateCore={activateCore}
           onPickPrompt={startPrompt}
           onSearchChange={setSearchQuery}
           onSearchSubmit={submitProductSearch}
@@ -897,17 +907,13 @@ export function BofytExperience({
         </div>
       )}
       {introStage === 'awakening' && <CoreAwakening onContinue={completeAwakening} />}
-      {introStage === 'discovery' && <CapabilityDiscovery onSelectCapability={startFromIntroCapability} />}
+      {introStage === 'discovery' && (
+        <CapabilityDiscovery onSelectCapability={startFromIntroCapability} onActivateCore={completeIntro} />
+      )}
     </div>
   )
 }
 
 function AmbientBackdrop() {
-  return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
-      <div className="absolute left-1/2 top-[32%] size-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(226,184,101,0.13),transparent_60%)]" />
-      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-[radial-gradient(ellipse_at_bottom,rgba(226,184,101,0.1),transparent_65%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.85))]" />
-    </div>
-  )
+  return <div aria-hidden className="bofyt-ambient-backdrop pointer-events-none fixed inset-0 overflow-hidden" />
 }

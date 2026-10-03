@@ -12,9 +12,13 @@ import { categoryById } from '@/lib/bofyt/categories'
 import { CAPABILITY_COLUMNS, type Capability, type CapabilityId } from '@/lib/bofyt/capabilities'
 import { cn } from '@/lib/utils'
 import { CategoryPanel } from './category-panel'
+import { CoreCapabilityCard } from './core-capability-card'
 
-const PRODUCTION_ORDER: CapabilityId[] = ['grow', 'reach', 'build', 'optimize', 'automate', 'discover', 'career']
+const PRODUCTION_ORDER: CapabilityId[] = ['grow', 'reach', 'build', 'optimize', 'automate', 'discover']
+const CORE_ITEM = { kind: 'core' } as const
 const FOCUS_EASE = [0.22, 1, 0.36, 1] as const
+
+type CarouselItem = { kind: 'capability'; capability: Capability } | typeof CORE_ITEM
 const SWIPE_DISTANCE = 48
 const SWIPE_AXIS_THRESHOLD = 10
 
@@ -30,6 +34,7 @@ interface CategoryCarouselProps {
   selected: CapabilityId | null
   highlighted: CapabilityId[]
   onSelect: (id: CapabilityId) => void
+  onActivateCore?: () => void
   layout?: 'flow' | 'core'
   mode?: 'normal' | 'discovery'
   showIntro?: boolean
@@ -40,6 +45,7 @@ export function CategoryCarousel({
   selected,
   highlighted,
   onSelect,
+  onActivateCore,
   layout = 'flow',
   mode = 'normal',
   showIntro = true,
@@ -47,9 +53,14 @@ export function CategoryCarousel({
 }: CategoryCarouselProps) {
   const coreLayout = layout === 'core'
   const discoveryLayout = coreLayout && mode === 'discovery'
-  const capabilities = coreLayout
-    ? [...CAPABILITY_COLUMNS].sort((a, b) => PRODUCTION_ORDER.indexOf(a.id) - PRODUCTION_ORDER.indexOf(b.id))
-    : CAPABILITY_COLUMNS
+  const supportCapabilities = [...CAPABILITY_COLUMNS]
+    .filter((capability) => capability.id !== 'career')
+    .sort((a, b) => PRODUCTION_ORDER.indexOf(a.id) - PRODUCTION_ORDER.indexOf(b.id))
+  const items: CarouselItem[] = [
+    ...supportCapabilities.slice(0, 3).map((capability) => ({ kind: 'capability' as const, capability })),
+    CORE_ITEM,
+    ...supportCapabilities.slice(3).map((capability) => ({ kind: 'capability' as const, capability })),
+  ]
   const carouselRef = useRef<HTMLUListElement>(null)
   const swipeRef = useRef<SwipeGesture | null>(null)
   const suppressClickRef = useRef(false)
@@ -164,10 +175,11 @@ export function CategoryCarousel({
   if (discoveryLayout) {
     return (
       <FocusedCapabilityCarousel
-        capabilities={capabilities}
+        items={items}
         interactive={interactive}
         showIntro={showIntro}
         onSelect={onSelect}
+        onActivateCore={onActivateCore}
       />
     )
   }
@@ -190,7 +202,7 @@ export function CategoryCarousel({
           Explore any capability
         </h2>
           <p className="max-w-md text-xs leading-relaxed text-white/45">
-            Six independent entry points. Start wherever the next useful move is.
+            Six paths orbit the BOFYT Core. Start wherever the next useful move is.
           </p>
         </div>
       )}
@@ -213,14 +225,14 @@ export function CategoryCarousel({
           dragging && 'cursor-grabbing select-none',
         )}
       >
-        {capabilities.map((capability, index) => {
-          const category = categoryById[capability.categoryId]
-          const mapped = highlighted.includes(capability.id)
-          const baseGridColumn = index < 3 ? index + 1 : index + 2
+        {items.map((item, index) => {
+          const capability = item.kind === 'capability' ? item.capability : null
+          const isCore = item.kind === 'core'
+          const mapped = capability ? highlighted.includes(capability.id) : false
 
           return (
             <motion.li
-              key={capability.id}
+              key={capability?.id ?? 'core'}
               layout={coreLayout}
               initial={discoveryLayout ? { opacity: 0, y: 28, scale: 0.94 } : false}
               animate={discoveryLayout ? { opacity: 1, scale: 1, x: 0, y: 0 } : { opacity: 1, scale: 1, x: 0 }}
@@ -234,7 +246,7 @@ export function CategoryCarousel({
               style={
                 coreLayout
                   ? {
-                      gridColumn: String(baseGridColumn),
+                      gridColumn: String(index + 1),
                       gridRow: '1',
                     }
                   : undefined
@@ -243,21 +255,28 @@ export function CategoryCarousel({
                 'h-[25rem] w-[calc(100vw-1.5rem)] min-w-0 shrink-0 snap-center sm:h-[28rem] sm:w-52',
                 discoveryLayout && 'max-[959px]:!w-[min(80vw,20rem)] sm:w-60 md:w-64',
                 coreLayout ? 'min-[960px]:!h-full min-[960px]:!w-full' : 'lg:h-[min(60vh,35rem)] lg:w-[clamp(10.5rem,14vw,14rem)]',
+                isCore && 'min-[960px]:relative min-[960px]:z-20 min-[960px]:scale-[1.035]',
+                !isCore && coreLayout && 'min-[960px]:opacity-90',
               )}
             >
-              <CategoryPanel
-                category={category}
-                capability={capability}
-                active={selected === capability.id}
-                mapped={mapped}
-                dimmed={Boolean(selected) && selected !== capability.id}
-                expanded={false}
-                disableHover={coreLayout}
-                disabled={!interactive}
-                onSelect={() => {
-                  if (interactive) onSelect(capability.id)
-                }}
-              />
+              {capability ? (
+                <CategoryPanel
+                  category={categoryById[capability.categoryId]}
+                  capability={capability}
+                  active={selected === capability.id}
+                  mapped={mapped}
+                  dimmed={Boolean(selected) && selected !== capability.id}
+                  expanded={false}
+                  compact={coreLayout}
+                  disableHover={coreLayout}
+                  disabled={!interactive}
+                  onSelect={() => {
+                    if (interactive) onSelect(capability.id)
+                  }}
+                />
+              ) : (
+                <CoreCapabilityCard interactive={interactive} onActivateCore={onActivateCore} />
+              )}
             </motion.li>
           )
         })}
@@ -267,10 +286,11 @@ export function CategoryCarousel({
 }
 
 interface FocusedCapabilityCarouselProps {
-  capabilities: Capability[]
+  items: CarouselItem[]
   interactive: boolean
   showIntro: boolean
   onSelect: (id: CapabilityId) => void
+  onActivateCore?: () => void
 }
 
 interface FocusedPointerGesture {
@@ -281,10 +301,11 @@ interface FocusedPointerGesture {
 }
 
 function FocusedCapabilityCarousel({
-  capabilities,
+  items,
   interactive,
   showIntro,
   onSelect,
+  onActivateCore,
 }: FocusedCapabilityCarouselProps) {
   const reduceMotion = useReducedMotion() === true
   const [activeIndex, setActiveIndex] = useState(0)
@@ -297,7 +318,7 @@ function FocusedCapabilityCarousel({
   const wheelDeltaRef = useRef(0)
   const wheelGestureHandledRef = useRef(false)
   const wheelResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const activeCapability = capabilities[activeIndex]
+  const activeItem = items[activeIndex]
 
   const resetWheelGesture = () => {
     wheelDeltaRef.current = 0
@@ -320,13 +341,13 @@ function FocusedCapabilityCarousel({
     [],
   )
 
-  if (!activeCapability) return null
+  if (!activeItem) return null
 
   const move = (step: number) => {
-    if (!interactive || capabilities.length < 2) return
+    if (!interactive || items.length < 2) return
 
     setDirection(step > 0 ? 1 : -1)
-    setActiveIndex((current) => Math.max(0, Math.min(capabilities.length - 1, current + step)))
+    setActiveIndex((current) => Math.max(0, Math.min(items.length - 1, current + step)))
     setDragX(0)
   }
 
@@ -356,7 +377,7 @@ function FocusedCapabilityCarousel({
       !interactive ||
       !event.isPrimary ||
       (event.pointerType === 'mouse' && event.button !== 0) ||
-      capabilities.length < 2
+      items.length < 2
     ) {
       gestureRef.current = null
       return
@@ -493,7 +514,7 @@ function FocusedCapabilityCarousel({
             Explore any capability
           </h2>
           <p className="max-w-md text-xs leading-relaxed text-white/45">
-            Six independent entry points. Start wherever the next useful move is.
+            Six paths orbit the BOFYT Core. Start wherever the next useful move is.
           </p>
         </div>
       )}
@@ -523,7 +544,7 @@ function FocusedCapabilityCarousel({
         <div className="relative flex min-h-0 w-full flex-1 items-center justify-center">
           <AnimatePresence initial={false} mode="wait">
             <motion.div
-              key={activeCapability.id}
+              key={activeItem.kind === 'core' ? 'core' : activeItem.capability.id}
               initial={{ opacity: 0, x: direction * 96, scale: 0.94 }}
               animate={{ opacity: 1, x: dragX, scale: dragging ? 0.985 : 1 }}
               exit={{ opacity: 0, x: direction * -96, scale: 0.94 }}
@@ -531,27 +552,31 @@ function FocusedCapabilityCarousel({
                 duration: dragging ? 0 : reduceMotion ? 0 : 0.48,
                 ease: FOCUS_EASE,
               }}
-              className="relative z-10 h-[min(62dvh,34rem)] w-[min(86vw,30rem)] min-w-0 sm:h-[min(66dvh,38rem)] sm:w-[min(72vw,34rem)] lg:h-[min(68vh,42rem)] lg:w-[min(36vw,36rem)]"
+              className="relative z-10 h-[min(58dvh,32rem)] w-[min(86vw,30rem)] min-w-0 sm:h-[min(66dvh,38rem)] sm:w-[min(72vw,34rem)] lg:h-[min(68vh,42rem)] lg:w-[min(36vw,36rem)]"
             >
-              <CategoryPanel
-                category={categoryById[activeCapability.categoryId]}
-                capability={activeCapability}
-                active
-                mapped={false}
-                dimmed={false}
-                expanded={false}
-                disableHover
-                disabled={!interactive}
-                onSelect={() => {
-                  if (interactive) onSelect(activeCapability.id)
-                }}
-              />
+              {activeItem.kind === 'core' ? (
+                <CoreCapabilityCard interactive={interactive} onActivateCore={onActivateCore} />
+              ) : (
+                <CategoryPanel
+                  category={categoryById[activeItem.capability.categoryId]}
+                  capability={activeItem.capability}
+                  active
+                  mapped={false}
+                  dimmed={false}
+                  expanded={false}
+                  disableHover
+                  disabled={!interactive}
+                  onSelect={() => {
+                    if (interactive) onSelect(activeItem.capability.id)
+                  }}
+                />
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
 
         <p aria-live="polite" className="relative z-10 text-center text-[10px] uppercase tracking-[0.24em] text-gold-light/75">
-          {activeIndex + 1} / {capabilities.length}
+          {activeIndex + 1} / {items.length}
         </p>
       </div>
     </section>

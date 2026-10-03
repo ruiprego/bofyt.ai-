@@ -106,7 +106,7 @@ export function CapabilityOverlay({
             <section
               aria-describedby="capability-overlay-description"
               onClick={handleCardClick}
-              className="relative flex max-h-[calc(100dvh-7rem)] min-h-0 w-full flex-col overflow-hidden rounded-[1.75rem] border border-gold/55 bg-void/95 shadow-[0_0_100px_-28px_rgba(226,184,101,0.85),0_28px_90px_-30px_rgba(0,0,0,0.95)] sm:max-w-4xl"
+              className="bofyt-auth-panel relative flex max-h-[calc(100dvh-7rem)] min-h-0 w-full flex-col overflow-hidden rounded-[1.75rem] border sm:max-w-4xl"
             >
               <div className="relative h-40 shrink-0 overflow-hidden border-b border-gold/30 sm:h-48">
                 <Image
@@ -117,7 +117,7 @@ export function CapabilityOverlay({
                   className="object-cover object-center opacity-65"
                   priority
                 />
-                <span aria-hidden className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,5,5,0.98),rgba(5,5,5,0.58),rgba(5,5,5,0.72)),linear-gradient(0deg,#050505,transparent_70%)]" />
+                <span aria-hidden className="bofyt-capability-hero-wash absolute inset-0" />
                 <span aria-hidden className="absolute inset-x-8 bottom-0 h-px bg-gradient-to-r from-transparent via-gold-light/80 to-transparent" />
 
                 <div className="absolute inset-x-5 bottom-5 flex items-end justify-between gap-4 sm:inset-x-7 sm:bottom-6">
@@ -179,11 +179,11 @@ export function CapabilityOverlay({
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                    <div className="bofyt-glass-panel rounded-2xl p-4">
                       <p className="text-[10px] uppercase tracking-[0.26em] text-white/45">What BOFYT builds</p>
                       <p className="mt-2 text-sm leading-relaxed text-white/75">{capability.response}</p>
                     </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                    <div className="bofyt-glass-panel rounded-2xl p-4">
                       <p className="text-[10px] uppercase tracking-[0.26em] text-white/45">Your path</p>
                       <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-2" aria-label="Capability path">
                         {capability.paths.map((path) => (
@@ -225,7 +225,7 @@ export function CapabilityOverlay({
                       </p>
                       <ul className="mt-4 grid gap-3 sm:grid-cols-2" aria-label="Evidence levels">
                         {capability.evidenceLevels.map((level) => (
-                          <li key={level.label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                          <li key={level.label} className="bofyt-glass-panel rounded-2xl p-4">
                             <p className="text-sm text-white">{level.label}</p>
                             <p className="mt-1 text-xs leading-relaxed text-white/50">{level.description}</p>
                           </li>
@@ -251,7 +251,7 @@ export function CapabilityOverlay({
                                 prompt: `I want to explore ${book.title} by ${book.author} and apply its ideas to my goal.`,
                               })
                             }
-                            className="group flex h-full w-full flex-col rounded-2xl border border-white/10 bg-black/35 p-4 text-left transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-gold/45 hover:bg-gold/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70"
+                            className="bofyt-result-item group flex h-full w-full flex-col rounded-2xl p-4 text-left transition-[border-color,background-color,transform] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tech-cyan/70"
                           >
                             <span className="font-display text-lg text-white group-hover:text-gold-light">{book.title}</span>
                             <span className="mt-1 text-xs uppercase tracking-[0.14em] text-gold-light/75">{book.author}</span>
@@ -298,7 +298,7 @@ function ModuleCard({ module, onSelect }: { module: CategoryModule; onSelect: ()
       <button
         type="button"
         onClick={onSelect}
-        className="group flex min-h-40 w-full flex-col justify-between rounded-2xl border border-white/10 bg-black/35 p-4 text-left transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-gold/45 hover:bg-gold/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70"
+        className="bofyt-result-item group flex min-h-40 w-full flex-col justify-between rounded-2xl p-4 text-left transition-[border-color,background-color,transform] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tech-cyan/70"
       >
         <span>
           <span className="block font-display text-lg text-white group-hover:text-gold-light">{module.name}</span>

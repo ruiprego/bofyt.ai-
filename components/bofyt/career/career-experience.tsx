@@ -83,9 +83,9 @@ export function CareerExperience({ initialQuery, accountHref, onClose, onNotify 
       onKeyDown={(event) => {
         if (event.key === 'Escape') onClose()
       }}
-      className="fixed inset-0 z-[60] flex flex-col bg-void/[0.97] text-white backdrop-blur-sm focus:outline-none"
+      className="bofyt-career-shell fixed inset-0 z-[60] flex flex-col text-white backdrop-blur-sm focus:outline-none"
     >
-      <header className="border-b border-white/[0.07]">
+      <header className="border-b border-tech-cyan/15">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 pb-3 pt-4 sm:px-6">
           <div className="flex flex-col gap-0.5">
             <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-gold">BOFYT Career</p>
@@ -111,8 +111,8 @@ export function CareerExperience({ initialQuery, accountHref, onClose, onNotify 
                 aria-current={tab === item.id ? 'page' : undefined}
                 onClick={() => setTab(item.id)}
                 className={cn(
-                  'relative shrink-0 px-3 pb-3 pt-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60',
-                  tab === item.id ? 'text-white after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-gold' : 'text-white/45 hover:text-white/80',
+                  'bofyt-career-tab relative shrink-0 px-3 pb-3 pt-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tech-cyan/60',
+                  tab === item.id ? 'text-white' : 'text-white/45 hover:text-white/80',
                 )}
               >
                 {item.label}

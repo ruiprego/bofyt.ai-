@@ -142,7 +142,10 @@ export function CategoryPanel({
         <span
           className={cn(
             capabilityCard
-              ? 'font-display text-[clamp(0.95rem,1.35vw,1.3rem)] font-medium uppercase leading-[1.12] tracking-[0.08em] break-words transition-colors duration-500'
+              ? cn(
+                  'font-display text-[clamp(0.95rem,1.35vw,1.3rem)] font-medium uppercase leading-[1.12] tracking-[0.08em] break-words transition-colors duration-500',
+                  compact && 'lg:text-[clamp(0.7rem,0.9vw,1rem)] lg:tracking-[0.05em]',
+                )
               : 'font-display text-[clamp(0.65rem,0.9vw,0.9rem)] font-medium uppercase leading-[1.2] tracking-wide break-words transition-colors duration-500',
             capabilityCard ? 'text-white' : active ? 'text-gold-light' : 'text-white',
           )}
@@ -157,7 +160,7 @@ export function CategoryPanel({
             capabilityCard ? (active ? 'bg-tech-cyan' : 'bg-tech-cyan/70') : active ? 'bg-gold-light' : 'bg-white/40',
           )}
         />
-        <span className={cn('max-w-[18rem] leading-relaxed', capabilityCard ? 'text-[12px] text-white/70' : 'text-[11px] text-white/65', compact && 'lg:max-h-8 lg:overflow-hidden lg:text-[10px] lg:leading-tight')}>
+        <span className={cn('max-w-[18rem] leading-relaxed', capabilityCard ? 'text-[12px] text-white/70' : 'text-[11px] text-white/65', compact && 'lg:max-h-12 lg:overflow-hidden lg:text-[10px] lg:leading-tight')}>
           {panelDescription}
         </span>
         {expanded && capability && (

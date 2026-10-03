@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   colorScheme: 'dark',
-  themeColor: '#050505',
+  themeColor: '#020a15',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
@@ -35,8 +35,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`dark bg-void ${inter.variable} ${outfit.variable}`}>
-      <body className="font-sans antialiased">
+    <html lang="en" className={`dark bg-tech-ink ${inter.variable} ${outfit.variable}`}>
+      <body className="bg-tech-ink font-sans antialiased">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

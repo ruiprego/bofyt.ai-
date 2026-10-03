@@ -47,7 +47,7 @@ export function InfoSheet({ kind, goals, profile, user, accountHref, onSignedOut
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-x-0 bottom-0 z-50 max-h-[80dvh] overflow-y-auto rounded-t-3xl border-t border-gold/30 bg-[#0b0a08] p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] lg:inset-x-auto lg:right-6 lg:bottom-6 lg:w-[420px] lg:rounded-3xl lg:border"
+            className="bofyt-sheet fixed inset-x-0 bottom-0 z-50 max-h-[80dvh] overflow-y-auto rounded-t-3xl border-t p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] lg:inset-x-auto lg:right-6 lg:bottom-6 lg:w-[420px] lg:rounded-3xl lg:border"
           >
             <div className="flex items-center justify-between">
               <h2 id="sheet-title" className="font-display text-2xl text-white">
@@ -95,7 +95,7 @@ function ProgressView({
       {goals.map((entry) => {
         const progress = progressOf(entry)
         return (
-          <li key={entry.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <li key={entry.id} className="bofyt-glass-panel rounded-2xl p-4">
             <button type="button" onClick={() => onOpenGoal(entry)} className="w-full text-left">
               <div className="flex items-start justify-between gap-3">
                 <p className="text-pretty text-base text-white">{entry.goal}</p>
@@ -173,10 +173,10 @@ function ProfileView({
           <p className="mt-2 text-sm leading-relaxed text-white/45">Your current goal flow stays available without an account.</p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
-          <Link href="/auth/login" onClick={onSignedOut} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full border border-gold bg-gold px-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-void transition-colors hover:bg-gold-light">
+          <Link href="/auth/login" onClick={onSignedOut} className="bofyt-primary-action inline-flex min-h-11 flex-1 items-center justify-center rounded-full px-4 text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors">
             Log in
           </Link>
-          <Link href="/auth/sign-up" onClick={onSignedOut} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full border border-white/20 px-4 text-[10px] uppercase tracking-[0.16em] text-white/75 transition-colors hover:border-gold/60 hover:text-gold-light">
+          <Link href="/auth/sign-up" onClick={onSignedOut} className="bofyt-secondary-action inline-flex min-h-11 flex-1 items-center justify-center rounded-full px-4 text-[10px] uppercase tracking-[0.16em] transition-colors">
             Create account
           </Link>
         </div>

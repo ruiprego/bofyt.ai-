@@ -64,7 +64,7 @@ export function AccountSettingsForm({
             setDisplayName(event.target.value)
             setStatus('idle')
           }}
-          className="h-12 rounded-xl border border-white/15 bg-white/[0.03] px-4 text-base text-white placeholder:text-white/30 transition-colors focus:border-gold/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/30"
+          className="bofyt-auth-input h-12 rounded-xl px-4 text-base placeholder:text-white/30 transition-colors focus:outline-none"
         />
       </div>
 
@@ -98,7 +98,7 @@ export function AccountSettingsForm({
         <Button
           type="submit"
           disabled={status === 'saving'}
-          className="h-11 rounded-xl border border-gold bg-gold px-6 text-[10px] font-semibold uppercase tracking-[0.16em] text-void hover:bg-gold-light"
+          className="bofyt-primary-action h-11 rounded-xl px-6 text-[10px] font-semibold uppercase tracking-[0.16em]"
         >
           {status === 'saving' ? 'Saving…' : 'Save profile'}
         </Button>

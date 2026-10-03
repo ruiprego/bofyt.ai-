@@ -57,7 +57,7 @@ export function CoreReply({ category, capability, onPickPrompt }: CoreReplyProps
               <button
                 type="button"
                 onClick={() => onPickPrompt(module.prompt)}
-                className="group flex h-full min-h-24 w-full items-start gap-2.5 rounded-xl border border-gold/25 bg-black/40 p-3 text-left transition-[border-color,background-color] duration-300 hover:border-gold/70 hover:bg-gold/[0.07] active:scale-[0.98]"
+                className="bofyt-glass-panel group flex h-full min-h-24 w-full items-start gap-2.5 rounded-xl p-3 text-left transition-[border-color,background-color] duration-300 hover:-translate-y-0.5 active:scale-[0.98]"
               >
                 {Icon && <Icon aria-hidden className="mt-0.5 size-4 shrink-0 text-gold-light" />}
                 <span className="flex min-w-0 flex-col">

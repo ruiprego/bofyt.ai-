@@ -35,7 +35,7 @@ export function CategoryGrid({ selected, highlighted, onSelect }: CategoryGridPr
                 aria-pressed={isSelected}
                 onClick={() => onSelect(category.id)}
                 className={cn(
-                  'flex min-h-16 w-full items-center gap-3 rounded-2xl border bg-black/40 p-3 text-left transition-[border-color,background-color,transform] duration-300 active:scale-[0.98]',
+                  'bofyt-glass-panel flex min-h-16 w-full items-center gap-3 rounded-2xl p-3 text-left transition-[border-color,background-color,transform] duration-300 active:scale-[0.98]',
                   isSelected
                     ? 'border-gold/80 bg-gold/[0.08]'
                     : isMapped

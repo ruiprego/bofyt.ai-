@@ -40,14 +40,14 @@ export function CoreAwakening({ onContinue }: CoreAwakeningProps) {
       role="dialog"
       aria-modal="true"
       aria-label="BOFYT Core opening"
-      className="fixed inset-0 z-[100] isolate overflow-hidden bg-void text-white"
+      className="bofyt-app-shell fixed inset-0 z-[100] isolate overflow-hidden text-white"
       initial={{ opacity: 1 }}
       animate={{ opacity: leaving ? 0 : 1 }}
       transition={{ duration: reduceMotion ? 0 : 0.52, ease: [0.22, 1, 0.36, 1] }}
     >
       <motion.div
         aria-hidden
-        className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(226,184,101,0.2),transparent_38%),radial-gradient(ellipse_at_center,#090806_0%,#020201_72%)]"
+        className="bofyt-core-opening-field absolute inset-0"
         animate={{ opacity: leaving ? 0 : 1 }}
       />
 

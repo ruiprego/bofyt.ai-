@@ -33,12 +33,12 @@ export function ForgotPasswordForm() {
   if (isComplete) {
     return (
       <div className="flex flex-col gap-5" aria-live="polite">
-        <div className="rounded-2xl border border-gold/30 bg-gold/[0.06] p-4">
+        <div className="bofyt-glass-panel-gold rounded-2xl p-4">
           <p className="text-sm leading-relaxed text-white/80">
             If an account exists for that address, a reset link is on its way. Check your inbox and follow the link to choose a new password.
           </p>
         </div>
-        <Button type="button" variant="outline" onClick={() => setIsComplete(false)} className="h-12 rounded-xl border-white/20 bg-transparent text-white hover:bg-white/10">
+        <Button type="button" variant="outline" onClick={() => setIsComplete(false)} className="bofyt-secondary-action h-12 rounded-xl">
           Send another link
         </Button>
         <p className="text-center text-sm text-white/50">

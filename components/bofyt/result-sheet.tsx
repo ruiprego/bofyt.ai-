@@ -60,7 +60,7 @@ export function ResultSheet({ state, kind, compared, onToggleCompare, onChoose, 
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ duration: 0.45, ease }}
-            className="fixed inset-x-0 bottom-0 z-[71] max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-3xl border-t border-gold/30 bg-[#0b0a08] px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-5 text-left text-white md:inset-x-auto md:left-1/2 md:w-[min(92vw,560px)] md:-translate-x-1/2 md:rounded-3xl md:border lg:bottom-8"
+            className="bofyt-sheet fixed inset-x-0 bottom-0 z-[71] max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-3xl border-t px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-5 text-left text-white md:inset-x-auto md:left-1/2 md:w-[min(92vw,560px)] md:-translate-x-1/2 md:rounded-3xl md:border lg:bottom-8"
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20 md:hidden" aria-hidden />
             <div className="flex items-start justify-between gap-4">
@@ -149,7 +149,7 @@ function ViewBody({
             href={item.productUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-gold-light to-gold text-sm font-medium uppercase tracking-[0.16em] text-black active:scale-[0.98]"
+            className="bofyt-primary-action inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full text-sm font-medium uppercase tracking-[0.16em] active:scale-[0.98]"
           >
             <ExternalLink aria-hidden className="size-4" />
             Open product
@@ -158,7 +158,7 @@ function ViewBody({
           <button
             type="button"
             onClick={() => onChoose(item)}
-            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-gold-light to-gold text-sm font-medium uppercase tracking-[0.16em] text-black active:scale-[0.98]"
+            className="bofyt-primary-action inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full text-sm font-medium uppercase tracking-[0.16em] active:scale-[0.98]"
           >
             {kind === 'places' ? (
               <>
@@ -178,8 +178,8 @@ function ViewBody({
           onClick={() => onToggleCompare(item)}
           aria-pressed={isCompared}
           className={cn(
-            'inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full border text-sm uppercase tracking-[0.16em] transition-colors active:scale-[0.98]',
-            isCompared ? 'border-gold bg-gold/15 text-gold-light' : 'border-white/20 text-white/85 hover:border-gold/60',
+            'bofyt-secondary-action inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full text-sm uppercase tracking-[0.16em] transition-colors active:scale-[0.98]',
+            isCompared && 'border-gold bg-gold/15 text-gold-light',
           )}
         >
           {isCompared ? <Check aria-hidden className="size-4" /> : <Plus aria-hidden className="size-4" />}

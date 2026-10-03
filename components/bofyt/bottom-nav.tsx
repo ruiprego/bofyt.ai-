@@ -33,7 +33,7 @@ export function BottomNav({ active, progressCount, category, capability, hasGoal
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-black/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
+      className="bofyt-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
     >
       <ul className="mx-auto grid max-w-md grid-cols-5 items-end px-2">
         {ITEMS.map((item) => {
@@ -100,7 +100,7 @@ export function BottomNav({ active, progressCount, category, capability, hasGoal
                   isActive ? 'text-white' : 'text-white/45',
                 )}
               >
-                <Icon aria-hidden className={cn('size-5', isActive && 'text-gold')} />
+                <Icon aria-hidden className={cn('size-5', isActive && 'text-tech-cyan')} />
                 {item.label}
                 {item.id === 'progress' && progressCount > 0 && (
                   <span className="absolute right-[22%] top-2 grid size-4 place-items-center rounded-full bg-gold text-[10px] font-semibold text-black">

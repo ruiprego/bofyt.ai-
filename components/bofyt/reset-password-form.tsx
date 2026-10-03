@@ -41,7 +41,7 @@ export function ResetPasswordForm() {
   if (isComplete) {
     return (
       <div className="flex flex-col gap-5" aria-live="polite">
-        <div className="rounded-2xl border border-gold/30 bg-gold/[0.06] p-4">
+        <div className="bofyt-glass-panel-gold rounded-2xl p-4">
           <p className="text-sm leading-relaxed text-white/80">Your password has been updated. You can now sign in with the new password.</p>
         </div>
         <Link href="/auth/login" className={`${authPrimaryButtonClassName} inline-flex items-center justify-center`}>
