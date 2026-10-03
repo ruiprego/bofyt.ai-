@@ -252,7 +252,7 @@ export function BofytExperience({
   const startFromIntroCapability = (id: CapabilityId) => {
     completeIntro()
     setNavActive('home')
-    openCapability(id)
+    openCapabilityFromCard(id)
   }
 
   const enterCapabilityExperience = (id: CapabilityId) => {
@@ -270,6 +270,14 @@ export function BofytExperience({
   }
 
   const openCapabilityFromCard = (id: CapabilityId) => {
+    if (id === 'career') {
+      closeCapability()
+      setSheet(null)
+      setCoreOpen(false)
+      setCareerQuery('')
+      pulse()
+      return
+    }
     openCapability(id)
   }
 

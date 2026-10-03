@@ -11,6 +11,7 @@ export const CAPABILITY_SEARCH_PLACEHOLDERS: Record<CapabilityId, string> = {
   optimize: 'What do you want to optimize?',
   automate: 'What do you want to automate?',
   discover: 'What are you looking for?',
+  career: 'What role are you looking for?',
 }
 
 interface CapabilitySearchProps {

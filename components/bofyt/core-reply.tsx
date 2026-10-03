@@ -19,6 +19,7 @@ const CAPABILITY_PROMPTS: Record<Capability['id'], string> = {
   optimize: 'What do you want to optimize?',
   automate: 'What do you want to automate?',
   discover: 'What do you want to discover?',
+  career: 'What role are you looking for?',
 }
 
 const ease = [0.22, 1, 0.36, 1] as const

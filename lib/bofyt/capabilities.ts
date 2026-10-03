@@ -1,6 +1,6 @@
 import type { CategoryId, CategoryModule } from './categories'
 
-export type CapabilityId = 'grow' | 'build' | 'reach' | 'optimize' | 'automate' | 'discover'
+export type CapabilityId = 'grow' | 'build' | 'reach' | 'optimize' | 'automate' | 'discover' | 'career'
 
 export interface RecommendedBook {
   title: string
@@ -237,6 +237,21 @@ export const CAPABILITY_COLUMNS: Capability[] = [
     categoryId: 'search',
     recommendationCategoryIds: ['search'],
     imageSrc: '/panels/search.png',
+  },
+  {
+    id: 'career',
+    index: '07',
+    title: 'Career',
+    shortTitle: 'Career',
+    description: 'Find live roles, tailor your CV and send applications you can track.',
+    response: 'Search real openings, adapt your CV to each role and send applications from one workspace.',
+    tags: ['Jobs', 'CV', 'Applications', 'Tracking'],
+    paths: ['Job search', 'CV tailoring', 'Applications', 'Follow-ups'],
+    modules: [],
+    books: [],
+    categoryId: 'personal',
+    recommendationCategoryIds: [],
+    imageSrc: '/panels/career.png',
   },
 ]
 

@@ -13,7 +13,7 @@ import { CAPABILITY_COLUMNS, type Capability, type CapabilityId } from '@/lib/bo
 import { cn } from '@/lib/utils'
 import { CategoryPanel } from './category-panel'
 
-const PRODUCTION_ORDER: CapabilityId[] = ['grow', 'reach', 'build', 'optimize', 'automate', 'discover']
+const PRODUCTION_ORDER: CapabilityId[] = ['grow', 'reach', 'build', 'optimize', 'automate', 'discover', 'career']
 const FOCUS_EASE = [0.22, 1, 0.36, 1] as const
 const SWIPE_DISTANCE = 48
 const SWIPE_AXIS_THRESHOLD = 10
