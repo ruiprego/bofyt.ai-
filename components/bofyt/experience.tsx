@@ -28,6 +28,8 @@ import { CapabilityOverlay } from './capability-overlay'
 import { CategoryCarousel } from './category-carousel'
 import { CenterStage } from './center-stage'
 import { CoreOverlay } from './core-overlay'
+import { CareerExperience } from './career/career-experience'
+import { isCareerWorkspaceGoal } from '@/lib/career/routing'
 import { CoreAwakening } from './core-awakening'
 import { ContinueGoal } from './continue-goal'
 import type { GoalResultData, GoalResultHandlers } from './goal-result'
@@ -93,6 +95,7 @@ export function BofytExperience({
   const [sheet, setSheet] = useState<SheetKind | null>(null)
   const [navActive, setNavActive] = useState<NavTarget>('home')
   const [coreOpen, setCoreOpen] = useState(false)
+  const [careerQuery, setCareerQuery] = useState<string | null>(null)
   const [introStage, setIntroStage] = useState<IntroStage>(initialReturn ? 'complete' : 'awakening')
   const [planSource, setPlanSource] = useState<GoalOutcome | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -291,7 +294,9 @@ export function BofytExperience({
     const productContext = targetCategory === 'search' ? searchCapabilityContext : null
     setResult(null)
 
-    if (isProductSearchQuery(trimmed)) {
+    if (isCareerWorkspaceGoal(trimmed)) {
+      submitGoalOrCareer(trimmed)
+    } else if (isProductSearchQuery(trimmed)) {
       setSelected('search')
       setGoal('')
       setGoalCapabilityContext(null)
@@ -299,7 +304,7 @@ export function BofytExperience({
       setSearchFeedback(null)
       runProductSearch(trimmed, productContext)
     } else {
-      submitGoal(trimmed, goalCapabilityContext)
+      submitGoalOrCareer(trimmed, goalCapabilityContext)
     }
 
     pulse()
@@ -359,6 +364,18 @@ export function BofytExperience({
       setNavActive('core')
     }
     pulse()
+  }
+
+  const submitGoalOrCareer = (goalOverride?: string, contextOverride?: CapabilitySearchContext | null) => {
+    const candidate = (typeof goalOverride === 'string' ? goalOverride : goal).trim()
+    if (candidate && isCareerWorkspaceGoal(candidate)) {
+      setCareerQuery(candidate)
+      setGoal('')
+      setCoreOpen(false)
+      pulse()
+      return
+    }
+    submitGoal(goalOverride, contextOverride)
   }
 
   const submitGoal = (goalOverride?: string, contextOverride?: CapabilitySearchContext | null) => {
@@ -769,7 +786,7 @@ export function BofytExperience({
           searchResultHandlers={searchResultHandlers}
           searchFeedback={searchFeedback}
           onGoalChange={changeGoal}
-          onSubmit={submitGoal}
+          onSubmit={submitGoalOrCareer}
           onFocusChange={setFocused}
           onActivateCore={() => {
             pulse()
@@ -809,13 +826,23 @@ export function BofytExperience({
         result={result}
         resultHandlers={resultHandlers}
         onGoalChange={changeGoal}
-        onSubmit={submitGoal}
+        onSubmit={submitGoalOrCareer}
         onPulse={pulse}
         onClose={() => {
           setCoreOpen(false)
           setNavActive('home')
         }}
       />
+
+      {careerQuery !== null && (
+        <CareerExperience
+          key={careerQuery}
+          initialQuery={careerQuery}
+          accountHref={accountHrefFor(currentReturnState)}
+          onClose={() => setCareerQuery(null)}
+          onNotify={notify}
+        />
+      )}
 
       <PlanSheet source={planSource} onClose={() => setPlanSource(null)} onStart={startPlan} />
 
