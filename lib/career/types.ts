@@ -168,6 +168,7 @@ export interface ApplicationRecord {
 
 export interface CareerStatus {
   signedIn: boolean
+  account?: { email: string | null; name: string | null }
   email: { configured: boolean; sender: string | null }
   jobs: { configured: boolean }
   ai: { configured: boolean }

@@ -1,5 +1,6 @@
 import 'server-only'
 import { generateText, Output } from 'ai'
+import { z } from 'zod'
 import {
   applicationEmailSchema,
   cvDocumentSchema,
@@ -41,6 +42,51 @@ export function baseCvFromProfile(profile: CareerProfile): CvDocument {
     education: profile.education.map((entry) => ({ school: entry.school, degree: entry.degree, period: period(entry.start, entry.end) })),
     languages: profile.languages,
   }
+}
+
+const extractedCvSchema = z.object({
+  fullName: z.string(),
+  email: z.string(),
+  phone: z.string(),
+  location: z.string(),
+  summary: z.string(),
+  aiExperience: z.string().describe('Concrete AI/ML models, tools, products or research mentioned; empty if none'),
+  website: z.string(),
+  github: z.string(),
+  linkedin: z.string(),
+  skills: z.array(z.string()),
+  languages: z.array(z.string()),
+  experience: z.array(
+    z.object({ company: z.string(), title: z.string(), location: z.string(), start: z.string(), end: z.string(), highlights: z.array(z.string()) }),
+  ),
+  education: z.array(z.object({ school: z.string(), degree: z.string(), start: z.string(), end: z.string() })),
+  projects: z.array(z.object({ name: z.string(), url: z.string(), description: z.string(), stack: z.array(z.string()) })),
+})
+
+export type ExtractedCv = z.infer<typeof extractedCvSchema>
+
+export async function extractProfileFromCv(file: { data: Uint8Array | string; mediaType: string; filename: string }): Promise<ExtractedCv> {
+  const isText = file.mediaType.startsWith('text/')
+  const { output } = await generateText({
+    model: MODEL,
+    output: Output.object({ schema: extractedCvSchema }),
+    system:
+      'You extract structured career data from a CV. Copy facts exactly as written. Never invent, infer or embellish. ' +
+      'Use an empty string or empty list for anything the CV does not state. Keep dates as written (e.g. "2021", "Mar 2022", "Present"). ' +
+      'Write the summary only from the CV\'s own profile/summary section, or leave it empty.',
+    messages: [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Extract the candidate profile from this CV.' },
+          isText
+            ? { type: 'text', text: String(file.data).slice(0, 40000) }
+            : { type: 'file', data: file.data as Uint8Array, mediaType: file.mediaType, filename: file.filename },
+        ],
+      },
+    ],
+  })
+  return output
 }
 
 export async function analyzeJob(profile: CareerProfile, job: Job): Promise<JobAnalysis> {

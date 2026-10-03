@@ -41,8 +41,9 @@ export function JobSearch({ initialQuery, configured, onSelect }: Props) {
           id="career-job-query"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          placeholder="AI Product Engineer, remote"
-          className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
+          placeholder="What role are you looking for?"
+          enterKeyHint="search"
+          className="min-w-0 flex-1 bg-transparent text-base text-white sm:text-sm placeholder:text-white/30 focus:outline-none"
         />
         <CareerButton type="submit" tone="gold" disabled={!configured || draft.trim().length < 2} className="min-h-9">
           Search

@@ -9,7 +9,9 @@ import { ApplicationTracker } from './application-tracker'
 import { careerFetcher, careerRequest, errorMessage } from './career-client'
 import { CareerProfileForm } from './career-profile-form'
 import { CareerButton, LoadingLine, Notice, Panel } from './career-ui'
+import { CvImportButton } from './cv-import'
 import { CvPreview } from './cv-preview'
+import { QuickProfile } from './quick-profile'
 import { JobSearch } from './job-search'
 import { JobWorkspace } from './job-workspace'
 
@@ -38,6 +40,21 @@ export function CareerExperience({ initialQuery, accountHref, onClose, onNotify 
 
   const savedProfile = profile.data?.profile ?? null
   const ready = isProfileReady(savedProfile)
+  const [draft, setDraft] = useState<CareerProfile | null>(null)
+  const [draftVersion, setDraftVersion] = useState(0)
+
+  const account = status.data?.account
+  const knownProfile: CareerProfile = {
+    ...(savedProfile ?? emptyProfile()),
+    fullName: savedProfile?.fullName || account?.name || '',
+    email: savedProfile?.email || account?.email || '',
+  }
+
+  const reviewExtracted = (extracted: CareerProfile) => {
+    setDraft(extracted)
+    setDraftVersion((v) => v + 1)
+    setTab('profile')
+  }
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
@@ -127,10 +144,13 @@ export function CareerExperience({ initialQuery, accountHref, onClose, onNotify 
 
           {signedIn && status.data && profile.data && (
             <>
-              {tab === 'jobs' && !ready && (
-                <Notice action={<CareerButton tone="gold" onClick={() => setTab('profile')} className="self-start">Complete my profile</CareerButton>}>
-                  Add your name, email, a summary and your experience or skills first. Every analysis, CV and email is built only from that profile.
-                </Notice>
+              {tab === 'jobs' && !ready && !selectedJob && (
+                <Panel eyebrow="Optional" title="Have a CV? Upload it.">
+                  <p className="text-sm leading-relaxed text-white/55">
+                    Start searching now. A CV lets BOFYT fill in your profile for you to check, ready for tailored applications.
+                  </p>
+                  <CvImportButton tone="ghost" onExtracted={reviewExtracted} />
+                </Panel>
               )}
 
               {tab === 'jobs' && (
@@ -157,18 +177,41 @@ export function CareerExperience({ initialQuery, accountHref, onClose, onNotify 
                 />
               )}
               {tab === 'jobs' && selectedJob && !ready && (
-                <CareerButton tone="quiet" onClick={() => setSelectedJob(null)} className="self-start px-0">
-                  Back to listings
-                </CareerButton>
+                <QuickProfile
+                  base={knownProfile}
+                  company={selectedJob.company}
+                  onExtracted={reviewExtracted}
+                  onSaved={(next) => profile.mutate({ profile: next }, { revalidate: false })}
+                  onBack={() => setSelectedJob(null)}
+                />
               )}
 
               {tab === 'profile' && (
                 <>
-                  {ready && savedProfile && <BaseCv profile={savedProfile} />}
+                  {!draft && (
+                    <Panel eyebrow="Fastest way" title="Have a CV? Upload it.">
+                      <p className="text-sm leading-relaxed text-white/55">BOFYT reads it and fills in your profile. You check everything before it is saved.</p>
+                      <CvImportButton onExtracted={reviewExtracted} label={savedProfile ? 'Update from CV' : 'Upload CV'} />
+                    </Panel>
+                  )}
+                  {draft && (
+                    <Notice action={<CareerButton tone="quiet" onClick={() => setDraft(null)} className="self-start px-0">Discard changes</CareerButton>}>
+                      We filled this in from your CV. Check and edit anything, then save. Nothing is stored until you do.
+                    </Notice>
+                  )}
+                  {ready && savedProfile && !draft && <BaseCv profile={savedProfile} />}
                   <CareerProfileForm
-                    initial={savedProfile ?? emptyProfile()}
+                    key={draftVersion}
+                    initial={draft ?? knownProfile}
                     onNotify={onNotify}
-                    onSaved={(next) => profile.mutate({ profile: next }, { revalidate: false })}
+                    onSaved={(next) => {
+                      profile.mutate({ profile: next }, { revalidate: false })
+                      if (draft) {
+                        setDraft(null)
+                        setDraftVersion((v) => v + 1)
+                        if (selectedJob) setTab('jobs')
+                      }
+                    }}
                   />
                 </>
               )}

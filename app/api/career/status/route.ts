@@ -11,6 +11,12 @@ export async function GET() {
   const { data } = await supabase.auth.getUser()
   const status: CareerStatus = {
     signedIn: Boolean(data.user),
+    account: data.user
+      ? {
+          email: data.user.email ?? null,
+          name: (data.user.user_metadata?.full_name as string | undefined) ?? (data.user.user_metadata?.name as string | undefined) ?? null,
+        }
+      : undefined,
     email: emailStatus(),
     jobs: { configured: isJobSearchConfigured() },
     ai: { configured: true },
