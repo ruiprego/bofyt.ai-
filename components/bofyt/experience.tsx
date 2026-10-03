@@ -15,6 +15,7 @@ import { deleteSavedProduct, insertGoal, insertGoalActivity, insertSavedProduct,
 import type { ResultItem } from '@/lib/bofyt/results'
 import { accountHrefFor, type BofytReturnState } from '@/lib/bofyt/return-location'
 import { ProductSearchClientError, searchProducts } from '@/lib/products/client'
+import { isProductSearchQuery } from '@/lib/products/parse'
 import { createClient } from '@/lib/supabase/client'
 import { savedItemKey, type UserProfile } from '@/lib/bofyt/user-data'
 import type { ProductSearchFeedback } from '@/lib/products/types'
@@ -287,10 +288,10 @@ export function BofytExperience({
 
     const intent = detectGoalIntent(trimmed)
     const targetCategory = selected ?? intent.categoryId
-    const productContext = targetCategory === 'search' ? searchCapabilityContext : goalCapabilityContext
+    const productContext = targetCategory === 'search' ? searchCapabilityContext : null
     setResult(null)
 
-    if (intent.kind === 'shopping') {
+    if (isProductSearchQuery(trimmed)) {
       setSelected('search')
       setGoal('')
       setGoalCapabilityContext(null)
@@ -371,7 +372,7 @@ export function BofytExperience({
 
     dismissKeyboard()
     const intent = detectGoalIntent(trimmed)
-    if (intent.kind === 'shopping') {
+    if (isProductSearchQuery(trimmed)) {
       setActivating(false)
       setGoalCapabilityContext(null)
       setResult(null)
@@ -382,7 +383,7 @@ export function BofytExperience({
       setCoreOpen(false)
       setSearchQuery(trimmed)
       setSearchFeedback(null)
-      runProductSearch(trimmed, context)
+      runProductSearch(trimmed, context?.categoryId === 'search' ? context : null)
       pulse()
       return
     }
@@ -463,20 +464,32 @@ export function BofytExperience({
       capabilityId: request.capabilityId,
       categoryId: request.categoryId,
     }
+    const query = request.query.trim()
+    const isShoppingQuery = isProductSearchQuery(query)
+    const productContext = context.categoryId === 'search' ? context : null
 
     clearTransientExperience()
     dismissKeyboard()
     closeCapability()
-    setSelected(request.categoryId)
+    setSelected(isShoppingQuery ? 'search' : request.categoryId)
     setNavActive('home')
     setCoreOpen(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
 
+    if (isShoppingQuery) {
+      setGoalCapabilityContext(null)
+      setSearchCapabilityContext(productContext)
+      setSearchQuery(query)
+      runProductSearch(query, productContext)
+      pulse()
+      return
+    }
+
     setSearchCapabilityContext(null)
     setGoalCapabilityContext(context)
     setSearchResult(null)
-    setGoal(request.query)
-    submitGoal(request.query, context)
+    setGoal(query)
+    submitGoal(query, context)
 
     pulse()
   }

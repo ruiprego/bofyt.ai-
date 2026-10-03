@@ -4,6 +4,11 @@ import { detectGoalIntent } from '../lib/bofyt/intent'
 
 test('routes product-shaped text to the existing Search capability', () => {
   const productQueries = [
+    'Black Nike shoes under €100',
+    'Black shoes under €50',
+    'Laptop under €500',
+    'iPhone 17',
+    'Running shoes under €100',
     'Black running shoes under 50€',
     'black running shoes',
     'Nike shoes',
