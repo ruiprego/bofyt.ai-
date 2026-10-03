@@ -239,7 +239,17 @@ function normalizeResponse(payload: unknown, params: ProductSearchParams): Produ
   }
 }
 
-function buildRequestUrl(params: ProductSearchParams, apiKey: string) {
+// google_shopping ignores `currency`; prices come back in the currency of the `gl` market.
+const CURRENCY_MARKETS: Record<string, string> = {
+  EUR: 'ie',
+  USD: 'us',
+  GBP: 'uk',
+  CHF: 'ch',
+  CAD: 'ca',
+  AUD: 'au',
+}
+
+export function buildRequestUrl(params: ProductSearchParams, apiKey: string) {
   const url = new URL(SERPAPI_ENDPOINT)
   url.searchParams.set('engine', 'google_shopping')
   url.searchParams.set('q', params.query)
@@ -248,6 +258,8 @@ function buildRequestUrl(params: ProductSearchParams, apiKey: string) {
   if (params.minPrice !== undefined) url.searchParams.set('min_price', String(params.minPrice))
   if (params.maxPrice !== undefined) url.searchParams.set('max_price', String(params.maxPrice))
   if (params.currency) url.searchParams.set('currency', params.currency)
+  const market = params.currency ? CURRENCY_MARKETS[params.currency.toUpperCase()] : undefined
+  if (market) url.searchParams.set('gl', market)
   if (params.page && params.page > 1) url.searchParams.set('start', String((params.page - 1) * 40))
   return url
 }
