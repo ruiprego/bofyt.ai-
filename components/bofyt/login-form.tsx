@@ -3,7 +3,6 @@
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
 import { authInputClassName, authPrimaryButtonClassName } from './auth-shell'
 
@@ -17,7 +16,6 @@ function loginErrorMessage(error: unknown) {
 }
 
 export function LoginForm({ nextPath }: { nextPath: string }) {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -29,12 +27,21 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
     setIsLoading(true)
 
     try {
-      const { error: signInError } = await createClient().auth.signInWithPassword({ email, password })
+      const supabase = createClient()
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
       if (signInError) throw signInError
-      router.replace(nextPath)
+
+      const { data } = await supabase.auth.getSession()
+      if (!data.session) throw new Error('session_not_persisted')
+
+      // A full document load guarantees the server render reads the fresh auth cookies.
+      window.location.replace(nextPath)
     } catch (error: unknown) {
-      setError(loginErrorMessage(error))
-    } finally {
+      setError(
+        error instanceof Error && error.message === 'session_not_persisted'
+          ? 'Signed in, but your browser blocked the session cookie. Allow cookies for this site and try again.'
+          : loginErrorMessage(error),
+      )
       setIsLoading(false)
     }
   }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { ArrowLeft, ExternalLink, Send } from 'lucide-react'
 import type { ApplicationEmail, ApplicationRecord, CareerProfile, CareerStatus, CvDocument, Job, JobAnalysis } from '@/lib/career/types'
 import { careerRequest, errorMessage, newId } from './career-client'
@@ -24,6 +24,7 @@ export function JobWorkspace({ job, profile, status, onBack, onApplied }: Props)
   const [recipient, setRecipient] = useState('')
   const [confirming, setConfirming] = useState(false)
   const [draftId] = useState(newId)
+  const sendingRef = useRef(false)
   const [busy, setBusy] = useState<Busy>(null)
   const [error, setError] = useState<{ step: Busy; message: string } | null>(null)
 
@@ -61,15 +62,20 @@ export function JobWorkspace({ job, profile, status, onBack, onApplied }: Props)
 
   const validRecipient = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.trim())
 
-  const send = () =>
-    run('send', async () => {
+  const send = () => {
+    if (sendingRef.current) return
+    sendingRef.current = true
+    return run('send', async () => {
       if (!cv || !email) return
       const response = await careerRequest<{ application: ApplicationRecord | null; warning?: string }>('/api/career/applications', {
         body: { ...email, draftId, confirmed: true, recipient: recipient.trim(), job, cv },
       })
       setConfirming(false)
       onApplied(response.application, response.warning)
+    }).finally(() => {
+      sendingRef.current = false
     })
+  }
 
   const stepError = (step: Busy) => error?.step === step && <Notice tone="error">{error.message}</Notice>
 

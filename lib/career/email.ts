@@ -39,7 +39,8 @@ export async function sendCareerEmail(input: {
   }
 
   const resend = new Resend(apiKey)
-  const { data, error } = await resend.emails.send(
+  const result = await resend.emails
+    .send(
     {
       from: `${senderName(input.fromName)} <${status.sender}>`,
       to: [input.to],
@@ -52,15 +53,39 @@ export async function sendCareerEmail(input: {
         : undefined,
     },
     { idempotencyKey: input.idempotencyKey },
-  )
+    )
+    .catch((caught: unknown) => {
+      console.error('[career] Resend request failed', caught instanceof Error ? caught.message : caught)
+      throw new CareerError('Could not reach the email provider. Nothing was sent — try again.', 'UPSTREAM', 502)
+    })
 
+  const { data, error } = result
   if (error || !data?.id) {
     console.error('[career] Resend send failed', error?.name, error?.message)
-    throw new CareerError(
-      error?.message ? `The email provider rejected the message: ${error.message}` : 'The email provider did not confirm delivery.',
-      'UPSTREAM',
-      502,
-    )
+    throw providerError(error?.name, error?.message)
   }
   return { id: data.id }
+}
+
+function providerError(name: string | undefined, message: string | undefined) {
+  switch (name) {
+    case 'rate_limit_exceeded':
+    case 'daily_quota_exceeded':
+      return new CareerError('Email sending is rate-limited right now. Nothing was sent — wait a minute and try again.', 'UPSTREAM', 429)
+    case 'missing_api_key':
+    case 'invalid_api_Key':
+    case 'invalid_api_key':
+    case 'restricted_api_key':
+    case 'invalid_from_address':
+      return new CareerError(`${EMAIL_NOT_CONFIGURED_MESSAGE} The sender is not authorised. Nothing was sent.`, 'CONFIGURATION', 503)
+    case 'invalid_idempotent_request':
+    case 'concurrent_idempotent_requests':
+      return new CareerError('This application is already being sent. Check your Applications tab before retrying.', 'INVALID', 409)
+    case 'validation_error':
+    case 'missing_required_field':
+    case 'invalid_parameter':
+      return new CareerError(`The email provider rejected the message${message ? `: ${message}` : '.'} Nothing was sent.`, 'INVALID', 422)
+    default:
+      return new CareerError('The email provider did not confirm delivery. Nothing was recorded — try again.', 'UPSTREAM', 502)
+  }
 }

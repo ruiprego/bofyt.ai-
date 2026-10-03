@@ -44,6 +44,25 @@ export async function POST(request: Request) {
     const { supabase, user } = await requireUser()
     const input = await readJson(request, sendSchema)
     const profile = await requireProfile(supabase, user.id)
+
+    const { data: duplicate, error: duplicateError } = await supabase
+      .from('job_applications')
+      .select('id')
+      .eq('user_id', user.id)
+      .ilike('recipient', input.recipient)
+      .eq('company', input.job.company)
+      .eq('role', input.job.title)
+      .limit(1)
+      .maybeSingle()
+    if (duplicateError) throw new CareerError('Could not check your existing applications. Nothing was sent — try again.', 'UPSTREAM', 502)
+    if (duplicate) {
+      throw new CareerError(
+        `You already applied to ${input.job.company} for this role at ${input.recipient}. Send a follow-up from the Applications tab instead.`,
+        'INVALID',
+        409,
+      )
+    }
+
     const pdf = await renderCvPdf(input.cv, profile)
 
     const sent = await sendCareerEmail({
@@ -55,6 +74,15 @@ export async function POST(request: Request) {
       idempotencyKey: `job-application/${input.draftId}`,
       attachment: { filename: cvFileName(profile.fullName), content: pdf },
     })
+
+    // Resend returns the original message id for a replayed idempotency key; reuse that tracker row.
+    const { data: existing } = await supabase
+      .from('job_applications')
+      .select(APPLICATION_COLUMNS)
+      .eq('user_id', user.id)
+      .eq('provider_message_id', sent.id)
+      .maybeSingle()
+    if (existing) return NextResponse.json({ sent: true, messageId: sent.id, application: toApplicationRecord(existing) })
 
     const { data, error } = await supabase
       .from('job_applications')

@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { mutate as mutateCache } from 'swr'
 import { categoryById, detectCategories, type CategoryId } from '@/lib/bofyt/categories'
 import {
   capabilitiesForCategories,
@@ -113,18 +114,28 @@ export function BofytExperience({
 
   useEffect(() => {
     const supabase = createClient()
-    const { data } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
+    let active = true
+
+    const applySession = (session: Session | null) => {
+      if (!active) return
       const nextUser = session?.user ?? null
-      if (nextUser?.id !== userIdRef.current) {
+      if ((nextUser?.id ?? null) !== userIdRef.current) {
         userIdRef.current = nextUser?.id ?? null
         setGoals([])
         setProfile(null)
         setSavedItemIds([])
+        void mutateCache((key) => typeof key === 'string' && key.startsWith('/api/career/'))
       }
       setUser(nextUser)
-    })
+    }
 
-    return () => data.subscription.unsubscribe()
+    void supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => applySession(data.session))
+    const { data } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => applySession(session))
+
+    return () => {
+      active = false
+      data.subscription.unsubscribe()
+    }
   }, [])
 
   useEffect(() => {
