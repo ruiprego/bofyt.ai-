@@ -156,32 +156,39 @@
 
   .bofyt-ambient-backdrop {
     background:
-      radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--color-tech-blue) 11%, transparent), transparent 34%),
-      radial-gradient(circle at 22% 66%, color-mix(in srgb, var(--color-tech-cyan) 4%, transparent), transparent 30%),
-      radial-gradient(circle at 78% 70%, color-mix(in srgb, var(--color-tech-blue) 5%, transparent), transparent 30%),
-      radial-gradient(ellipse at 50% 88%, color-mix(in srgb, var(--color-gold) 5%, transparent), transparent 42%),
-      linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--color-tech-ink) 42%, transparent) 72%, var(--color-void) 100%);
-    opacity: 0.9;
+      radial-gradient(ellipse 58% 42% at 50% 28%, color-mix(in srgb, var(--color-tech-blue) 10%, transparent), transparent 72%),
+      radial-gradient(ellipse 34% 62% at -6% 44%, color-mix(in srgb, var(--color-tech-cyan) 7%, transparent), transparent 76%),
+      radial-gradient(ellipse 38% 68% at 106% 34%, color-mix(in srgb, var(--color-tech-blue) 8%, transparent), transparent 78%),
+      linear-gradient(180deg, color-mix(in srgb, var(--color-tech-ink) 18%, transparent), transparent 46%, color-mix(in srgb, var(--color-void) 72%, transparent) 100%);
+    opacity: 0.96;
   }
 
+  /* Out-of-focus environmental sources replace the old flat grid with depth and soft falloff. */
   .bofyt-ambient-backdrop::before {
     position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(color-mix(in srgb, var(--color-tech-cyan) 4%, transparent) 1px, transparent 1px),
-      linear-gradient(90deg, color-mix(in srgb, var(--color-tech-cyan) 4%, transparent) 1px, transparent 1px);
-    background-position: center;
-    background-size: 5rem 5rem;
+    inset: -12%;
+    background:
+      radial-gradient(circle at 12% 22%, color-mix(in srgb, var(--color-tech-cyan) 13%, transparent) 0%, color-mix(in srgb, var(--color-tech-cyan) 4%, transparent) 6%, transparent 18%),
+      radial-gradient(circle at 86% 18%, color-mix(in srgb, var(--color-tech-blue) 14%, transparent) 0%, color-mix(in srgb, var(--color-tech-blue) 4%, transparent) 7%, transparent 20%),
+      radial-gradient(circle at 8% 72%, color-mix(in srgb, var(--color-tech-blue) 8%, transparent) 0%, color-mix(in srgb, var(--color-tech-blue) 3%, transparent) 8%, transparent 22%),
+      radial-gradient(circle at 92% 68%, color-mix(in srgb, var(--color-tech-cyan) 8%, transparent) 0%, color-mix(in srgb, var(--color-tech-cyan) 2%, transparent) 7%, transparent 20%),
+      radial-gradient(circle at 62% 12%, color-mix(in srgb, var(--foreground) 7%, transparent) 0%, color-mix(in srgb, var(--foreground) 2%, transparent) 5%, transparent 15%),
+      radial-gradient(circle at 34% 86%, color-mix(in srgb, var(--foreground) 5%, transparent) 0%, transparent 14%);
     content: '';
-    mask-image: linear-gradient(to bottom, transparent, black 18%, black 78%, transparent);
-    opacity: 0.3;
+    filter: blur(18px);
+    mix-blend-mode: screen;
+    opacity: 0.66;
+    transform: translateZ(0) scale(1.06);
   }
 
   .bofyt-ambient-backdrop::after {
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at center, transparent 38%, color-mix(in srgb, var(--color-void) 88%, transparent) 100%);
+    background:
+      radial-gradient(ellipse 70% 56% at 50% 40%, transparent 0%, transparent 48%, color-mix(in srgb, var(--color-void) 32%, transparent) 100%),
+      linear-gradient(180deg, transparent 0%, transparent 72%, color-mix(in srgb, var(--color-void) 78%, transparent) 100%);
     content: '';
+    opacity: 0.9;
   }
 
   .bofyt-glass-panel {
@@ -411,11 +418,38 @@
 
   .bofyt-nav-field {
     z-index: 0;
+    overflow: hidden;
     background:
       radial-gradient(ellipse 66% 112% at -8% 48%, color-mix(in srgb, var(--bofyt-atmosphere-left) 18%, transparent), transparent 70%),
       radial-gradient(ellipse 64% 106% at 108% 46%, color-mix(in srgb, var(--bofyt-atmosphere-right) 16%, transparent), transparent 72%),
       radial-gradient(ellipse 54% 66% at var(--bofyt-atmosphere-center-x) var(--bofyt-atmosphere-center-y), color-mix(in srgb, var(--bofyt-atmosphere-center) 11%, transparent), transparent 74%),
       linear-gradient(180deg, color-mix(in srgb, var(--color-tech-navy) 13%, transparent), transparent 46%, color-mix(in srgb, var(--color-tech-ink) 34%, transparent) 100%);
+  }
+
+  /* A few broad, defocused sources give the transparent card something real to reflect. */
+  .bofyt-nav-field::before {
+    position: absolute;
+    inset: -18%;
+    background:
+      radial-gradient(circle at 8% 28%, color-mix(in srgb, var(--bofyt-atmosphere-left) 16%, transparent) 0%, color-mix(in srgb, var(--bofyt-atmosphere-left) 5%, transparent) 7%, transparent 20%),
+      radial-gradient(circle at 92% 24%, color-mix(in srgb, var(--bofyt-atmosphere-right) 14%, transparent) 0%, color-mix(in srgb, var(--bofyt-atmosphere-right) 4%, transparent) 8%, transparent 21%),
+      radial-gradient(circle at 16% 78%, color-mix(in srgb, var(--bofyt-atmosphere-center) 9%, transparent) 0%, transparent 13%),
+      radial-gradient(circle at 84% 72%, color-mix(in srgb, var(--foreground) 6%, transparent) 0%, transparent 12%);
+    content: '';
+    filter: blur(22px);
+    mix-blend-mode: screen;
+    opacity: 0.58;
+    transform: translateZ(0) scale(1.08);
+  }
+
+  .bofyt-nav-field::after {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 62% 56% at 50% 44%, transparent 0%, transparent 48%, color-mix(in srgb, var(--color-void) 24%, transparent) 100%),
+      linear-gradient(180deg, transparent 0%, transparent 78%, color-mix(in srgb, var(--color-void) 48%, transparent) 100%);
+    content: '';
+    opacity: 0.8;
   }
 
   .bofyt-capability-stage[data-atmosphere='grow'] {
@@ -472,9 +506,13 @@
 
   .bofyt-nav-halo {
     z-index: 1;
-    background: radial-gradient(ellipse at 50% 58%, color-mix(in srgb, var(--color-tech-cyan) 10%, transparent), color-mix(in srgb, var(--color-tech-blue) 9%, transparent) 42%, transparent 72%);
-    filter: blur(32px);
-    transform: scale(1.12);
+    background:
+      radial-gradient(ellipse 72% 54% at 50% 58%, color-mix(in srgb, var(--bofyt-atmosphere-center) 7%, transparent), transparent 68%),
+      radial-gradient(ellipse 44% 42% at 16% 46%, color-mix(in srgb, var(--bofyt-atmosphere-left) 5%, transparent), transparent 72%),
+      radial-gradient(ellipse 44% 42% at 84% 46%, color-mix(in srgb, var(--bofyt-atmosphere-right) 5%, transparent), transparent 72%);
+    filter: blur(46px);
+    opacity: 0.76;
+    transform: scale(1.16);
   }
 
   .bofyt-nav-edge {
@@ -501,7 +539,7 @@
     pointer-events: none;
   }
 
-  /* Dark glass: translucent navy body, hairline edge, depth from shadow rather than glow. */
+  /* Smoked glass: the environment remains visible through the tint while backdrop blur creates depth. */
   .bofyt-capability-card {
     --capability-angle: 135deg;
     --capability-orbit-x: 78%;
@@ -510,58 +548,66 @@
     --capability-glow-soft: var(--color-tech-cyan);
     --capability-image-hue: 142deg;
     border-width: 1px;
-    border-color: color-mix(in srgb, var(--color-tech-cyan) 14%, transparent);
+    border-color: color-mix(in srgb, var(--color-tech-cyan) 18%, transparent);
     background:
-      linear-gradient(var(--capability-angle), color-mix(in srgb, var(--color-tech-navy) 72%, transparent) 0%, color-mix(in srgb, var(--color-tech-ink) 80%, transparent) 55%, color-mix(in srgb, var(--color-tech-ink) 92%, transparent) 100%);
+      radial-gradient(ellipse 74% 58% at var(--bofyt-atmosphere-left-x) var(--bofyt-atmosphere-left-y), color-mix(in srgb, var(--bofyt-atmosphere-left) 6%, transparent), transparent 72%),
+      radial-gradient(ellipse 68% 54% at var(--bofyt-atmosphere-right-x) var(--bofyt-atmosphere-right-y), color-mix(in srgb, var(--bofyt-atmosphere-right) 5%, transparent), transparent 74%),
+      linear-gradient(var(--capability-angle), color-mix(in srgb, var(--color-tech-navy) 54%, transparent) 0%, color-mix(in srgb, var(--color-tech-ink) 64%, transparent) 54%, color-mix(in srgb, var(--color-tech-ink) 78%, transparent) 100%);
+    background-color: color-mix(in srgb, var(--color-tech-ink) 42%, transparent);
     box-shadow:
-      0 28px 60px -34px color-mix(in srgb, var(--color-tech-ink) 95%, transparent),
-      0 18px 50px -36px color-mix(in srgb, var(--capability-glow) 34%, transparent),
-      inset 0 1px 0 color-mix(in srgb, var(--foreground) 8%, transparent),
-      inset 0 -1px 0 color-mix(in srgb, var(--color-tech-cyan) 5%, transparent);
-    backdrop-filter: blur(18px) saturate(1.1);
+      0 30px 72px -38px color-mix(in srgb, var(--color-void) 96%, transparent),
+      0 18px 46px -34px color-mix(in srgb, var(--capability-glow) 28%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--foreground) 10%, transparent),
+      inset 0 -1px 0 color-mix(in srgb, var(--color-tech-cyan) 8%, transparent),
+      inset 16px 0 30px -36px color-mix(in srgb, var(--bofyt-atmosphere-left) 22%, transparent),
+      inset -16px 0 30px -36px color-mix(in srgb, var(--bofyt-atmosphere-right) 18%, transparent);
+    backdrop-filter: blur(24px) saturate(1.24) contrast(1.04);
+    -webkit-backdrop-filter: blur(24px) saturate(1.24) contrast(1.04);
   }
 
-  /* Polished glass: a curved top reflection, a primary diagonal sheen with a thin refraction line,
-     a bright top edge and a faint reflection of the blue environment along the base. */
+  /* Reflections borrow the same ambient sources as the field behind the card, rather than using a flat blue fill. */
   .bofyt-glass-specular {
     overflow: hidden;
     border-radius: inherit;
     background:
-      radial-gradient(ellipse 140% 60% at 12% -18%, color-mix(in srgb, var(--color-tech-cyan) 15%, transparent), color-mix(in srgb, var(--color-tech-blue) 7%, transparent) 38%, transparent 62%),
-      radial-gradient(ellipse 70% 40% at 96% 38%, color-mix(in srgb, var(--color-tech-blue) 12%, transparent), transparent 70%),
-      linear-gradient(118deg, transparent 22%, color-mix(in srgb, var(--color-tech-cyan) 4%, transparent) 27%, color-mix(in srgb, var(--color-tech-cyan) 9%, var(--foreground) 5%) 31%, color-mix(in srgb, var(--color-tech-blue) 6%, transparent) 34%, transparent 40%),
-      linear-gradient(118deg, transparent 55%, color-mix(in srgb, var(--color-tech-cyan) 11%, transparent) 58.5%, transparent 62%),
-      linear-gradient(180deg, color-mix(in srgb, var(--color-tech-cyan) 8%, var(--foreground) 4%), transparent 6%),
-      linear-gradient(0deg, color-mix(in srgb, var(--color-tech-blue) 22%, transparent), color-mix(in srgb, var(--color-tech-cyan) 7%, transparent) 16%, transparent 34%);
+      radial-gradient(ellipse 118% 54% at var(--bofyt-atmosphere-left-x) -10%, color-mix(in srgb, var(--bofyt-atmosphere-left) 10%, transparent), transparent 64%),
+      radial-gradient(ellipse 86% 50% at var(--bofyt-atmosphere-right-x) 38%, color-mix(in srgb, var(--bofyt-atmosphere-right) 8%, transparent), transparent 72%),
+      linear-gradient(116deg, transparent 20%, color-mix(in srgb, var(--foreground) 3%, transparent) 26%, color-mix(in srgb, var(--foreground) 9%, transparent) 31%, color-mix(in srgb, var(--bofyt-atmosphere-left) 6%, transparent) 35%, transparent 42%),
+      linear-gradient(116deg, transparent 54%, color-mix(in srgb, var(--bofyt-atmosphere-right) 8%, transparent) 58%, transparent 63%),
+      linear-gradient(180deg, color-mix(in srgb, var(--foreground) 8%, transparent), transparent 8%),
+      linear-gradient(0deg, color-mix(in srgb, var(--bofyt-atmosphere-center) 14%, transparent), transparent 30%);
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, var(--color-tech-cyan) 30%, var(--foreground) 14%),
-      inset 1px 0 0 color-mix(in srgb, var(--color-tech-cyan) 18%, transparent),
-      inset -1px 0 0 color-mix(in srgb, var(--color-tech-blue) 12%, transparent),
-      inset 0 -1px 0 color-mix(in srgb, var(--color-tech-cyan) 22%, transparent);
+      inset 0 1px 0 color-mix(in srgb, var(--foreground) 20%, transparent),
+      inset 1px 0 0 color-mix(in srgb, var(--bofyt-atmosphere-left) 12%, transparent),
+      inset -1px 0 0 color-mix(in srgb, var(--bofyt-atmosphere-right) 10%, transparent),
+      inset 0 -1px 0 color-mix(in srgb, var(--bofyt-atmosphere-center) 14%, transparent);
     mix-blend-mode: screen;
-    opacity: 0.6;
+    opacity: 0.48;
     transition: opacity 700ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  /* Environment reflection: a soft curved horizon of the surrounding blue field, as if mirrored in the glass. */
+  /* A blurred lower reflection suggests the environment wrapping around the glass edge. */
   .bofyt-glass-specular::before {
     position: absolute;
-    inset: auto -30% 4% -30%;
-    height: 46%;
+    inset: auto -28% -16% -28%;
+    height: 48%;
     border-radius: 50%;
-    border-top: 1px solid color-mix(in srgb, var(--color-tech-cyan) 26%, transparent);
-    background: radial-gradient(ellipse 60% 70% at 50% 0%, color-mix(in srgb, var(--color-tech-cyan) 10%, transparent), transparent 70%);
+    background:
+      radial-gradient(ellipse 58% 74% at 50% 0%, color-mix(in srgb, var(--bofyt-atmosphere-center) 12%, transparent), transparent 72%),
+      linear-gradient(180deg, color-mix(in srgb, var(--bofyt-atmosphere-right) 7%, transparent), transparent 66%);
     content: '';
-    filter: blur(0.5px);
+    filter: blur(10px);
+    opacity: 0.8;
+    transform: rotate(-4deg);
   }
 
-  /* Refraction along the frame: a luminous gradient hairline that brightens at the top-left and lower-right. */
+  /* Refraction along the frame: a luminous hairline, not a white border. */
   .bofyt-glass-specular::after {
     position: absolute;
     inset: 0;
     padding: 1px;
     border-radius: inherit;
-    background: linear-gradient(135deg, color-mix(in srgb, var(--color-tech-cyan) 40%, var(--foreground) 18%), color-mix(in srgb, var(--color-tech-cyan) 18%, transparent) 22%, transparent 45%, transparent 62%, color-mix(in srgb, var(--color-tech-cyan) 35%, transparent) 100%);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--bofyt-atmosphere-left) 28%, var(--foreground) 8%), color-mix(in srgb, var(--bofyt-atmosphere-left) 12%, transparent) 22%, transparent 45%, transparent 62%, color-mix(in srgb, var(--bofyt-atmosphere-right) 24%, transparent) 100%);
     content: '';
     mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -573,6 +619,18 @@
   }
 
   @media (prefers-reduced-transparency: reduce) {
+    .bofyt-ambient-backdrop::before,
+    .bofyt-nav-field::before {
+      filter: none;
+      opacity: 0.28;
+    }
+
+    .bofyt-capability-card {
+      background: color-mix(in srgb, var(--color-tech-ink) 88%, transparent);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
     .bofyt-glass-specular::before {
       display: none;
     }
@@ -783,15 +841,16 @@
 
   .bofyt-capability-wash {
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--color-tech-ink) 14%, transparent) 0%, color-mix(in srgb, var(--color-tech-ink) 25%, transparent) 32%, color-mix(in srgb, var(--color-tech-ink) 68%, transparent) 62%, var(--color-tech-ink) 100%),
-      linear-gradient(var(--capability-angle), color-mix(in srgb, var(--capability-glow) 24%, transparent), transparent 62%);
+      linear-gradient(180deg, color-mix(in srgb, var(--color-tech-ink) 8%, transparent) 0%, color-mix(in srgb, var(--color-tech-ink) 18%, transparent) 34%, color-mix(in srgb, var(--color-tech-ink) 52%, transparent) 68%, color-mix(in srgb, var(--color-tech-ink) 82%, transparent) 100%),
+      linear-gradient(var(--capability-angle), color-mix(in srgb, var(--capability-glow) 12%, transparent), transparent 62%);
   }
 
   .bofyt-capability-light {
     background:
-      radial-gradient(circle at var(--capability-orbit-x) var(--capability-orbit-y), color-mix(in srgb, var(--capability-glow-soft) 10%, transparent), transparent 30%);
+      radial-gradient(circle at var(--capability-orbit-x) var(--capability-orbit-y), color-mix(in srgb, var(--capability-glow-soft) 8%, transparent), transparent 32%),
+      radial-gradient(ellipse 60% 28% at var(--bofyt-atmosphere-left-x) 100%, color-mix(in srgb, var(--bofyt-atmosphere-left) 6%, transparent), transparent 76%);
     mix-blend-mode: screen;
-    opacity: 0.6;
+    opacity: 0.46;
   }
 
   .bofyt-capability-tone {
