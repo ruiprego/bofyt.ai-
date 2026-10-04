@@ -75,7 +75,7 @@ export const CAPABILITY_COLUMNS: Capability[] = [
     ],
     categoryId: 'personal',
     recommendationCategoryIds: ['personal', 'creativity', 'communication'],
-    imageSrc: '/panels/personal.webp',
+    imageSrc: '/panels/grow-glass.png',
   },
   {
     id: 'build',
@@ -108,7 +108,7 @@ export const CAPABILITY_COLUMNS: Capability[] = [
     ],
     categoryId: 'business',
     recommendationCategoryIds: ['business', 'creativity'],
-    imageSrc: '/panels/business.webp',
+    imageSrc: '/panels/build-glass.png',
   },
   {
     id: 'reach',
@@ -140,7 +140,7 @@ export const CAPABILITY_COLUMNS: Capability[] = [
     ],
     categoryId: 'marketing',
     recommendationCategoryIds: ['marketing', 'social', 'communication'],
-    imageSrc: '/panels/marketing.webp',
+    imageSrc: '/panels/reach-glass.png',
   },
   {
     id: 'optimize',
@@ -171,7 +171,7 @@ export const CAPABILITY_COLUMNS: Capability[] = [
     ],
     categoryId: 'productivity',
     recommendationCategoryIds: ['productivity', 'personal'],
-    imageSrc: '/panels/productivity.webp',
+    imageSrc: '/panels/optimize-glass.png',
   },
   {
     id: 'automate',
@@ -203,7 +203,7 @@ export const CAPABILITY_COLUMNS: Capability[] = [
     ],
     categoryId: 'creativity',
     recommendationCategoryIds: ['creativity', 'productivity', 'business'],
-    imageSrc: '/panels/ai.webp',
+    imageSrc: '/panels/automate-glass.png',
   },
   {
     id: 'discover',
@@ -235,7 +235,7 @@ export const CAPABILITY_COLUMNS: Capability[] = [
     ],
     categoryId: 'search',
     recommendationCategoryIds: ['search'],
-    imageSrc: '/panels/search.png',
+    imageSrc: '/panels/discover-glass.png',
   },
   {
     id: 'career',
