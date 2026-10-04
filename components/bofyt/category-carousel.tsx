@@ -548,19 +548,81 @@ function FocusedCapabilityCarousel({
           {interactive ? 'Swipe horizontally · tap to enter' : 'Opening your experience'}
         </p>
 
+        <span aria-hidden className="bofyt-nav-field pointer-events-none absolute inset-0" />
+
         <div className="relative flex min-h-0 w-full flex-1 items-center justify-center">
-          <AnimatePresence initial={false} mode="wait">
+          <motion.div
+            aria-hidden
+            animate={{ x: dragX * 0.55 }}
+            transition={{ duration: dragging || reduceMotion ? 0 : 0.6, ease: FOCUS_EASE }}
+            className="pointer-events-none absolute inset-0 [mask-image:linear-gradient(90deg,transparent,black_6%,black_94%,transparent)] lg:[mask-image:linear-gradient(90deg,transparent,black_16%,black_84%,transparent)]"
+          >
+            {items.map((item, index) => {
+              const offset = index - activeIndex
+              const distance = Math.abs(offset)
+              if (distance === 0 || distance > 2) return null
+              const key = item.kind === 'core' ? 'core' : item.capability.id
+
+              return (
+                <div
+                  key={key}
+                  inert
+                  className={cn('absolute inset-0 flex items-center justify-center', distance === 2 && 'max-lg:hidden')}
+                >
+                  <motion.div
+                    initial={false}
+                    animate={{
+                      x: `${offset * (distance === 1 ? 86 : 82)}%`,
+                      scale: distance === 1 ? 0.84 : 0.72,
+                      opacity: distance === 1 ? 0.42 : 0.16,
+                      filter: distance === 1 ? 'blur(1.5px) saturate(0.7)' : 'blur(4px) saturate(0.5)',
+                    }}
+                    transition={{ duration: reduceMotion ? 0 : 0.6, ease: FOCUS_EASE }}
+                    className={CARD_SLOT}
+                  >
+                    {item.kind === 'core' ? (
+                      <CoreCapabilityCard interactive={false} positionLabel={formatCardPosition(index, items.length)} />
+                    ) : (
+                      <CategoryPanel
+                        category={categoryById[item.capability.categoryId]}
+                        capability={item.capability}
+                        displayIndex={formatCardPosition(index, items.length)}
+                        active={false}
+                        mapped={false}
+                        dimmed={false}
+                        expanded={false}
+                        disableHover
+                        disabled
+                        onSelect={() => {}}
+                      />
+                    )}
+                  </motion.div>
+                </div>
+              )
+            })}
+          </motion.div>
+
+          <span aria-hidden className={cn('bofyt-nav-halo pointer-events-none absolute', CARD_SLOT)} />
+
+          <AnimatePresence initial={false} mode="popLayout">
             <motion.div
               key={activeItem.kind === 'core' ? 'core' : activeItem.capability.id}
-              initial={{ opacity: 0, x: direction * 96, scale: 0.94 }}
-              animate={{ opacity: 1, x: dragX, scale: dragging ? 0.985 : 1 }}
-              exit={{ opacity: 0, x: direction * -96, scale: 0.94 }}
+              initial={{ opacity: 0, x: direction * 72, scale: 0.965, filter: 'blur(6px)' }}
+              animate={{ opacity: 1, x: dragX, scale: dragging ? 0.985 : 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, x: direction * -72, scale: 0.965, filter: 'blur(6px)' }}
               transition={{
-                duration: dragging ? 0 : reduceMotion ? 0 : 0.48,
+                duration: dragging ? 0 : reduceMotion ? 0 : 0.6,
                 ease: FOCUS_EASE,
               }}
-              className="relative z-10 h-[min(58dvh,32rem)] w-[min(86vw,30rem)] min-w-0 sm:h-[min(66dvh,38rem)] sm:w-[min(72vw,34rem)] lg:h-[min(68vh,42rem)] lg:w-[min(36vw,36rem)]"
+              className={cn('relative z-10 min-w-0', CARD_SLOT)}
             >
+              <span
+                aria-hidden
+                className={cn(
+                  'bofyt-nav-edge pointer-events-none absolute inset-0 z-20',
+                  activeItem.kind === 'core' ? 'rounded-[1.5rem]' : 'rounded-[1.35rem]',
+                )}
+              />
               {activeItem.kind === 'core' ? (
                 <CoreCapabilityCard interactive={interactive} onActivateCore={onActivateCore} positionLabel={positionLabel} />
               ) : (
@@ -583,12 +645,67 @@ function FocusedCapabilityCarousel({
           </AnimatePresence>
         </div>
 
-        <p aria-live="polite" className="relative z-10 text-center text-[10px] tabular-nums uppercase tracking-[0.24em] text-tech-cyan/70">
-          <span className="sr-only">Card </span>
-          {positionLabel}
+        <NavigationSignal count={items.length} activeIndex={activeIndex} coreIndex={items.indexOf(CORE_ITEM)} reduceMotion={reduceMotion} />
+
+        <p aria-live="polite" className="sr-only">
+          Card {positionLabel}
         </p>
       </div>
     </section>
+  )
+}
+
+const CARD_SLOT =
+  'h-[min(58dvh,32rem)] w-[min(86vw,30rem)] sm:h-[min(66dvh,38rem)] sm:w-[min(72vw,34rem)] lg:h-[min(68vh,42rem)] lg:w-[min(36vw,36rem)]'
+const SIGNAL_GAP = 18
+
+interface NavigationSignalProps {
+  count: number
+  activeIndex: number
+  coreIndex: number
+  reduceMotion: boolean
+}
+
+function NavigationSignal({ count, activeIndex, coreIndex, reduceMotion }: NavigationSignalProps) {
+  const transition = { duration: reduceMotion ? 0 : 0.6, ease: FOCUS_EASE }
+
+  return (
+    <div aria-hidden className="relative z-10 flex w-full flex-col items-center">
+      <span className="h-4 w-px bg-gradient-to-b from-transparent to-tech-cyan/45" />
+      <div className="relative h-5 w-44 [mask-image:linear-gradient(90deg,transparent,black_28%,black_72%,transparent)]">
+        <motion.div
+          initial={false}
+          animate={{ x: -activeIndex * SIGNAL_GAP }}
+          transition={transition}
+          className="absolute left-1/2 top-1/2 h-0"
+          style={{ width: (count - 1) * SIGNAL_GAP }}
+        >
+          <span className="absolute inset-x-0 top-0 h-px -translate-y-1/2 bg-white/10" />
+          <motion.span
+            initial={false}
+            animate={{ width: activeIndex * SIGNAL_GAP }}
+            transition={transition}
+            className="absolute left-0 top-0 h-px -translate-y-1/2 bg-gradient-to-r from-tech-cyan/10 to-tech-cyan/60"
+          />
+          {Array.from({ length: count }, (_, index) => (
+            <span
+              key={index}
+              className={cn(
+                'absolute top-0 -translate-x-1/2 -translate-y-1/2 rounded-full transition-[width,height,background-color,box-shadow,border-color] duration-500',
+                index === activeIndex
+                  ? 'bofyt-nav-node-active size-1.5 bg-tech-cyan'
+                  : index === coreIndex
+                    ? 'size-1.5 border border-gold-light/50 bg-transparent'
+                    : index < activeIndex
+                      ? 'size-1 bg-tech-cyan/50'
+                      : 'size-1 bg-white/25',
+              )}
+              style={{ left: index * SIGNAL_GAP }}
+            />
+          ))}
+        </motion.div>
+      </div>
+    </div>
   )
 }
 

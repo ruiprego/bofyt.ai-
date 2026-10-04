@@ -392,6 +392,34 @@
     opacity: 0.72;
   }
 
+  .bofyt-nav-field {
+    z-index: 0;
+    background:
+      radial-gradient(ellipse 58% 46% at 50% 47%, color-mix(in srgb, var(--color-tech-blue) 13%, transparent), transparent 72%),
+      radial-gradient(ellipse 34% 14% at 50% 94%, color-mix(in srgb, var(--color-tech-cyan) 7%, transparent), transparent 78%),
+      radial-gradient(ellipse 90% 70% at 50% 50%, color-mix(in srgb, var(--color-tech-navy) 55%, transparent), transparent 80%);
+  }
+
+  .bofyt-nav-halo {
+    z-index: 1;
+    background: radial-gradient(ellipse at 50% 58%, color-mix(in srgb, var(--color-tech-cyan) 10%, transparent), color-mix(in srgb, var(--color-tech-blue) 9%, transparent) 42%, transparent 72%);
+    filter: blur(32px);
+    transform: scale(1.12);
+  }
+
+  .bofyt-nav-edge {
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--color-tech-cyan) 16%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--color-tech-cyan) 30%, transparent),
+      0 44px 90px -54px color-mix(in srgb, var(--color-tech-cyan) 48%, transparent);
+  }
+
+  .bofyt-nav-node-active {
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--color-tech-cyan) 12%, transparent),
+      0 0 10px color-mix(in srgb, var(--color-tech-cyan) 65%, transparent);
+  }
+
   .bofyt-capability-card::after {
     position: absolute;
     inset: 0;
