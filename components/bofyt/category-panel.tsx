@@ -57,7 +57,7 @@ export function CategoryPanel({
   const modules = capability?.modules ?? category.modules
   const capabilities = modules.slice(0, capability ? (expanded ? 6 : 4) : category.id === 'search' ? 5 : 4).map((module) => module.name)
   const imageSrc = capability?.imageSrc ?? (category.id === 'search' ? '/panels/search.png' : `/panels/${category.id}.webp`)
-  const panelIndex = capability?.index ?? displayIndex ?? category.index
+  const panelIndex = displayIndex ?? capability?.index ?? category.index
   const panelTitle = capability?.title ?? displayTitle ?? category.title
   const panelDescription = capability?.description ?? displayDescription ?? category.description
   const descriptionId = `panel-${category.id}-description`
@@ -166,7 +166,7 @@ export function CategoryPanel({
         {expanded && capability && (
           <span className="hidden max-w-[18rem] flex-col gap-2 text-[10px] leading-relaxed text-white/55 min-[960px]:flex">
             <span className="line-clamp-4">{capability.response}</span>
-            <span className="uppercase tracking-[0.12em] text-gold-light/70">{capability.paths.slice(0, 3).join(' · ')}</span>
+            <span className={cn('uppercase tracking-[0.12em]', capabilityCard ? 'bofyt-capability-tone-muted' : 'text-gold-light/70')}>{capability.paths.slice(0, 3).join(' · ')}</span>
           </span>
         )}
       </span>

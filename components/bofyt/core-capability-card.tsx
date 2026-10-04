@@ -6,10 +6,11 @@ import { AiCore } from './ai-core'
 interface CoreCapabilityCardProps {
   interactive: boolean
   onActivateCore?: () => void
+  positionLabel?: string
   className?: string
 }
 
-export function CoreCapabilityCard({ interactive, onActivateCore, className }: CoreCapabilityCardProps) {
+export function CoreCapabilityCard({ interactive, onActivateCore, positionLabel, className }: CoreCapabilityCardProps) {
   const canActivate = interactive && Boolean(onActivateCore)
 
   return (
@@ -28,11 +29,12 @@ export function CoreCapabilityCard({ interactive, onActivateCore, className }: C
 
       <span className="flex items-start justify-between gap-3 p-[clamp(1rem,1.5vw,1.4rem)]">
         <span className="flex flex-col gap-1">
+          {positionLabel && <span className="pt-1 text-[10px] tabular-nums tracking-[0.2em] text-tech-cyan">{positionLabel}</span>}
           <span className="font-mono text-[9px] uppercase tracking-[0.28em] text-gold-light/80">CORE</span>
           <span className="text-[9px] uppercase tracking-[0.2em] text-white/45">Central intelligence</span>
         </span>
         <span className="bofyt-core-status" aria-hidden>
-          <span className="size-1.5 rounded-full bg-gold-light" />
+          <span className="size-1.5 rounded-full bg-tech-cyan" />
           <span>awake</span>
         </span>
       </span>
@@ -54,14 +56,14 @@ export function CoreCapabilityCard({ interactive, onActivateCore, className }: C
       </span>
 
       <span className="flex flex-col gap-2 p-[clamp(1rem,1.5vw,1.4rem)] pt-3">
-        <span className="h-px w-12 bg-gold-light/80" />
+        <span className="h-px w-12 bg-gradient-to-r from-tech-cyan/80 to-gold-light/70" />
         <span className="font-display text-[clamp(1rem,1.4vw,1.3rem)] font-medium uppercase leading-[1.05] tracking-[0.1em] text-white">
           The BOFYT brain
         </span>
         <span className="max-w-[15rem] text-[11px] leading-relaxed text-white/60">
           Awareness that turns your next move into a clear path.
         </span>
-        <span className="mt-1 text-[9px] uppercase tracking-[0.2em] text-gold-light/65">
+        <span className="mt-1 text-[9px] uppercase tracking-[0.2em] text-tech-cyan/65">
           See what needs to happen next
         </span>
       </span>

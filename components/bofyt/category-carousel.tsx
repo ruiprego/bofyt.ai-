@@ -197,7 +197,7 @@ export function CategoryCarousel({
     >
       {showIntro && (
         <div className={cn('flex flex-col items-center gap-3', coreLayout && 'min-[960px]:hidden')}>
-        <span aria-hidden className="h-8 w-px bg-gradient-to-b from-transparent to-gold/50" />
+        <span aria-hidden className="h-8 w-px bg-gradient-to-b from-transparent to-tech-cyan/40" />
         <h2 id="explore-heading" className="text-[11px] uppercase tracking-[0.35em] text-white/70">
           Explore any capability
         </h2>
@@ -266,6 +266,7 @@ export function CategoryCarousel({
                   active={selected === capability.id}
                   mapped={mapped}
                   dimmed={Boolean(selected) && selected !== capability.id}
+                  displayIndex={formatCardPosition(index, items.length)}
                   expanded={false}
                   compact={coreLayout}
                   disableHover={coreLayout}
@@ -275,7 +276,11 @@ export function CategoryCarousel({
                   }}
                 />
               ) : (
-                <CoreCapabilityCard interactive={interactive} onActivateCore={onActivateCore} />
+                <CoreCapabilityCard
+                  interactive={interactive}
+                  onActivateCore={onActivateCore}
+                  positionLabel={formatCardPosition(index, items.length)}
+                />
               )}
             </motion.li>
           )
@@ -342,6 +347,8 @@ function FocusedCapabilityCarousel({
   )
 
   if (!activeItem) return null
+
+  const positionLabel = formatCardPosition(activeIndex, items.length)
 
   const move = (step: number) => {
     if (!interactive || items.length < 2) return
@@ -509,7 +516,7 @@ function FocusedCapabilityCarousel({
     >
       {showIntro && (
         <div className="flex flex-col items-center gap-3">
-          <span aria-hidden className="h-8 w-px bg-gradient-to-b from-transparent to-gold/50" />
+          <span aria-hidden className="h-8 w-px bg-gradient-to-b from-transparent to-tech-cyan/40" />
           <h2 id="explore-heading" className="text-[11px] uppercase tracking-[0.35em] text-white/70">
             Explore any capability
           </h2>
@@ -555,11 +562,12 @@ function FocusedCapabilityCarousel({
               className="relative z-10 h-[min(58dvh,32rem)] w-[min(86vw,30rem)] min-w-0 sm:h-[min(66dvh,38rem)] sm:w-[min(72vw,34rem)] lg:h-[min(68vh,42rem)] lg:w-[min(36vw,36rem)]"
             >
               {activeItem.kind === 'core' ? (
-                <CoreCapabilityCard interactive={interactive} onActivateCore={onActivateCore} />
+                <CoreCapabilityCard interactive={interactive} onActivateCore={onActivateCore} positionLabel={positionLabel} />
               ) : (
                 <CategoryPanel
                   category={categoryById[activeItem.capability.categoryId]}
                   capability={activeItem.capability}
+                  displayIndex={positionLabel}
                   active
                   mapped={false}
                   dimmed={false}
@@ -575,10 +583,16 @@ function FocusedCapabilityCarousel({
           </AnimatePresence>
         </div>
 
-        <p aria-live="polite" className="relative z-10 text-center text-[10px] uppercase tracking-[0.24em] text-gold-light/75">
-          {activeIndex + 1} / {items.length}
+        <p aria-live="polite" className="relative z-10 text-center text-[10px] tabular-nums uppercase tracking-[0.24em] text-tech-cyan/70">
+          <span className="sr-only">Card </span>
+          {positionLabel}
         </p>
       </div>
     </section>
   )
+}
+
+function formatCardPosition(index: number, total: number) {
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${pad(index + 1)} / ${pad(total)}`
 }
