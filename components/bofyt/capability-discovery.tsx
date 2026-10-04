@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
+import { BriefcaseBusiness } from 'lucide-react'
 import type { CapabilityId } from '@/lib/bofyt/capabilities'
 import { CategoryCarousel } from './category-carousel'
 
@@ -10,9 +11,10 @@ type DiscoveryPhase = 'ready' | 'leaving'
 interface CapabilityDiscoveryProps {
   onSelectCapability: (id: CapabilityId) => void
   onActivateCore?: () => void
+  onOpenCareer?: () => void
 }
 
-export function CapabilityDiscovery({ onSelectCapability, onActivateCore }: CapabilityDiscoveryProps) {
+export function CapabilityDiscovery({ onSelectCapability, onActivateCore, onOpenCareer }: CapabilityDiscoveryProps) {
   const reduceMotion = useReducedMotion() === true
   const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [phase, setPhase] = useState<DiscoveryPhase>('ready')
@@ -60,6 +62,17 @@ export function CapabilityDiscovery({ onSelectCapability, onActivateCore }: Capa
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-white/55">
             {ready ? 'Choose one path. BOFYT opens that experience next.' : 'The Core is revealing the paths around it.'}
           </p>
+          {onOpenCareer && (
+            <button
+              type="button"
+              onClick={() => ready && onOpenCareer()}
+              disabled={!ready}
+              className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-tech-cyan/25 bg-tech-navy/60 px-5 text-[11px] font-medium uppercase tracking-[0.3em] text-white/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-md transition-colors hover:border-gold/50 hover:text-gold-light active:border-gold/60 active:text-gold-light disabled:opacity-50"
+            >
+              <BriefcaseBusiness aria-hidden className="size-4 text-gold-light" />
+              Career
+            </button>
+          )}
         </header>
 
         <div className="relative flex min-h-0 flex-1 flex-col justify-center pt-5 min-[960px]:pt-3">

@@ -775,7 +775,7 @@ export function BofytExperience({
       {introStage === 'complete' && (
         <div className="relative">
         <AmbientBackdrop />
-        <BrandHeader progressCount={goals.length} onOpenSheet={setSheet} />
+        <BrandHeader progressCount={goals.length} onOpenSheet={setSheet} onOpenCareer={() => openCapabilityFromCard('career')} />
 
       <main className="bofyt-main-stage relative z-10 flex flex-col items-center px-4 pb-32 pt-2 lg:px-8 lg:pb-12 lg:pt-2">
         <CenterStage
@@ -908,7 +908,11 @@ export function BofytExperience({
       )}
       {introStage === 'awakening' && <CoreAwakening onContinue={completeAwakening} />}
       {introStage === 'discovery' && (
-        <CapabilityDiscovery onSelectCapability={startFromIntroCapability} onActivateCore={completeIntro} />
+        <CapabilityDiscovery
+            onSelectCapability={startFromIntroCapability}
+            onActivateCore={completeIntro}
+            onOpenCareer={() => startFromIntroCapability('career')}
+          />
       )}
     </div>
   )
