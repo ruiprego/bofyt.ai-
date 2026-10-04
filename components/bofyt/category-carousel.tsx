@@ -190,7 +190,7 @@ export function CategoryCarousel({
       aria-label={showIntro ? undefined : 'BOFYT capabilities'}
       aria-labelledby={showIntro ? 'explore-heading' : undefined}
       className={cn(
-        'relative flex w-full scroll-mt-24 flex-col gap-4',
+        'bofyt-capability-stage relative flex w-full scroll-mt-24 flex-col gap-4',
         coreLayout && 'min-[960px]:h-full min-[960px]:gap-0',
         discoveryLayout && 'min-[960px]:min-h-[min(78vh,48rem)]',
       )}
@@ -505,7 +505,7 @@ function FocusedCapabilityCarousel({
       id={showIntro ? 'explore' : undefined}
       aria-label={showIntro ? undefined : 'BOFYT capabilities'}
       aria-labelledby={showIntro ? 'explore-heading' : undefined}
-      className="relative flex min-h-[min(68vh,42rem)] w-full flex-1 scroll-mt-24 flex-col gap-3 pb-4"
+      className="bofyt-capability-stage relative flex min-h-[min(68vh,42rem)] w-full flex-1 scroll-mt-24 flex-col gap-3 pb-4"
     >
       {showIntro && (
         <div className="flex flex-col items-center gap-3">

@@ -144,9 +144,10 @@
   .bofyt-app-shell {
     min-height: 100svh;
     background:
-      radial-gradient(circle at 50% -10%, color-mix(in srgb, var(--color-tech-blue) 18%, transparent), transparent 34%),
-      radial-gradient(ellipse at 50% 52%, color-mix(in srgb, var(--color-tech-cyan) 7%, transparent), transparent 48%),
-      linear-gradient(180deg, var(--color-tech-ink) 0%, var(--color-void) 78%);
+      radial-gradient(ellipse at 50% -8%, color-mix(in srgb, var(--color-tech-blue) 17%, transparent), transparent 33%),
+      radial-gradient(ellipse at 50% 52%, color-mix(in srgb, var(--color-tech-blue) 10%, transparent), transparent 43%),
+      radial-gradient(circle at 50% 80%, color-mix(in srgb, var(--color-tech-cyan) 4%, transparent), transparent 36%),
+      linear-gradient(180deg, var(--color-tech-ink) 0%, var(--color-void) 82%);
   }
 
   .bofyt-main-stage {
@@ -155,8 +156,10 @@
 
   .bofyt-ambient-backdrop {
     background:
-      radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--color-tech-blue) 17%, transparent), transparent 34%),
-      radial-gradient(ellipse at 50% 82%, color-mix(in srgb, var(--color-gold) 8%, transparent), transparent 48%),
+      radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--color-tech-blue) 11%, transparent), transparent 34%),
+      radial-gradient(circle at 22% 66%, color-mix(in srgb, var(--color-tech-cyan) 4%, transparent), transparent 30%),
+      radial-gradient(circle at 78% 70%, color-mix(in srgb, var(--color-tech-blue) 5%, transparent), transparent 30%),
+      radial-gradient(ellipse at 50% 88%, color-mix(in srgb, var(--color-gold) 5%, transparent), transparent 42%),
       linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--color-tech-ink) 42%, transparent) 72%, var(--color-void) 100%);
     opacity: 0.9;
   }
@@ -171,13 +174,13 @@
     background-size: 5rem 5rem;
     content: '';
     mask-image: linear-gradient(to bottom, transparent, black 18%, black 78%, transparent);
-    opacity: 0.35;
+    opacity: 0.3;
   }
 
   .bofyt-ambient-backdrop::after {
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at center, transparent 42%, color-mix(in srgb, var(--color-void) 86%, transparent) 100%);
+    background: radial-gradient(ellipse at center, transparent 38%, color-mix(in srgb, var(--color-void) 88%, transparent) 100%);
     content: '';
   }
 
@@ -220,7 +223,9 @@
 
   .bofyt-discovery-field {
     background:
-      radial-gradient(circle at center, color-mix(in srgb, var(--color-tech-blue) 18%, transparent), transparent 34%),
+      radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--color-tech-blue) 13%, transparent), transparent 34%),
+      radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--color-tech-cyan) 6%, transparent), transparent 26%),
+      radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--color-gold) 4%, transparent), transparent 52%),
       radial-gradient(ellipse at center, var(--color-tech-ink) 0%, var(--color-void) 72%);
   }
 
@@ -358,37 +363,70 @@
       linear-gradient(0deg, var(--color-tech-ink), transparent 70%);
   }
 
+  .bofyt-capability-stage {
+    isolation: isolate;
+  }
+
+  .bofyt-capability-stage::before,
+  .bofyt-capability-stage::after {
+    position: absolute;
+    inset: 8% -10% 6%;
+    border-radius: 999px;
+    content: '';
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .bofyt-capability-stage::before {
+    background:
+      radial-gradient(ellipse at center, color-mix(in srgb, var(--color-tech-blue) 12%, transparent) 0%, color-mix(in srgb, var(--color-tech-cyan) 4%, transparent) 34%, transparent 72%);
+    filter: blur(26px);
+    opacity: 0.9;
+  }
+
+  .bofyt-capability-stage::after {
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 34%, color-mix(in srgb, var(--color-void) 34%, transparent) 100%);
+    opacity: 0.72;
+  }
+
   .bofyt-capability-card {
     --capability-angle: 135deg;
     --capability-orbit-x: 78%;
     --capability-orbit-y: 12%;
-    border-color: color-mix(in srgb, var(--color-tech-blue) 28%, transparent);
+    --capability-glow: var(--color-tech-blue);
+    --capability-glow-soft: var(--color-tech-cyan);
+    --capability-image-hue: 142deg;
+    border-color: color-mix(in srgb, var(--capability-glow) 30%, transparent);
     background:
-      linear-gradient(145deg, color-mix(in srgb, var(--color-tech-navy) 92%, transparent), var(--color-tech-ink)),
+      radial-gradient(circle at var(--capability-orbit-x) var(--capability-orbit-y), color-mix(in srgb, var(--capability-glow-soft) 12%, transparent), transparent 34%),
+      linear-gradient(var(--capability-angle), color-mix(in srgb, var(--color-tech-navy) 88%, var(--capability-glow) 12%) 0%, color-mix(in srgb, var(--color-tech-surface) 92%, transparent) 48%, color-mix(in srgb, var(--color-tech-ink) 97%, var(--capability-glow) 3%) 100%),
       var(--color-tech-ink);
     box-shadow:
-      0 26px 70px -36px color-mix(in srgb, var(--color-tech-blue) 70%, transparent),
-      inset 0 1px 0 color-mix(in srgb, var(--foreground) 12%, transparent),
-      inset 0 0 0 1px color-mix(in srgb, var(--color-tech-blue) 8%, transparent);
-    backdrop-filter: blur(12px);
+      0 30px 74px -40px color-mix(in srgb, var(--capability-glow) 56%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--capability-glow-soft) 5%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--foreground) 10%, transparent),
+      inset 0 0 34px -24px color-mix(in srgb, var(--capability-glow) 22%, transparent);
+    backdrop-filter: blur(14px);
   }
 
   .bofyt-core-card {
-    border-color: color-mix(in srgb, var(--color-gold-light) 58%, transparent);
+    border-color: color-mix(in srgb, var(--color-tech-cyan) 38%, var(--color-gold-light) 18%);
     background:
-      radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--color-gold) 22%, transparent), transparent 34%),
-      linear-gradient(145deg, color-mix(in srgb, var(--color-gold-deep) 18%, var(--color-tech-ink)), var(--color-void) 72%);
+      radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--color-tech-blue) 18%, transparent), transparent 36%),
+      radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--color-gold) 9%, transparent), transparent 28%),
+      linear-gradient(145deg, color-mix(in srgb, var(--color-tech-navy) 94%, var(--color-tech-blue) 6%), var(--color-void) 74%);
     box-shadow:
-      0 34px 90px -30px color-mix(in srgb, var(--color-gold) 76%, transparent),
-      inset 0 1px 0 color-mix(in srgb, var(--color-gold-light) 42%, transparent),
-      inset 0 0 42px -24px color-mix(in srgb, var(--color-gold) 45%, transparent);
+      0 34px 90px -30px color-mix(in srgb, var(--color-tech-blue) 62%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--color-tech-cyan) 24%, transparent),
+      inset 0 0 42px -24px color-mix(in srgb, var(--color-tech-blue) 36%, transparent);
   }
 
   .bofyt-core-card::before,
   .bofyt-core-card::after {
     position: absolute;
     inset: 0.55rem;
-    border: 1px solid color-mix(in srgb, var(--color-gold-light) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-tech-cyan) 12%, var(--color-gold-light) 8%);
     border-radius: 1.1rem;
     content: '';
     pointer-events: none;
@@ -404,27 +442,29 @@
   }
 
   .bofyt-core-card[data-core-interactive='true']:hover {
-    border-color: color-mix(in srgb, var(--color-gold-light) 82%, transparent);
+    border-color: color-mix(in srgb, var(--color-tech-cyan) 56%, var(--color-gold-light) 26%);
     box-shadow:
-      0 40px 100px -30px color-mix(in srgb, var(--color-gold) 88%, transparent),
-      inset 0 1px 0 color-mix(in srgb, var(--color-gold-light) 54%, transparent),
-      inset 0 0 48px -22px color-mix(in srgb, var(--color-gold) 58%, transparent);
+      0 40px 100px -30px color-mix(in srgb, var(--color-tech-blue) 72%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--color-tech-cyan) 34%, transparent),
+      inset 0 0 48px -22px color-mix(in srgb, var(--color-tech-blue) 48%, transparent);
   }
 
   .bofyt-core-card-grid {
     background-image:
-      linear-gradient(color-mix(in srgb, var(--color-gold-light) 8%, transparent) 1px, transparent 1px),
-      linear-gradient(90deg, color-mix(in srgb, var(--color-gold-light) 8%, transparent) 1px, transparent 1px);
+      linear-gradient(color-mix(in srgb, var(--color-tech-cyan) 6%, var(--color-gold-light) 3%) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--color-tech-cyan) 6%, var(--color-gold-light) 3%) 1px, transparent 1px);
     background-position: center;
     background-size: 2.9rem 2.9rem;
     mask-image: radial-gradient(circle at center, black, transparent 72%);
-    opacity: 0.28;
+    opacity: 0.24;
   }
 
   .bofyt-core-card-shine {
-    background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--color-gold-light) 20%, transparent), transparent 26%);
+    background:
+      radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--color-tech-cyan) 11%, transparent), transparent 28%),
+      radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--color-gold-light) 11%, transparent), transparent 22%);
     mix-blend-mode: screen;
-    opacity: 0.7;
+    opacity: 0.72;
   }
 
   .bofyt-core-status {
@@ -492,77 +532,132 @@
     --capability-angle: 122deg;
     --capability-orbit-x: 20%;
     --capability-orbit-y: 22%;
+    --capability-glow: color-mix(in srgb, var(--color-tech-cyan) 70%, var(--color-tech-blue));
+    --capability-glow-soft: var(--color-tech-cyan);
+    --capability-image-hue: 150deg;
   }
 
   .bofyt-capability-card[data-capability='reach'] {
     --capability-angle: 28deg;
     --capability-orbit-x: 84%;
     --capability-orbit-y: 30%;
+    --capability-glow: var(--color-tech-blue);
+    --capability-glow-soft: color-mix(in srgb, var(--color-tech-cyan) 65%, var(--color-tech-blue));
+    --capability-image-hue: 142deg;
   }
 
   .bofyt-capability-card[data-capability='build'] {
     --capability-angle: 158deg;
     --capability-orbit-x: 72%;
     --capability-orbit-y: 18%;
+    --capability-glow: color-mix(in srgb, var(--color-tech-blue) 82%, var(--color-gold) 18%);
+    --capability-glow-soft: var(--color-tech-blue);
+    --capability-image-hue: 132deg;
   }
 
   .bofyt-capability-card[data-capability='optimize'] {
     --capability-angle: 198deg;
     --capability-orbit-x: 28%;
     --capability-orbit-y: 16%;
+    --capability-glow: color-mix(in srgb, var(--color-tech-blue) 68%, var(--color-tech-cyan) 32%);
+    --capability-glow-soft: var(--color-tech-cyan);
+    --capability-image-hue: 158deg;
   }
 
   .bofyt-capability-card[data-capability='automate'] {
     --capability-angle: 238deg;
     --capability-orbit-x: 82%;
     --capability-orbit-y: 68%;
+    --capability-glow: color-mix(in srgb, var(--color-tech-blue) 76%, var(--color-gold) 24%);
+    --capability-glow-soft: color-mix(in srgb, var(--color-tech-cyan) 72%, var(--color-tech-blue));
+    --capability-image-hue: 136deg;
   }
 
   .bofyt-capability-card[data-capability='discover'] {
     --capability-angle: 302deg;
     --capability-orbit-x: 22%;
     --capability-orbit-y: 64%;
+    --capability-glow: color-mix(in srgb, var(--color-tech-cyan) 68%, var(--color-tech-blue) 32%);
+    --capability-glow-soft: var(--color-tech-cyan);
+    --capability-image-hue: 164deg;
   }
 
   .bofyt-capability-card-active {
-    border-color: color-mix(in srgb, var(--color-tech-cyan) 72%, transparent);
+    border-color: color-mix(in srgb, var(--capability-glow-soft) 68%, transparent);
     box-shadow:
-      0 30px 82px -34px color-mix(in srgb, var(--color-tech-blue) 84%, transparent),
-      inset 0 1px 0 color-mix(in srgb, var(--color-tech-cyan) 34%, transparent),
-      inset 0 0 34px -20px color-mix(in srgb, var(--color-tech-cyan) 44%, transparent);
+      0 30px 82px -34px color-mix(in srgb, var(--capability-glow) 68%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--capability-glow-soft) 34%, transparent),
+      inset 0 0 34px -20px color-mix(in srgb, var(--capability-glow-soft) 38%, transparent);
   }
 
   .bofyt-capability-card-mapped {
-    border-color: color-mix(in srgb, var(--color-tech-cyan) 48%, transparent);
+    border-color: color-mix(in srgb, var(--capability-glow-soft) 46%, transparent);
   }
 
   .bofyt-capability-card-idle {
-    border-color: color-mix(in srgb, var(--color-tech-blue) 30%, transparent);
+    border-color: color-mix(in srgb, var(--capability-glow) 28%, transparent);
   }
 
   .bofyt-capability-image {
-    opacity: 0.68;
-    filter: saturate(0.58) brightness(0.56) hue-rotate(142deg);
+    opacity: 0.56;
+    filter: saturate(0.38) brightness(0.52) contrast(1.06) hue-rotate(var(--capability-image-hue));
     mix-blend-mode: screen;
   }
 
   .bofyt-capability-card[data-active='true'] .bofyt-capability-image {
-    opacity: 0.84;
-    filter: saturate(0.68) brightness(0.68) hue-rotate(142deg);
+    opacity: 0.7;
+    filter: saturate(0.48) brightness(0.62) contrast(1.06) hue-rotate(var(--capability-image-hue));
   }
 
   .bofyt-capability-wash {
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--color-tech-ink) 8%, transparent) 0%, color-mix(in srgb, var(--color-tech-ink) 16%, transparent) 32%, color-mix(in srgb, var(--color-tech-ink) 52%, transparent) 62%, var(--color-tech-ink) 100%),
-      linear-gradient(var(--capability-angle), color-mix(in srgb, var(--color-tech-blue) 38%, transparent), transparent 58%);
+      linear-gradient(180deg, color-mix(in srgb, var(--color-tech-ink) 14%, transparent) 0%, color-mix(in srgb, var(--color-tech-ink) 25%, transparent) 32%, color-mix(in srgb, var(--color-tech-ink) 68%, transparent) 62%, var(--color-tech-ink) 100%),
+      linear-gradient(var(--capability-angle), color-mix(in srgb, var(--capability-glow) 24%, transparent), transparent 62%);
   }
 
   .bofyt-capability-light {
     background:
-      radial-gradient(circle at var(--capability-orbit-x) var(--capability-orbit-y), color-mix(in srgb, var(--color-tech-cyan) 22%, transparent), transparent 25%),
-      linear-gradient(120deg, color-mix(in srgb, var(--foreground) 9%, transparent), transparent 34%);
+      radial-gradient(circle at var(--capability-orbit-x) var(--capability-orbit-y), color-mix(in srgb, var(--capability-glow-soft) 17%, transparent), transparent 26%),
+      linear-gradient(120deg, color-mix(in srgb, var(--foreground) 7%, transparent), transparent 34%);
     mix-blend-mode: screen;
+    opacity: 0.66;
+  }
+
+  .bofyt-capability-tone {
+    color: var(--capability-glow-soft);
+  }
+
+  .bofyt-capability-tone-muted {
+    color: color-mix(in srgb, var(--capability-glow-soft) 72%, var(--foreground));
+  }
+
+  .bofyt-capability-rule {
+    background: var(--capability-glow-soft);
     opacity: 0.72;
+  }
+
+  .bofyt-capability-card-line {
+    --tw-gradient-via: var(--capability-glow-soft);
+  }
+
+  .bofyt-capability-card[data-active='true'] .bofyt-capability-rule {
+    opacity: 1;
+  }
+
+  .bofyt-capability-action {
+    border-color: color-mix(in srgb, var(--capability-glow-soft) 42%, transparent);
+    background: color-mix(in srgb, var(--color-tech-ink) 42%, transparent);
+    color: color-mix(in srgb, var(--capability-glow-soft) 82%, var(--foreground));
+  }
+
+  .bofyt-capability-card:not([data-active='true']):hover .bofyt-capability-action {
+    border-color: color-mix(in srgb, var(--capability-glow-soft) 68%, transparent);
+  }
+
+  .bofyt-capability-action-active {
+    border-color: var(--capability-glow-soft);
+    background: var(--capability-glow-soft);
+    color: var(--color-tech-ink);
   }
 
   .bofyt-capability-motif {
@@ -572,11 +667,11 @@
     height: 2.75rem;
     place-items: center;
     flex: none;
-    border: 1px solid color-mix(in srgb, var(--color-tech-cyan) 34%, transparent);
+    border: 1px solid color-mix(in srgb, var(--capability-glow-soft) 34%, transparent);
     border-radius: 0.9rem;
-    background: linear-gradient(145deg, color-mix(in srgb, var(--color-tech-blue) 18%, transparent), color-mix(in srgb, var(--color-tech-ink) 58%, transparent));
-    color: var(--color-tech-cyan);
-    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 12%, transparent);
+    background: linear-gradient(145deg, color-mix(in srgb, var(--capability-glow) 18%, transparent), color-mix(in srgb, var(--color-tech-ink) 58%, transparent));
+    color: var(--capability-glow-soft);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
   }
 
   .bofyt-capability-motif::after {
@@ -586,10 +681,10 @@
     width: 0.25rem;
     height: 0.25rem;
     border-radius: 999px;
-    background: var(--color-tech-cyan);
-    box-shadow: 0 0 12px color-mix(in srgb, var(--color-tech-cyan) 68%, transparent);
+    background: var(--capability-glow-soft);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--capability-glow-soft) 58%, transparent);
     content: '';
-    opacity: 0.76;
+    opacity: 0.72;
   }
 
   @media (prefers-reduced-motion: reduce) {

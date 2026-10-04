@@ -130,7 +130,7 @@ export function CategoryPanel({
 
       <span className={cn('flex flex-col gap-[clamp(0.65rem,0.95vw,0.9rem)] p-[clamp(0.9rem,1.4vw,1.45rem)]', compact && 'lg:gap-1 lg:p-2.5')}>
         <span className="flex items-start justify-between gap-3">
-          <span className={cn('pt-1 text-[10px] tabular-nums tracking-[0.2em] transition-colors', capabilityCard ? 'text-tech-cyan/80' : active ? 'text-gold-light' : 'text-white/60')}>
+          <span className={cn('pt-1 text-[10px] tabular-nums tracking-[0.2em] transition-colors', capabilityCard ? 'bofyt-capability-tone' : active ? 'text-gold-light' : 'text-white/60')}>
             {panelIndex}
           </span>
           {CapabilityIcon && (
@@ -157,7 +157,7 @@ export function CategoryPanel({
           className={cn(
             'h-px transition-colors',
             capabilityCard ? 'w-10' : 'w-3',
-            capabilityCard ? (active ? 'bg-tech-cyan' : 'bg-tech-cyan/70') : active ? 'bg-gold-light' : 'bg-white/40',
+            capabilityCard ? 'bofyt-capability-rule' : active ? 'bg-gold-light' : 'bg-white/40',
           )}
         />
         <span className={cn('max-w-[18rem] leading-relaxed', capabilityCard ? 'text-[12px] text-white/70' : 'text-[11px] text-white/65', compact && 'lg:max-h-12 lg:overflow-hidden lg:text-[10px] lg:leading-tight')}>
@@ -181,7 +181,7 @@ export function CategoryPanel({
                   ? 'text-[clamp(0.58rem,0.68vw,0.7rem)] uppercase leading-snug tracking-[0.16em] transition-colors duration-500'
                   : 'text-[clamp(0.5rem,0.62vw,0.65rem)] uppercase leading-snug tracking-[0.14em] transition-colors duration-500',
                 compact && 'lg:text-[8px] lg:tracking-[0.12em]',
-                capabilityCard ? 'text-tech-cyan/75' : active ? 'text-gold-light' : 'text-white/70',
+                capabilityCard ? 'bofyt-capability-tone-muted' : active ? 'text-gold-light' : 'text-white/70',
               )}
             >
               {name}
@@ -197,9 +197,9 @@ export function CategoryPanel({
               : 'grid size-7 place-items-center self-center rounded-full border transition-[transform,background-color,border-color,color] duration-500',
             compact && 'lg:size-6',
             capabilityCard
-              ? active
-                ? 'rotate-45 border-tech-cyan bg-tech-cyan text-tech-ink'
-                : cn('border-tech-cyan/40 text-tech-cyan/80', !disableHover && 'group-hover:border-tech-cyan')
+                ? active
+                ? 'bofyt-capability-action bofyt-capability-action-active rotate-45'
+                : 'bofyt-capability-action'
               : active
                 ? 'rotate-45 border-gold-light bg-gold text-void'
                 : cn('border-white/45 text-white', !disableHover && 'group-hover:border-gold/70'),
@@ -213,7 +213,7 @@ export function CategoryPanel({
         aria-hidden
         className={cn(
           'pointer-events-none absolute inset-x-4 bottom-0 z-20 h-px bg-gradient-to-r from-transparent to-transparent transition-opacity duration-500',
-          capabilityCard ? 'via-tech-cyan' : 'via-gold-light',
+          capabilityCard ? 'bofyt-capability-card-line' : 'via-gold-light',
           active ? 'opacity-100' : 'opacity-0',
         )}
       />
