@@ -266,7 +266,7 @@ export function CategoryCarousel({
                   active={selected === capability.id}
                   mapped={mapped}
                   dimmed={Boolean(selected) && selected !== capability.id}
-                  displayIndex={formatCardPosition(index, items.length)}
+                  displayIndex={formatCardPosition(items, index)}
                   expanded={false}
                   compact={coreLayout}
                   disableHover={coreLayout}
@@ -279,7 +279,7 @@ export function CategoryCarousel({
                 <CoreCapabilityCard
                   interactive={interactive}
                   onActivateCore={onActivateCore}
-                  positionLabel={formatCardPosition(index, items.length)}
+                  positionLabel={formatCardPosition(items, index)}
                 />
               )}
             </motion.li>
@@ -348,7 +348,7 @@ function FocusedCapabilityCarousel({
 
   if (!activeItem) return null
 
-  const positionLabel = formatCardPosition(activeIndex, items.length)
+  const positionLabel = formatCardPosition(items, activeIndex)
 
   const move = (step: number) => {
     if (!interactive || items.length < 2) return
@@ -581,12 +581,12 @@ function FocusedCapabilityCarousel({
                     className={CARD_SLOT}
                   >
                     {item.kind === 'core' ? (
-                      <CoreCapabilityCard interactive={false} positionLabel={formatCardPosition(index, items.length)} />
+                      <CoreCapabilityCard interactive={false} positionLabel={formatCardPosition(items, index)} />
                     ) : (
                       <CategoryPanel
                         category={categoryById[item.capability.categoryId]}
                         capability={item.capability}
-                        displayIndex={formatCardPosition(index, items.length)}
+                        displayIndex={formatCardPosition(items, index)}
                         active={false}
                         mapped={false}
                         dimmed={false}
@@ -620,7 +620,7 @@ function FocusedCapabilityCarousel({
                 aria-hidden
                 className={cn(
                   'bofyt-nav-edge pointer-events-none absolute inset-0 z-20',
-                  activeItem.kind === 'core' ? 'rounded-[1.5rem]' : 'rounded-[1.35rem]',
+                  activeItem.kind === 'core' ? 'rounded-[1.5rem]' : 'rounded-[0.5rem]',
                 )}
               />
               {activeItem.kind === 'core' ? (
@@ -648,7 +648,7 @@ function FocusedCapabilityCarousel({
         <NavigationSignal count={items.length} activeIndex={activeIndex} coreIndex={items.indexOf(CORE_ITEM)} reduceMotion={reduceMotion} />
 
         <p aria-live="polite" className="sr-only">
-          Card {positionLabel}
+          {positionLabel ? `Card ${positionLabel}` : 'Core'}
         </p>
       </div>
     </section>
@@ -709,7 +709,11 @@ function NavigationSignal({ count, activeIndex, coreIndex, reduceMotion }: Navig
   )
 }
 
-function formatCardPosition(index: number, total: number) {
+function formatCardPosition(items: CarouselItem[], index: number) {
+  if (items[index]?.kind !== 'capability') return undefined
+
   const pad = (value: number) => String(value).padStart(2, '0')
-  return `${pad(index + 1)} / ${pad(total)}`
+  const total = items.filter((item) => item.kind === 'capability').length
+  const position = items.slice(0, index + 1).filter((item) => item.kind === 'capability').length
+  return `${pad(position)} / ${pad(total)}`
 }
