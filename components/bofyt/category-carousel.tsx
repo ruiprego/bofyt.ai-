@@ -512,7 +512,8 @@ function FocusedCapabilityCarousel({
       id={showIntro ? 'explore' : undefined}
       aria-label={showIntro ? undefined : 'BOFYT capabilities'}
       aria-labelledby={showIntro ? 'explore-heading' : undefined}
-      className="bofyt-capability-stage relative flex min-h-[min(68vh,42rem)] w-full flex-1 scroll-mt-24 flex-col gap-3 pb-4"
+      data-atmosphere={activeItem.kind === 'core' ? 'core' : activeItem.capability.id}
+      className="bofyt-capability-stage relative flex min-h-[min(68vh,42rem)] w-full flex-1 scroll-mt-24 flex-col gap-3 pb-4" 
     >
       {showIntro && (
         <div className="flex flex-col items-center gap-3">

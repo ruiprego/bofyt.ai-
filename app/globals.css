@@ -365,40 +365,109 @@
 
   .bofyt-capability-stage {
     isolation: isolate;
+    --bofyt-atmosphere-left: var(--color-tech-cyan);
+    --bofyt-atmosphere-right: var(--color-tech-blue);
+    --bofyt-atmosphere-center: var(--color-tech-blue);
+    --bofyt-atmosphere-left-x: 4%;
+    --bofyt-atmosphere-left-y: 48%;
+    --bofyt-atmosphere-right-x: 96%;
+    --bofyt-atmosphere-right-y: 48%;
+    --bofyt-atmosphere-center-x: 50%;
+    --bofyt-atmosphere-center-y: 48%;
+    --bofyt-atmosphere-left-strength: 24%;
+    --bofyt-atmosphere-right-strength: 20%;
+    --bofyt-atmosphere-center-strength: 14%;
   }
 
   .bofyt-capability-stage::before,
   .bofyt-capability-stage::after {
     position: absolute;
-    inset: 8% -10% 6%;
     border-radius: 999px;
     content: '';
     pointer-events: none;
     z-index: -1;
   }
 
+  /* Large environmental sources sit outside the card slot; the glass can borrow their light without glowing itself. */
   .bofyt-capability-stage::before {
+    inset: -16% -22% -12%;
     background:
-      radial-gradient(ellipse 50% 40% at 18% 20%, color-mix(in srgb, var(--color-tech-cyan) 7%, transparent), transparent 70%),
-      radial-gradient(ellipse at center, color-mix(in srgb, var(--color-tech-blue) 14%, transparent) 0%, color-mix(in srgb, var(--color-tech-cyan) 4%, transparent) 34%, transparent 72%);
-    filter: blur(26px);
-    opacity: 0.9;
+      radial-gradient(ellipse 58% 88% at var(--bofyt-atmosphere-left-x) var(--bofyt-atmosphere-left-y), color-mix(in srgb, var(--bofyt-atmosphere-left) var(--bofyt-atmosphere-left-strength), transparent), transparent 72%),
+      radial-gradient(ellipse 56% 82% at var(--bofyt-atmosphere-right-x) var(--bofyt-atmosphere-right-y), color-mix(in srgb, var(--bofyt-atmosphere-right) var(--bofyt-atmosphere-right-strength), transparent), transparent 74%),
+      radial-gradient(ellipse 62% 58% at var(--bofyt-atmosphere-center-x) var(--bofyt-atmosphere-center-y), color-mix(in srgb, var(--bofyt-atmosphere-center) var(--bofyt-atmosphere-center-strength), transparent), transparent 76%),
+      linear-gradient(180deg, color-mix(in srgb, var(--color-tech-navy) 26%, transparent), transparent 52%, color-mix(in srgb, var(--color-tech-ink) 20%, transparent));
+    filter: blur(72px);
+    opacity: 0.92;
+    transform: translateZ(0) scale(1.04);
   }
 
   .bofyt-capability-stage::after {
     inset: 0;
     background:
-      radial-gradient(ellipse 60% 22% at 50% 96%, color-mix(in srgb, var(--color-tech-blue) 10%, transparent), transparent 80%),
-      radial-gradient(ellipse at center, transparent 34%, color-mix(in srgb, var(--color-void) 34%, transparent) 100%);
-    opacity: 0.72;
+      radial-gradient(ellipse 72% 58% at 50% 48%, transparent 0%, transparent 44%, color-mix(in srgb, var(--color-void) 28%, transparent) 100%),
+      linear-gradient(180deg, transparent 0%, transparent 76%, color-mix(in srgb, var(--color-void) 44%, transparent) 100%);
+    opacity: 0.86;
   }
 
   .bofyt-nav-field {
     z-index: 0;
     background:
-      radial-gradient(ellipse 58% 46% at 50% 47%, color-mix(in srgb, var(--color-tech-blue) 13%, transparent), transparent 72%),
-      radial-gradient(ellipse 34% 14% at 50% 94%, color-mix(in srgb, var(--color-tech-cyan) 7%, transparent), transparent 78%),
-      radial-gradient(ellipse 90% 70% at 50% 50%, color-mix(in srgb, var(--color-tech-navy) 55%, transparent), transparent 80%);
+      radial-gradient(ellipse 66% 112% at -8% 48%, color-mix(in srgb, var(--bofyt-atmosphere-left) 18%, transparent), transparent 70%),
+      radial-gradient(ellipse 64% 106% at 108% 46%, color-mix(in srgb, var(--bofyt-atmosphere-right) 16%, transparent), transparent 72%),
+      radial-gradient(ellipse 54% 66% at var(--bofyt-atmosphere-center-x) var(--bofyt-atmosphere-center-y), color-mix(in srgb, var(--bofyt-atmosphere-center) 11%, transparent), transparent 74%),
+      linear-gradient(180deg, color-mix(in srgb, var(--color-tech-navy) 13%, transparent), transparent 46%, color-mix(in srgb, var(--color-tech-ink) 34%, transparent) 100%);
+  }
+
+  .bofyt-capability-stage[data-atmosphere='grow'] {
+    --bofyt-atmosphere-left-y: 28%;
+    --bofyt-atmosphere-center-y: 38%;
+    --bofyt-atmosphere-left-strength: 28%;
+    --bofyt-atmosphere-center-strength: 16%;
+  }
+
+  .bofyt-capability-stage[data-atmosphere='reach'] {
+    --bofyt-atmosphere-left-x: -2%;
+    --bofyt-atmosphere-right-x: 102%;
+    --bofyt-atmosphere-left-strength: 25%;
+    --bofyt-atmosphere-right-strength: 23%;
+    --bofyt-atmosphere-center-strength: 10%;
+  }
+
+  .bofyt-capability-stage[data-atmosphere='build'] {
+    --bofyt-atmosphere-left-x: 20%;
+    --bofyt-atmosphere-right-x: 80%;
+    --bofyt-atmosphere-center-y: 42%;
+    --bofyt-atmosphere-left-strength: 21%;
+    --bofyt-atmosphere-right-strength: 22%;
+  }
+
+  .bofyt-capability-stage[data-atmosphere='optimize'] {
+    --bofyt-atmosphere-left-x: 16%;
+    --bofyt-atmosphere-right-x: 84%;
+    --bofyt-atmosphere-center-y: 36%;
+    --bofyt-atmosphere-center-strength: 17%;
+  }
+
+  .bofyt-capability-stage[data-atmosphere='automate'] {
+    --bofyt-atmosphere-left-y: 58%;
+    --bofyt-atmosphere-right-y: 38%;
+    --bofyt-atmosphere-center-x: 56%;
+    --bofyt-atmosphere-center-strength: 16%;
+  }
+
+  .bofyt-capability-stage[data-atmosphere='discover'] {
+    --bofyt-atmosphere-left-x: 18%;
+    --bofyt-atmosphere-right-x: 82%;
+    --bofyt-atmosphere-center-y: 52%;
+    --bofyt-atmosphere-left-strength: 18%;
+    --bofyt-atmosphere-right-strength: 16%;
+    --bofyt-atmosphere-center-strength: 12%;
+  }
+
+  .bofyt-capability-stage[data-atmosphere='core'] {
+    --bofyt-atmosphere-left-strength: 18%;
+    --bofyt-atmosphere-right-strength: 17%;
+    --bofyt-atmosphere-center-strength: 12%;
   }
 
   .bofyt-nav-halo {
