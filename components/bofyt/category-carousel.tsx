@@ -695,7 +695,7 @@ function NavigationSignal({ count, activeIndex, coreIndex, reduceMotion }: Navig
                 index === activeIndex
                   ? 'bofyt-nav-node-active size-1.5 bg-tech-cyan'
                   : index === coreIndex
-                    ? 'size-1.5 border border-gold-light/50 bg-transparent'
+                    ? 'size-1.5 border border-tech-cyan/60 bg-transparent'
                     : index < activeIndex
                       ? 'size-1 bg-tech-cyan/50'
                       : 'size-1 bg-white/25',

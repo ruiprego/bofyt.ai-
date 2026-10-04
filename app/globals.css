@@ -379,7 +379,8 @@
 
   .bofyt-capability-stage::before {
     background:
-      radial-gradient(ellipse at center, color-mix(in srgb, var(--color-tech-blue) 12%, transparent) 0%, color-mix(in srgb, var(--color-tech-cyan) 4%, transparent) 34%, transparent 72%);
+      radial-gradient(ellipse 50% 40% at 18% 20%, color-mix(in srgb, var(--color-tech-cyan) 7%, transparent), transparent 70%),
+      radial-gradient(ellipse at center, color-mix(in srgb, var(--color-tech-blue) 14%, transparent) 0%, color-mix(in srgb, var(--color-tech-cyan) 4%, transparent) 34%, transparent 72%);
     filter: blur(26px);
     opacity: 0.9;
   }
@@ -457,13 +458,14 @@
     overflow: hidden;
     border-radius: inherit;
     background:
-      radial-gradient(ellipse 140% 60% at 12% -18%, color-mix(in srgb, var(--color-tech-cyan) 16%, transparent), color-mix(in srgb, var(--color-tech-blue) 7%, transparent) 38%, transparent 62%),
-      linear-gradient(118deg, transparent 18%, color-mix(in srgb, var(--color-tech-cyan) 5%, transparent) 25%, color-mix(in srgb, var(--foreground) 13%, transparent) 31%, color-mix(in srgb, var(--color-tech-cyan) 9%, transparent) 36%, transparent 44%),
-      linear-gradient(118deg, transparent 55%, color-mix(in srgb, var(--color-tech-cyan) 13%, transparent) 58.5%, transparent 62%),
-      linear-gradient(180deg, color-mix(in srgb, var(--foreground) 12%, transparent), transparent 7%),
+      radial-gradient(ellipse 140% 60% at 12% -18%, color-mix(in srgb, var(--color-tech-cyan) 15%, transparent), color-mix(in srgb, var(--color-tech-blue) 7%, transparent) 38%, transparent 62%),
+      radial-gradient(ellipse 70% 40% at 96% 38%, color-mix(in srgb, var(--color-tech-blue) 12%, transparent), transparent 70%),
+      linear-gradient(118deg, transparent 22%, color-mix(in srgb, var(--color-tech-cyan) 4%, transparent) 27%, color-mix(in srgb, var(--color-tech-cyan) 9%, var(--foreground) 5%) 31%, color-mix(in srgb, var(--color-tech-blue) 6%, transparent) 34%, transparent 40%),
+      linear-gradient(118deg, transparent 55%, color-mix(in srgb, var(--color-tech-cyan) 11%, transparent) 58.5%, transparent 62%),
+      linear-gradient(180deg, color-mix(in srgb, var(--color-tech-cyan) 8%, var(--foreground) 4%), transparent 6%),
       linear-gradient(0deg, color-mix(in srgb, var(--color-tech-blue) 22%, transparent), color-mix(in srgb, var(--color-tech-cyan) 7%, transparent) 16%, transparent 34%);
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, var(--foreground) 30%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--color-tech-cyan) 30%, var(--foreground) 14%),
       inset 1px 0 0 color-mix(in srgb, var(--color-tech-cyan) 18%, transparent),
       inset -1px 0 0 color-mix(in srgb, var(--color-tech-blue) 12%, transparent),
       inset 0 -1px 0 color-mix(in srgb, var(--color-tech-cyan) 22%, transparent);
@@ -490,7 +492,7 @@
     inset: 0;
     padding: 1px;
     border-radius: inherit;
-    background: linear-gradient(135deg, color-mix(in srgb, var(--foreground) 55%, transparent), color-mix(in srgb, var(--color-tech-cyan) 18%, transparent) 22%, transparent 45%, transparent 62%, color-mix(in srgb, var(--color-tech-cyan) 35%, transparent) 100%);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--color-tech-cyan) 40%, var(--foreground) 18%), color-mix(in srgb, var(--color-tech-cyan) 18%, transparent) 22%, transparent 45%, transparent 62%, color-mix(in srgb, var(--color-tech-cyan) 35%, transparent) 100%);
     content: '';
     mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -508,7 +510,7 @@
   }
 
   .bofyt-core-card {
-    border-color: color-mix(in srgb, var(--color-tech-cyan) 38%, var(--color-gold-light) 18%);
+    border-color: color-mix(in srgb, var(--color-tech-cyan) 44%, transparent);
     background:
       radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--color-tech-blue) 18%, transparent), transparent 36%),
       radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--color-gold) 9%, transparent), transparent 28%),
@@ -523,7 +525,7 @@
   .bofyt-core-card::after {
     position: absolute;
     inset: 0.55rem;
-    border: 1px solid color-mix(in srgb, var(--color-tech-cyan) 12%, var(--color-gold-light) 8%);
+    border: 1px solid color-mix(in srgb, var(--color-tech-cyan) 16%, transparent);
     border-radius: 1.1rem;
     content: '';
     pointer-events: none;
@@ -534,12 +536,12 @@
     height: 1px;
     border: 0;
     border-radius: 0;
-    background: linear-gradient(90deg, transparent, var(--color-gold-light), transparent);
-    opacity: 0.62;
+    background: linear-gradient(90deg, transparent, var(--color-tech-cyan), transparent);
+    opacity: 0.5;
   }
 
   .bofyt-core-card[data-core-interactive='true']:hover {
-    border-color: color-mix(in srgb, var(--color-tech-cyan) 56%, var(--color-gold-light) 26%);
+    border-color: color-mix(in srgb, var(--color-tech-cyan) 62%, transparent);
     box-shadow:
       0 40px 100px -30px color-mix(in srgb, var(--color-tech-blue) 72%, transparent),
       inset 0 1px 0 color-mix(in srgb, var(--color-tech-cyan) 34%, transparent),
@@ -548,8 +550,8 @@
 
   .bofyt-core-card-grid {
     background-image:
-      linear-gradient(color-mix(in srgb, var(--color-tech-cyan) 6%, var(--color-gold-light) 3%) 1px, transparent 1px),
-      linear-gradient(90deg, color-mix(in srgb, var(--color-tech-cyan) 6%, var(--color-gold-light) 3%) 1px, transparent 1px);
+      linear-gradient(color-mix(in srgb, var(--color-tech-cyan) 8%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--color-tech-cyan) 8%, transparent) 1px, transparent 1px);
     background-position: center;
     background-size: 2.9rem 2.9rem;
     mask-image: radial-gradient(circle at center, black, transparent 72%);

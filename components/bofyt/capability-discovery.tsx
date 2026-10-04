@@ -53,7 +53,7 @@ export function CapabilityDiscovery({ onSelectCapability, onActivateCore, onOpen
 
       <div className="relative mx-auto flex min-h-dvh w-full max-w-[124rem] flex-col px-3 pb-6 pt-5 sm:px-5 lg:px-8 lg:pt-7">
         <header className="relative z-30 shrink-0 text-center">
-          <p className="text-[10px] uppercase tracking-[0.35em] text-gold-light/75">
+          <p className="text-[10px] uppercase tracking-[0.35em] text-tech-cyan/75">
             {ready ? 'Choose an experience' : 'Experiences initializing'}
           </p>
           <h1 id="capability-discovery-title" className="mt-2 font-display text-[clamp(1.8rem,4vw,3.5rem)] leading-[0.98] tracking-tight text-balance">
@@ -67,9 +67,9 @@ export function CapabilityDiscovery({ onSelectCapability, onActivateCore, onOpen
               type="button"
               onClick={() => ready && onOpenCareer()}
               disabled={!ready}
-              className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-tech-cyan/25 bg-tech-navy/60 px-5 text-[11px] font-medium uppercase tracking-[0.3em] text-white/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-md transition-colors hover:border-gold/50 hover:text-gold-light active:border-gold/60 active:text-gold-light disabled:opacity-50"
+              className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-tech-cyan/25 bg-tech-navy/60 px-5 text-[11px] font-medium uppercase tracking-[0.3em] text-white/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-md transition-colors hover:border-tech-cyan/50 hover:text-white active:border-tech-cyan/60 active:text-white disabled:opacity-50"
             >
-              <BriefcaseBusiness aria-hidden className="size-4 text-gold-light" />
+              <BriefcaseBusiness aria-hidden className="size-4 text-tech-cyan" />
               Career
             </button>
           )}

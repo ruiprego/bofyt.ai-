@@ -25,9 +25,9 @@ export function BrandHeader({ progressCount, onOpenSheet, onOpenCareer }: BrandH
         <button
           type="button"
           onClick={onOpenCareer}
-          className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-tech-cyan/25 bg-tech-navy/60 px-5 text-[11px] font-medium uppercase tracking-[0.3em] text-white/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-md transition-colors active:border-gold/60 active:text-gold-light lg:hidden"
+          className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-tech-cyan/25 bg-tech-navy/60 px-5 text-[11px] font-medium uppercase tracking-[0.3em] text-white/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-md transition-colors active:border-tech-cyan/60 active:text-white lg:hidden"
         >
-          <BriefcaseBusiness aria-hidden className="size-4 text-gold-light" />
+          <BriefcaseBusiness aria-hidden className="size-4 text-tech-cyan" />
           Career
         </button>
       </div>
@@ -39,13 +39,13 @@ export function BrandHeader({ progressCount, onOpenSheet, onOpenCareer }: BrandH
           artificial intelligence
         </p>
         <nav aria-label="Account" className="flex gap-5 text-[11px] uppercase tracking-[0.25em]">
-          <button type="button" onClick={onOpenCareer} className="text-gold-light/85 transition-colors hover:text-gold-light">
+          <button type="button" onClick={onOpenCareer} className="text-tech-cyan/85 transition-colors hover:text-tech-cyan">
             Career
           </button>
-          <button type="button" onClick={() => onOpenSheet('progress')} className="text-white/55 transition-colors hover:text-gold-light">
-            Progress{progressCount > 0 && <span className="ml-1.5 text-gold">{progressCount}</span>}
+          <button type="button" onClick={() => onOpenSheet('progress')} className="text-white/55 transition-colors hover:text-white">
+            Progress{progressCount > 0 && <span className="ml-1.5 text-tech-cyan">{progressCount}</span>}
           </button>
-          <button type="button" onClick={() => onOpenSheet('profile')} className="text-white/55 transition-colors hover:text-gold-light">
+          <button type="button" onClick={() => onOpenSheet('profile')} className="text-white/55 transition-colors hover:text-white">
             Profile
           </button>
         </nav>
