@@ -14,7 +14,8 @@ export { getJobSearchParameters, parseJobSearch, toJobQuery } from './job-query'
 
 const SERPAPI_ENDPOINT = 'https://serpapi.com/search.json'
 const SERPAPI_LOCATIONS_ENDPOINT = 'https://serpapi.com/locations.json'
-const REQUEST_TIMEOUT_MS = 15_000
+const REQUEST_TIMEOUT_MS = 25_000
+const PER_CALL_TIMEOUT_MS = 18_000
 
 type JsonRecord = Record<string, unknown>
 
@@ -154,6 +155,31 @@ async function fetchJobs(
     .filter((job): job is Job => Boolean(job))
 }
 
+/**
+ * Google Jobs is inconsistent in non-English markets: "AI developer jobs" in Zurich returns
+ * nothing while "AI developer" returns listings, and for other titles it is the reverse.
+ * Both forms run in parallel and are merged; each call has its own timeout so one slow
+ * region cannot fail a multi-region search.
+ */
+async function fetchTarget(
+  apiKey: string,
+  query: string,
+  target: ProviderLocationTarget | null,
+  remote: boolean,
+  signal: AbortSignal,
+) {
+  const callSignal = () => AbortSignal.any([signal, AbortSignal.timeout(PER_CALL_TIMEOUT_MS)])
+  const bareQuery = query.replace(/\s+jobs$/i, '')
+  const variants = target && target.hl !== 'en' && bareQuery !== query ? [query, bareQuery] : [query]
+
+  const settled = await Promise.allSettled(
+    variants.map((variant) => fetchJobs(apiKey, variant, target, remote, callSignal())),
+  )
+  const groups = settled.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []))
+  if (!groups.length) throw (settled[0] as PromiseRejectedResult).reason
+  return groups.flat()
+}
+
 export async function searchJobs(goal: string, signal?: AbortSignal) {
   const apiKey = process.env.SERPAPI_API_KEY?.trim()
   if (!apiKey) throw new CareerError(JOBS_NOT_CONFIGURED_MESSAGE, 'CONFIGURATION', 503)
@@ -171,7 +197,7 @@ export async function searchJobs(goal: string, signal?: AbortSignal) {
 
     const targets = plan.targets.length ? plan.targets : [null]
     const settled = await Promise.allSettled(
-      targets.map((target) => fetchJobs(apiKey, query, target, plan.remote, controller.signal)),
+      targets.map((target) => fetchTarget(apiKey, query, target, plan.remote, controller.signal)),
     )
     const groups = settled.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []))
     if (!groups.length) {
