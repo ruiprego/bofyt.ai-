@@ -121,15 +121,44 @@ const keepFactual = (adapted: CvDocument, base: CvDocument): CvDocument => {
   }
 }
 
+// OpenAI strict structured output requires every property to be required, so the
+// model gets a schema without `.default()`/`.optional()`; the result is then
+// validated against the shared cvDocumentSchema.
+const tailoredCvOutputSchema = z.object({
+  headline: z.string(),
+  summary: z.string(),
+  skills: z.array(z.string()),
+  experience: z.array(
+    z.object({ company: z.string(), title: z.string(), location: z.string(), period: z.string(), bullets: z.array(z.string()) }),
+  ),
+  projects: z.array(z.object({ name: z.string(), url: z.string(), description: z.string() })),
+  education: z.array(z.object({ school: z.string(), degree: z.string(), period: z.string() })),
+  languages: z.array(z.string()),
+})
+
+const clip = (value: string, max: number) => (value.length > max ? `${value.slice(0, max - 1).trimEnd()}…` : value)
+
+const fitCvLimits = (cv: CvDocument): CvDocument => ({
+  ...cv,
+  headline: clip(cv.headline, 200),
+  summary: clip(cv.summary, 2000),
+  skills: cv.skills.slice(0, 40).map((skill) => clip(skill, 80)),
+  experience: cv.experience.slice(0, 20).map((entry) => ({ ...entry, bullets: entry.bullets.slice(0, 10).map((bullet) => clip(bullet, 500)) })),
+  projects: cv.projects.slice(0, 15).map((project) => ({ ...project, description: clip(project.description, 800) })),
+  education: cv.education.slice(0, 10),
+  languages: cv.languages.slice(0, 15),
+})
+
 export async function adaptCv(profile: CareerProfile, job: Job, analysis: JobAnalysis | null): Promise<CvDocument> {
   const base = baseCvFromProfile(profile)
   const { output } = await generateText({
     model: MODEL,
-    output: Output.object({ schema: cvDocumentSchema }),
+    output: Output.object({ schema: tailoredCvOutputSchema }),
     system: `You tailor a CV to a specific job.\n${FACTUAL_RULES}\n- Rewrite the summary for this role using only profile facts.\n- Order skills by relevance; only include skills from the profile.\n- Order experience and projects by relevance; keep every company name, title and period exactly as in the profile.\n- Rewrite bullets to surface relevant keywords where truthful.\n- Set targetRole and targetCompany from the posting.`,
     prompt: `${jobBlock(job)}\n\n${analysis ? `ANALYSIS:\n${JSON.stringify(analysis)}\n\n` : ''}BASE CV:\n${JSON.stringify(base)}\n\n${profileBlock(profile)}`,
   })
-  return { ...keepFactual(output, base), targetRole: job.title, targetCompany: job.company }
+  const tailored = fitCvLimits({ ...keepFactual(output, base), targetRole: clip(job.title, 200), targetCompany: clip(job.company, 200) })
+  return cvDocumentSchema.parse(tailored)
 }
 
 export async function draftApplicationEmail(profile: CareerProfile, job: Job, cv: CvDocument, analysis: JobAnalysis | null) {
