@@ -228,19 +228,18 @@
       linear-gradient(160deg, var(--color-tech-ink), var(--color-void));
   }
 
-  /* A photographed dark studio: the room supplies the light and colour, and the cards reflect it. */
+  /* A photographed luminous showroom: the room supplies the light and colour, and the cards reflect it. Only the header and footer bands are shaded, for text legibility. */
   .bofyt-discovery-field {
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--color-void) 72%, transparent) 0%, color-mix(in srgb, var(--color-void) 30%, transparent) 30%, color-mix(in srgb, var(--color-void) 18%, transparent) 62%, color-mix(in srgb, var(--color-void) 66%, transparent) 100%),
-      radial-gradient(ellipse 70% 60% at 50% 52%, color-mix(in srgb, var(--color-void) 34%, transparent), transparent 80%),
-      url('/images/bofyt-studio-environment.png') center 58% / cover no-repeat,
-      var(--color-void);
+      linear-gradient(180deg, color-mix(in srgb, var(--color-void) 58%, transparent) 0%, color-mix(in srgb, var(--color-void) 14%, transparent) 28%, transparent 56%, color-mix(in srgb, var(--color-void) 48%, transparent) 100%),
+      url('/images/bofyt-luminous-environment.png') center 46% / cover no-repeat,
+      var(--color-tech-navy);
   }
 
-  /* Portrait screens crop the room to its dark centre; shift the frame so the left softbox stays in shot. */
+  /* Portrait screens crop to the centre; frame the cyan wall wash behind the deck instead. */
   @media (max-width: 959px) {
     .bofyt-discovery-field {
-      background-position: 0 0, 0 0, 17% 58%, 0 0;
+      background-position: 0 0, 30% 46%, 0 0;
     }
   }
 
@@ -472,19 +471,19 @@
       0 0 10px color-mix(in srgb, var(--color-tech-cyan) 65%, transparent);
   }
 
-  /* Internal volume: the slab is thicker at the base, so light pools and darkens there instead of glowing. */
+  /* Internal volume: the slab is thicker at the base, so it deepens slightly there instead of glowing. */
   .bofyt-capability-card::after {
     position: absolute;
     inset: 0;
     z-index: -1;
     background:
-      linear-gradient(180deg, transparent 0%, transparent 54%, color-mix(in srgb, var(--color-void) 42%, transparent) 100%),
-      linear-gradient(calc(var(--capability-angle) + 90deg), color-mix(in srgb, var(--color-void) 18%, transparent), transparent 40%);
+      linear-gradient(180deg, transparent 0%, transparent 60%, color-mix(in srgb, var(--color-void) 26%, transparent) 100%),
+      linear-gradient(calc(var(--capability-angle) + 90deg), color-mix(in srgb, var(--color-void) 10%, transparent), transparent 40%);
     content: '';
     pointer-events: none;
   }
 
-  /* Dark smoked crystal: mostly opaque tint, a hint of the room behind, and weight from a grounded contact shadow. */
+  /* Luminous smoked crystal: a translucent navy tint that lets the lit room through, refracted and softened, with a grounded contact shadow. */
   .bofyt-capability-card {
     --capability-angle: 135deg;
     --capability-orbit-x: 78%;
@@ -493,15 +492,16 @@
     --capability-glow-soft: var(--color-tech-cyan);
     --capability-image-hue: 142deg;
     border-width: 1px;
-    border-color: color-mix(in srgb, var(--foreground) 5%, transparent);
-    background: linear-gradient(var(--capability-angle), color-mix(in srgb, var(--color-tech-navy) 62%, transparent) 0%, color-mix(in srgb, var(--color-tech-ink) 80%, transparent) 48%, color-mix(in srgb, var(--color-void) 90%, transparent) 100%);
-    background-color: color-mix(in srgb, var(--color-void) 52%, transparent);
+    border-color: color-mix(in srgb, var(--foreground) 8%, transparent);
+    background: linear-gradient(var(--capability-angle), color-mix(in srgb, var(--color-tech-blue) 14%, transparent) 0%, color-mix(in srgb, var(--color-tech-navy) 46%, transparent) 46%, color-mix(in srgb, var(--color-tech-ink) 66%, transparent) 100%);
+    background-color: color-mix(in srgb, var(--color-tech-navy) 28%, transparent);
     box-shadow:
-      0 48px 70px -42px var(--color-void),
-      0 16px 30px -22px color-mix(in srgb, var(--color-void) 90%, transparent),
-      inset 0 -22px 36px -30px var(--color-void);
-    backdrop-filter: blur(22px) saturate(0.8) brightness(0.62);
-    -webkit-backdrop-filter: blur(22px) saturate(0.8) brightness(0.62);
+      0 44px 64px -40px color-mix(in srgb, var(--color-void) 85%, transparent),
+      0 14px 26px -20px color-mix(in srgb, var(--color-void) 70%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--foreground) 10%, transparent),
+      inset 0 -18px 32px -28px color-mix(in srgb, var(--color-void) 80%, transparent);
+    backdrop-filter: blur(20px) saturate(1.05) brightness(0.86);
+    -webkit-backdrop-filter: blur(20px) saturate(1.05) brightness(0.86);
   }
 
   /*
@@ -520,12 +520,12 @@
   .bofyt-glass-specular::before {
     position: absolute;
     inset: -12%;
-    background: url('/images/bofyt-studio-environment.png') var(--capability-orbit-x) var(--capability-orbit-y) / 240% auto no-repeat;
+    background: url('/images/bofyt-luminous-environment.png') var(--capability-orbit-x) var(--capability-orbit-y) / 240% auto no-repeat;
     content: '';
-    filter: blur(14px) saturate(0.7) brightness(0.9);
-    mask-image: linear-gradient(var(--capability-angle), black 0%, color-mix(in srgb, black 55%, transparent) 26%, transparent 58%);
-    -webkit-mask-image: linear-gradient(var(--capability-angle), black 0%, color-mix(in srgb, black 55%, transparent) 26%, transparent 58%);
-    opacity: 0.34;
+    filter: blur(12px) saturate(0.9) brightness(1.05);
+    mask-image: linear-gradient(var(--capability-angle), black 0%, color-mix(in srgb, black 60%, transparent) 30%, transparent 64%);
+    -webkit-mask-image: linear-gradient(var(--capability-angle), black 0%, color-mix(in srgb, black 60%, transparent) 30%, transparent 64%);
+    opacity: 0.5;
     transform: scaleX(-1);
   }
 
@@ -535,7 +535,7 @@
     inset: 0;
     padding: 1px;
     border-radius: inherit;
-    background: linear-gradient(var(--capability-angle), color-mix(in srgb, var(--foreground) 22%, transparent) 0%, color-mix(in srgb, var(--foreground) 6%, transparent) 14%, transparent 34%, transparent 80%, color-mix(in srgb, var(--color-gold-light) 8%, transparent) 96%, transparent 100%);
+    background: linear-gradient(var(--capability-angle), color-mix(in srgb, var(--foreground) 32%, transparent) 0%, color-mix(in srgb, var(--color-tech-cyan) 10%, transparent) 16%, transparent 38%, transparent 78%, color-mix(in srgb, var(--color-gold-light) 7%, transparent) 95%, transparent 100%);
     content: '';
     mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
