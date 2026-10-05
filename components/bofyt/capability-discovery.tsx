@@ -84,7 +84,7 @@ export function CapabilityDiscovery({ onSelectCapability, onActivateCore, onOpen
             {ready ? 'Cards revealed · select one to continue' : 'Mapping available experiences'}
           </motion.p>
 
-          <div className="relative min-h-0 flex-1 min-[960px]:h-[calc(100dvh-12rem)]">
+          <div className="relative min-h-0 flex-1 min-[960px]:h-[calc(100dvh-17rem)]">
             <CategoryCarousel
               layout="core"
               mode="discovery"

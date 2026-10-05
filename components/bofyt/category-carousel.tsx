@@ -513,7 +513,7 @@ function FocusedCapabilityCarousel({
       aria-label={showIntro ? undefined : 'BOFYT capabilities'}
       aria-labelledby={showIntro ? 'explore-heading' : undefined}
       data-atmosphere={activeItem.kind === 'core' ? 'core' : activeItem.capability.id}
-      className="bofyt-capability-stage relative flex min-h-[min(68vh,42rem)] w-full flex-1 scroll-mt-24 flex-col gap-3 pb-4" 
+      className="bofyt-capability-stage relative flex min-h-[min(68vh,42rem)] w-full flex-1 lg:min-h-0 scroll-mt-24 flex-col gap-3 pb-4" 
     >
       {showIntro && (
         <div className="flex flex-col items-center gap-3">
@@ -657,7 +657,7 @@ function FocusedCapabilityCarousel({
 }
 
 const CARD_SLOT =
-  'h-[min(58dvh,32rem)] w-[min(86vw,30rem)] sm:h-[min(66dvh,38rem)] sm:w-[min(72vw,34rem)] lg:h-[min(68vh,42rem)] lg:w-[min(36vw,36rem)]'
+  'h-[min(58dvh,32rem)] w-[min(86vw,30rem)] sm:h-[min(66dvh,38rem)] sm:w-[min(72vw,34rem)] lg:h-[min(calc(100dvh-24.5rem),42rem)] lg:w-[min(36vw,36rem,calc((100dvh-24.5rem)*0.85))]'
 const SIGNAL_GAP = 18
 
 interface NavigationSignalProps {

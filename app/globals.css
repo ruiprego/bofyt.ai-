@@ -228,16 +228,24 @@
       linear-gradient(160deg, var(--color-tech-ink), var(--color-void));
   }
 
+  /* A photographed dark studio: the room supplies the light and colour, and the cards reflect it. */
   .bofyt-discovery-field {
     background:
-      radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--color-tech-blue) 13%, transparent), transparent 34%),
-      radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--color-tech-cyan) 6%, transparent), transparent 26%),
-      radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--color-gold) 4%, transparent), transparent 52%),
-      radial-gradient(ellipse at center, var(--color-tech-ink) 0%, var(--color-void) 72%);
+      linear-gradient(180deg, color-mix(in srgb, var(--color-void) 72%, transparent) 0%, color-mix(in srgb, var(--color-void) 30%, transparent) 30%, color-mix(in srgb, var(--color-void) 18%, transparent) 62%, color-mix(in srgb, var(--color-void) 66%, transparent) 100%),
+      radial-gradient(ellipse 70% 60% at 50% 52%, color-mix(in srgb, var(--color-void) 34%, transparent), transparent 80%),
+      url('/images/bofyt-studio-environment.png') center 58% / cover no-repeat,
+      var(--color-void);
+  }
+
+  /* Portrait screens crop the room to its dark centre; shift the frame so the left softbox stays in shot. */
+  @media (max-width: 959px) {
+    .bofyt-discovery-field {
+      background-position: 0 0, 0 0, 17% 58%, 0 0;
+    }
   }
 
   .bofyt-discovery-edge {
-    background: linear-gradient(to bottom, color-mix(in srgb, var(--color-tech-cyan) 8%, transparent), transparent);
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--color-void) 40%, transparent), transparent);
   }
 
   .bofyt-orbital-field {
@@ -372,9 +380,9 @@
 
   .bofyt-capability-stage {
     isolation: isolate;
-    --bofyt-atmosphere-left: var(--color-tech-cyan);
-    --bofyt-atmosphere-right: var(--color-tech-blue);
-    --bofyt-atmosphere-center: var(--color-tech-blue);
+    --bofyt-atmosphere-left: color-mix(in srgb, var(--color-tech-cyan) 22%, var(--foreground));
+    --bofyt-atmosphere-right: color-mix(in srgb, var(--color-tech-blue) 34%, var(--foreground));
+    --bofyt-atmosphere-center: color-mix(in srgb, var(--color-tech-blue) 30%, var(--foreground));
     --bofyt-atmosphere-left-x: 4%;
     --bofyt-atmosphere-left-y: 48%;
     --bofyt-atmosphere-right-x: 96%;
@@ -386,70 +394,10 @@
     --bofyt-atmosphere-center-strength: 14%;
   }
 
-  .bofyt-capability-stage::before,
-  .bofyt-capability-stage::after {
-    position: absolute;
-    border-radius: 999px;
-    content: '';
-    pointer-events: none;
-    z-index: -1;
-  }
-
-  /* Large environmental sources sit outside the card slot; the glass can borrow their light without glowing itself. */
-  .bofyt-capability-stage::before {
-    inset: -16% -22% -12%;
-    background:
-      radial-gradient(ellipse 58% 88% at var(--bofyt-atmosphere-left-x) var(--bofyt-atmosphere-left-y), color-mix(in srgb, var(--bofyt-atmosphere-left) var(--bofyt-atmosphere-left-strength), transparent), transparent 72%),
-      radial-gradient(ellipse 56% 82% at var(--bofyt-atmosphere-right-x) var(--bofyt-atmosphere-right-y), color-mix(in srgb, var(--bofyt-atmosphere-right) var(--bofyt-atmosphere-right-strength), transparent), transparent 74%),
-      radial-gradient(ellipse 62% 58% at var(--bofyt-atmosphere-center-x) var(--bofyt-atmosphere-center-y), color-mix(in srgb, var(--bofyt-atmosphere-center) var(--bofyt-atmosphere-center-strength), transparent), transparent 76%),
-      linear-gradient(180deg, color-mix(in srgb, var(--color-tech-navy) 26%, transparent), transparent 52%, color-mix(in srgb, var(--color-tech-ink) 20%, transparent));
-    filter: blur(72px);
-    opacity: 0.92;
-    transform: translateZ(0) scale(1.04);
-  }
-
-  .bofyt-capability-stage::after {
-    inset: 0;
-    background:
-      radial-gradient(ellipse 72% 58% at 50% 48%, transparent 0%, transparent 44%, color-mix(in srgb, var(--color-void) 28%, transparent) 100%),
-      linear-gradient(180deg, transparent 0%, transparent 76%, color-mix(in srgb, var(--color-void) 44%, transparent) 100%);
-    opacity: 0.86;
-  }
-
+  /* The deck sits directly in the continuous studio environment: no panel, slab or glow of its own. */
   .bofyt-nav-field {
     z-index: 0;
-    overflow: hidden;
-    background:
-      radial-gradient(ellipse 66% 112% at -8% 48%, color-mix(in srgb, var(--bofyt-atmosphere-left) 18%, transparent), transparent 70%),
-      radial-gradient(ellipse 64% 106% at 108% 46%, color-mix(in srgb, var(--bofyt-atmosphere-right) 16%, transparent), transparent 72%),
-      radial-gradient(ellipse 54% 66% at var(--bofyt-atmosphere-center-x) var(--bofyt-atmosphere-center-y), color-mix(in srgb, var(--bofyt-atmosphere-center) 11%, transparent), transparent 74%),
-      linear-gradient(180deg, color-mix(in srgb, var(--color-tech-navy) 13%, transparent), transparent 46%, color-mix(in srgb, var(--color-tech-ink) 34%, transparent) 100%);
-  }
-
-  /* A few broad, defocused sources give the transparent card something real to reflect. */
-  .bofyt-nav-field::before {
-    position: absolute;
-    inset: -18%;
-    background:
-      radial-gradient(circle at 8% 28%, color-mix(in srgb, var(--bofyt-atmosphere-left) 16%, transparent) 0%, color-mix(in srgb, var(--bofyt-atmosphere-left) 5%, transparent) 7%, transparent 20%),
-      radial-gradient(circle at 92% 24%, color-mix(in srgb, var(--bofyt-atmosphere-right) 14%, transparent) 0%, color-mix(in srgb, var(--bofyt-atmosphere-right) 4%, transparent) 8%, transparent 21%),
-      radial-gradient(circle at 16% 78%, color-mix(in srgb, var(--bofyt-atmosphere-center) 9%, transparent) 0%, transparent 13%),
-      radial-gradient(circle at 84% 72%, color-mix(in srgb, var(--foreground) 6%, transparent) 0%, transparent 12%);
-    content: '';
-    filter: blur(22px);
-    mix-blend-mode: screen;
-    opacity: 0.58;
-    transform: translateZ(0) scale(1.08);
-  }
-
-  .bofyt-nav-field::after {
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(ellipse 62% 56% at 50% 44%, transparent 0%, transparent 48%, color-mix(in srgb, var(--color-void) 24%, transparent) 100%),
-      linear-gradient(180deg, transparent 0%, transparent 78%, color-mix(in srgb, var(--color-void) 48%, transparent) 100%);
-    content: '';
-    opacity: 0.8;
+    background: none;
   }
 
   .bofyt-capability-stage[data-atmosphere='grow'] {
@@ -504,22 +452,18 @@
     --bofyt-atmosphere-center-strength: 12%;
   }
 
+  /* Not a glow: the plate's contact shadow on the studio floor, which is what makes it read as an object. */
   .bofyt-nav-halo {
     z-index: 1;
-    background:
-      radial-gradient(ellipse 72% 54% at 50% 58%, color-mix(in srgb, var(--bofyt-atmosphere-center) 7%, transparent), transparent 68%),
-      radial-gradient(ellipse 44% 42% at 16% 46%, color-mix(in srgb, var(--bofyt-atmosphere-left) 5%, transparent), transparent 72%),
-      radial-gradient(ellipse 44% 42% at 84% 46%, color-mix(in srgb, var(--bofyt-atmosphere-right) 5%, transparent), transparent 72%);
-    filter: blur(46px);
-    opacity: 0.76;
-    transform: scale(1.16);
+    background: radial-gradient(ellipse 52% 9% at 50% 99%, color-mix(in srgb, var(--color-void) 92%, transparent), transparent 100%);
+    filter: blur(10px);
+    transform: translateY(5%) scaleX(1.04);
   }
 
   .bofyt-nav-edge {
     box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--color-tech-cyan) 16%, transparent),
-      inset 0 1px 0 color-mix(in srgb, var(--color-tech-cyan) 30%, transparent),
-      0 44px 90px -54px color-mix(in srgb, var(--color-tech-cyan) 48%, transparent);
+      inset 0 1px 0 color-mix(in srgb, var(--foreground) 14%, transparent),
+      inset 1px 0 0 color-mix(in srgb, var(--foreground) 5%, transparent);
   }
 
   .bofyt-nav-node-active {
@@ -534,8 +478,7 @@
     inset: 0;
     z-index: -1;
     background:
-      radial-gradient(ellipse 90% 40% at var(--capability-orbit-x) 104%, color-mix(in srgb, var(--color-tech-blue) 7%, transparent), transparent 72%),
-      linear-gradient(180deg, transparent 0%, transparent 58%, color-mix(in srgb, var(--color-void) 34%, transparent) 100%),
+      linear-gradient(180deg, transparent 0%, transparent 54%, color-mix(in srgb, var(--color-void) 42%, transparent) 100%),
       linear-gradient(calc(var(--capability-angle) + 90deg), color-mix(in srgb, var(--color-void) 18%, transparent), transparent 40%);
     content: '';
     pointer-events: none;
@@ -550,57 +493,49 @@
     --capability-glow-soft: var(--color-tech-cyan);
     --capability-image-hue: 142deg;
     border-width: 1px;
-    border-color: color-mix(in srgb, var(--foreground) 7%, transparent);
-    background:
-      radial-gradient(ellipse 80% 60% at var(--bofyt-atmosphere-left-x) var(--bofyt-atmosphere-left-y), color-mix(in srgb, var(--bofyt-atmosphere-left) 4%, transparent), transparent 74%),
-      radial-gradient(ellipse 70% 56% at var(--bofyt-atmosphere-right-x) var(--bofyt-atmosphere-right-y), color-mix(in srgb, var(--bofyt-atmosphere-right) 3%, transparent), transparent 76%),
-      linear-gradient(var(--capability-angle), color-mix(in srgb, var(--color-tech-navy) 66%, transparent) 0%, color-mix(in srgb, var(--color-tech-ink) 78%, transparent) 52%, color-mix(in srgb, var(--color-void) 84%, transparent) 100%);
-    background-color: color-mix(in srgb, var(--color-tech-ink) 58%, transparent);
+    border-color: color-mix(in srgb, var(--foreground) 5%, transparent);
+    background: linear-gradient(var(--capability-angle), color-mix(in srgb, var(--color-tech-navy) 62%, transparent) 0%, color-mix(in srgb, var(--color-tech-ink) 80%, transparent) 48%, color-mix(in srgb, var(--color-void) 90%, transparent) 100%);
+    background-color: color-mix(in srgb, var(--color-void) 52%, transparent);
     box-shadow:
-      0 42px 64px -40px color-mix(in srgb, var(--color-void) 100%, transparent),
-      0 14px 28px -20px color-mix(in srgb, var(--color-void) 80%, transparent),
-      inset 0 1px 0 color-mix(in srgb, var(--foreground) 6%, transparent),
-      inset 0 -18px 32px -28px color-mix(in srgb, var(--color-void) 70%, transparent);
-    backdrop-filter: blur(28px) saturate(1.06) brightness(0.86);
-    -webkit-backdrop-filter: blur(28px) saturate(1.06) brightness(0.86);
+      0 48px 70px -42px var(--color-void),
+      0 16px 30px -22px color-mix(in srgb, var(--color-void) 90%, transparent),
+      inset 0 -22px 36px -30px var(--color-void);
+    backdrop-filter: blur(22px) saturate(0.8) brightness(0.62);
+    -webkit-backdrop-filter: blur(22px) saturate(0.8) brightness(0.62);
   }
 
   /*
-   * Reflections are placed from each card's own --capability-orbit/angle values, so every card
-   * catches the room differently: one soft window reflection, one coloured bounce, and darker areas left unlit.
+   * The polished face mirrors the actual studio: the same room photograph, flipped as a mirror would,
+   * framed from each card's own --capability-orbit/angle so every plate catches different lights and some areas stay dark.
    */
   .bofyt-glass-specular {
     overflow: hidden;
     border-radius: inherit;
-    background:
-      radial-gradient(ellipse 64% 30% at var(--capability-orbit-x) var(--capability-orbit-y), color-mix(in srgb, var(--foreground) 7%, transparent) 0%, color-mix(in srgb, var(--foreground) 2%, transparent) 46%, transparent 74%),
-      radial-gradient(ellipse 46% 64% at calc(100% - var(--capability-orbit-x)) calc(100% - var(--capability-orbit-y)), color-mix(in srgb, var(--bofyt-atmosphere-right) 6%, transparent), transparent 70%),
-      radial-gradient(ellipse 120% 22% at 50% -6%, color-mix(in srgb, var(--bofyt-atmosphere-left) 7%, transparent), transparent 70%),
-      linear-gradient(calc(var(--capability-angle) - 20deg), color-mix(in srgb, var(--color-void) 16%, transparent) 0%, transparent 34%, transparent 70%, color-mix(in srgb, var(--color-void) 10%, transparent) 100%);
+    background: linear-gradient(calc(var(--capability-angle) - 20deg), transparent 0%, transparent 60%, color-mix(in srgb, var(--color-void) 22%, transparent) 100%);
     mix-blend-mode: screen;
-    opacity: 0.62;
+    opacity: 0.7;
     transition: opacity 700ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  /* A defocused bounce from the floor wraps the lower bevel, shifted per card so no two edges match. */
   .bofyt-glass-specular::before {
     position: absolute;
-    inset: auto -30% -20% -30%;
-    height: 42%;
-    border-radius: 50%;
-    background: radial-gradient(ellipse 46% 70% at var(--capability-orbit-x) 0%, color-mix(in srgb, var(--bofyt-atmosphere-center) 8%, transparent), transparent 74%);
+    inset: -12%;
+    background: url('/images/bofyt-studio-environment.png') var(--capability-orbit-x) var(--capability-orbit-y) / 240% auto no-repeat;
     content: '';
-    filter: blur(16px);
-    opacity: 0.7;
+    filter: blur(14px) saturate(0.7) brightness(0.9);
+    mask-image: linear-gradient(var(--capability-angle), black 0%, color-mix(in srgb, black 55%, transparent) 26%, transparent 58%);
+    -webkit-mask-image: linear-gradient(var(--capability-angle), black 0%, color-mix(in srgb, black 55%, transparent) 26%, transparent 58%);
+    opacity: 0.34;
+    transform: scaleX(-1);
   }
 
-  /* Polished bevel: light catches only the edges facing a source and falls away on the shaded side. */
+  /* Polished edge: only the bevels facing a light source catch it; the shaded sides fall away to nothing. */
   .bofyt-glass-specular::after {
     position: absolute;
     inset: 0;
     padding: 1px;
     border-radius: inherit;
-    background: linear-gradient(var(--capability-angle), color-mix(in srgb, var(--foreground) 16%, transparent) 0%, color-mix(in srgb, var(--bofyt-atmosphere-left) 10%, transparent) 16%, transparent 38%, transparent 72%, color-mix(in srgb, var(--bofyt-atmosphere-right) 9%, transparent) 92%, color-mix(in srgb, var(--foreground) 5%, transparent) 100%);
+    background: linear-gradient(var(--capability-angle), color-mix(in srgb, var(--foreground) 22%, transparent) 0%, color-mix(in srgb, var(--foreground) 6%, transparent) 14%, transparent 34%, transparent 80%, color-mix(in srgb, var(--color-gold-light) 8%, transparent) 96%, transparent 100%);
     content: '';
     mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -630,14 +565,14 @@
   }
 
   .bofyt-core-card {
-    border-color: color-mix(in srgb, var(--color-tech-cyan) 44%, transparent);
+    border-color: color-mix(in srgb, var(--foreground) 9%, transparent);
     background:
       radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--color-tech-blue) 18%, transparent), transparent 36%),
       radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--color-gold) 9%, transparent), transparent 28%),
       linear-gradient(145deg, color-mix(in srgb, var(--color-tech-navy) 94%, var(--color-tech-blue) 6%), var(--color-void) 74%);
     box-shadow:
-      0 34px 90px -30px color-mix(in srgb, var(--color-tech-blue) 62%, transparent),
-      inset 0 1px 0 color-mix(in srgb, var(--color-tech-cyan) 24%, transparent),
+      0 48px 70px -42px var(--color-void),
+      inset 0 1px 0 color-mix(in srgb, var(--foreground) 14%, transparent),
       inset 0 0 42px -24px color-mix(in srgb, var(--color-tech-blue) 36%, transparent);
   }
 
