@@ -31,7 +31,7 @@ export function AccountView({
           </Link>
           <Link
             href={returnPath}
-            className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-white/50 transition-colors hover:text-gold-light"
+            className="relative inline-flex items-center gap-2 after:absolute after:-inset-x-3 after:-inset-y-4 after:content-[''] text-[10px] uppercase tracking-[0.18em] text-white/50 transition-colors hover:text-gold-light"
           >
             <ArrowLeft aria-hidden className="size-3.5" />
             Back to BOFYT
