@@ -78,7 +78,7 @@ export function CategoryPanel({
       onClick={onSelect}
       className={cn(
         capabilityCard
-          ? 'bofyt-capability-card group relative isolate flex h-full w-full flex-col overflow-hidden rounded-[0.5rem] border bg-tech-ink text-left outline-none transition-[border-color,box-shadow,opacity,transform] duration-500 disabled:pointer-events-none disabled:cursor-default'
+          ? 'bofyt-capability-card group relative isolate flex h-full w-full flex-col overflow-hidden rounded-[1.35rem] border bg-tech-ink text-left outline-none transition-[border-color,box-shadow,opacity,transform] duration-500 disabled:pointer-events-none disabled:cursor-default'
           : 'group relative isolate flex h-full w-full flex-col overflow-hidden rounded-md border bg-[#0a0907] text-left outline-none transition-[border-color,box-shadow,opacity,transform] duration-500 disabled:pointer-events-none disabled:cursor-default',
         !disableHover && 'min-[960px]:group-hover:-translate-y-0.5 min-[960px]:group-hover:scale-[1.015]',
         capabilityCard
@@ -123,7 +123,6 @@ export function CategoryPanel({
         className={capabilityCard ? 'bofyt-capability-wash absolute inset-0 -z-10' : 'absolute inset-0 -z-10 bg-[linear-gradient(to_bottom,#0a0907_0%,rgba(10,9,7,0.55)_26%,rgba(10,9,7,0)_46%,rgba(10,9,7,0.2)_62%,#0a0907_84%)]'}
       />
       <span aria-hidden className={capabilityCard ? 'bofyt-capability-light absolute inset-0 -z-10' : 'absolute inset-0 -z-10 bg-[linear-gradient(105deg,rgba(255,255,255,0.07),transparent_38%)]'} />
-      {capabilityCard && <span aria-hidden className="bofyt-glass-specular pointer-events-none absolute inset-0 z-20" />}
       <span
         aria-hidden
         className={cn('pointer-events-none absolute inset-0 z-10 bg-void transition-opacity duration-500', active ? 'opacity-0' : SHADE[shade])}
@@ -194,7 +193,7 @@ export function CategoryPanel({
           data-card-close={expanded ? 'true' : undefined}
           className={cn(
             capabilityCard
-              ? 'grid size-9 place-items-center self-center rounded-md border transition-[transform,background-color,border-color,color] duration-500'
+              ? 'grid size-9 place-items-center self-center rounded-xl border transition-[transform,background-color,border-color,color] duration-500'
               : 'grid size-7 place-items-center self-center rounded-full border transition-[transform,background-color,border-color,color] duration-500',
             compact && 'lg:size-6',
             capabilityCard

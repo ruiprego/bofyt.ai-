@@ -512,7 +512,6 @@ function FocusedCapabilityCarousel({
       id={showIntro ? 'explore' : undefined}
       aria-label={showIntro ? undefined : 'BOFYT capabilities'}
       aria-labelledby={showIntro ? 'explore-heading' : undefined}
-      data-atmosphere={activeItem.kind === 'core' ? 'core' : activeItem.capability.id}
       className="bofyt-capability-stage relative flex min-h-[min(68vh,42rem)] w-full flex-1 lg:min-h-0 scroll-mt-24 flex-col gap-3 pb-4" 
     >
       {showIntro && (
@@ -548,8 +547,6 @@ function FocusedCapabilityCarousel({
         <p className="relative z-10 text-center text-[10px] uppercase tracking-[0.24em] text-white/35">
           {interactive ? 'Swipe horizontally · tap to enter' : 'Opening your experience'}
         </p>
-
-        <span aria-hidden className="bofyt-nav-field pointer-events-none absolute inset-0" />
 
         <div className="relative flex min-h-0 w-full flex-1 items-center justify-center">
           <motion.div
@@ -603,8 +600,6 @@ function FocusedCapabilityCarousel({
             })}
           </motion.div>
 
-          <span aria-hidden className={cn('bofyt-nav-halo pointer-events-none absolute', CARD_SLOT)} />
-
           <AnimatePresence initial={false} mode="popLayout">
             <motion.div
               key={activeItem.kind === 'core' ? 'core' : activeItem.capability.id}
@@ -617,13 +612,6 @@ function FocusedCapabilityCarousel({
               }}
               className={cn('relative z-10 min-w-0', CARD_SLOT)}
             >
-              <span
-                aria-hidden
-                className={cn(
-                  'bofyt-nav-edge pointer-events-none absolute inset-0 z-20',
-                  activeItem.kind === 'core' ? 'rounded-[1.5rem]' : 'rounded-[0.5rem]',
-                )}
-              />
               {activeItem.kind === 'core' ? (
                 <CoreCapabilityCard interactive={interactive} onActivateCore={onActivateCore} positionLabel={positionLabel} />
               ) : (

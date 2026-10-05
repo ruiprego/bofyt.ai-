@@ -53,7 +53,7 @@ export function CapabilityDiscovery({ onSelectCapability, onActivateCore, onOpen
 
       <div className="relative mx-auto flex min-h-dvh w-full max-w-[124rem] flex-col px-3 pb-6 pt-5 sm:px-5 lg:px-8 lg:pt-7">
         <header className="relative z-30 shrink-0 text-center">
-          <p className="text-[10px] uppercase tracking-[0.35em] text-tech-cyan/75">
+          <p className="text-[10px] uppercase tracking-[0.35em] text-gold-light/75">
             {ready ? 'Choose an experience' : 'Experiences initializing'}
           </p>
           <h1 id="capability-discovery-title" className="mt-2 font-display text-[clamp(1.8rem,4vw,3.5rem)] leading-[0.98] tracking-tight text-balance">

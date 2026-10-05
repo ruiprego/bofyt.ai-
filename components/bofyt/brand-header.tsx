@@ -42,10 +42,10 @@ export function BrandHeader({ progressCount, onOpenSheet, onOpenCareer }: BrandH
           <button type="button" onClick={onOpenCareer} className="text-tech-cyan/85 transition-colors hover:text-tech-cyan">
             Career
           </button>
-          <button type="button" onClick={() => onOpenSheet('progress')} className="text-white/55 transition-colors hover:text-white">
-            Progress{progressCount > 0 && <span className="ml-1.5 text-tech-cyan">{progressCount}</span>}
+          <button type="button" onClick={() => onOpenSheet('progress')} className="text-white/55 transition-colors hover:text-gold-light">
+            Progress{progressCount > 0 && <span className="ml-1.5 text-gold">{progressCount}</span>}
           </button>
-          <button type="button" onClick={() => onOpenSheet('profile')} className="text-white/55 transition-colors hover:text-white">
+          <button type="button" onClick={() => onOpenSheet('profile')} className="text-white/55 transition-colors hover:text-gold-light">
             Profile
           </button>
         </nav>
