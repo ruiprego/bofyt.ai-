@@ -1,10 +1,19 @@
 import 'server-only'
 import { getJobSearchParameters } from './job-query'
+import {
+  interleave,
+  prioritizeByLocation,
+  resolveKnownLocation,
+  targetFromCanonicalLocation,
+  type ProviderLocationPlan,
+  type ProviderLocationTarget,
+} from './job-location'
 import { CareerError, JOBS_NOT_CONFIGURED_MESSAGE, type Job } from './types'
 
 export { getJobSearchParameters, parseJobSearch, toJobQuery } from './job-query'
 
 const SERPAPI_ENDPOINT = 'https://serpapi.com/search.json'
+const SERPAPI_LOCATIONS_ENDPOINT = 'https://serpapi.com/locations.json'
 const REQUEST_TIMEOUT_MS = 15_000
 
 type JsonRecord = Record<string, unknown>
@@ -78,18 +87,78 @@ export function normalizeJob(value: unknown): Job | null {
   }
 }
 
+async function resolveUnknownLocation(location: string, signal: AbortSignal): Promise<ProviderLocationTarget | null> {
+  const url = new URL(SERPAPI_LOCATIONS_ENDPOINT)
+  url.searchParams.set('q', location)
+  url.searchParams.set('limit', '1')
+  try {
+    const response = await fetch(url, { headers: { Accept: 'application/json' }, cache: 'force-cache', signal })
+    if (!response.ok) return null
+    const payload: unknown = await response.json().catch(() => null)
+    const match = asRecord(Array.isArray(payload) ? payload[0] : null)
+    const canonicalName = asString(match?.canonical_name)
+    const countryCode = asString(match?.country_code)
+    return canonicalName && countryCode ? targetFromCanonicalLocation(canonicalName, countryCode) : null
+  } catch (error) {
+    if (signal.aborted) throw error
+    return null
+  }
+}
+
+async function buildLocationPlan(location: string | undefined, remote: boolean, signal: AbortSignal): Promise<ProviderLocationPlan> {
+  if (!location) return { label: '', targets: [], remote, matchTerms: [] }
+  const known = resolveKnownLocation(location, remote)
+  if (known) return known
+  const resolved = await resolveUnknownLocation(location, signal)
+  return {
+    label: location,
+    targets: resolved ? [resolved] : [],
+    remote,
+    matchTerms: [location.toLocaleLowerCase()],
+  }
+}
+
+async function fetchJobs(
+  apiKey: string,
+  query: string,
+  target: ProviderLocationTarget | null,
+  remote: boolean,
+  signal: AbortSignal,
+) {
+  const url = new URL(SERPAPI_ENDPOINT)
+  url.searchParams.set('engine', 'google_jobs')
+  url.searchParams.set('q', query)
+  url.searchParams.set('hl', target?.hl ?? 'en')
+  url.searchParams.set('api_key', apiKey)
+  if (target) {
+    url.searchParams.set('location', target.location)
+    url.searchParams.set('gl', target.gl)
+  }
+  if (remote) url.searchParams.set('ltype', '1')
+
+  const response = await fetch(url, { headers: { Accept: 'application/json' }, cache: 'no-store', signal })
+  if (response.status === 401 || response.status === 403) {
+    throw new CareerError('The job search provider rejected the configured API key.', 'UPSTREAM', 502)
+  }
+  if (response.status === 429) throw new CareerError('Job search rate limit reached. Try again shortly.', 'UPSTREAM', 502)
+
+  const payload = asRecord(await response.json().catch(() => null))
+  const providerError = asString(payload?.error)
+  if (providerError && /hasn't returned any results|unsupported .* location/i.test(providerError)) return [] as Job[]
+  if (!response.ok || providerError || !payload) {
+    throw new CareerError('The live job search could not be completed. Try again.', 'UPSTREAM', 502)
+  }
+
+  return (Array.isArray(payload.jobs_results) ? payload.jobs_results : [])
+    .map(normalizeJob)
+    .filter((job): job is Job => Boolean(job))
+}
+
 export async function searchJobs(goal: string, signal?: AbortSignal) {
   const apiKey = process.env.SERPAPI_API_KEY?.trim()
   if (!apiKey) throw new CareerError(JOBS_NOT_CONFIGURED_MESSAGE, 'CONFIGURATION', 503)
 
   const { query, location, remote } = getJobSearchParameters(goal)
-  const url = new URL(SERPAPI_ENDPOINT)
-  url.searchParams.set('engine', 'google_jobs')
-  url.searchParams.set('q', query)
-  url.searchParams.set('hl', 'en')
-  url.searchParams.set('api_key', apiKey)
-  if (location) url.searchParams.set('location', location)
-  if (remote) url.searchParams.set('ltype', '1')
 
   const controller = new AbortController()
   const forwardAbort = () => controller.abort(signal?.reason)
@@ -97,25 +166,22 @@ export async function searchJobs(goal: string, signal?: AbortSignal) {
   signal?.addEventListener('abort', forwardAbort, { once: true })
 
   try {
-    const response = await fetch(url, { headers: { Accept: 'application/json' }, cache: 'no-store', signal: controller.signal })
-    if (response.status === 401 || response.status === 403) {
-      throw new CareerError('The job search provider rejected the configured API key.', 'UPSTREAM', 502)
-    }
-    if (response.status === 429) throw new CareerError('Job search rate limit reached. Try again shortly.', 'UPSTREAM', 502)
+    const plan = await buildLocationPlan(location, remote, controller.signal)
+    if (location && !plan.targets.length && !plan.remote) return { query, location: plan.label, jobs: [] as Job[] }
 
-    const payload = asRecord(await response.json().catch(() => null))
-    const providerError = asString(payload?.error)
-    if (providerError && /hasn't returned any results/i.test(providerError)) return { query, location, jobs: [] as Job[] }
-    if (!response.ok || providerError || !payload) {
-      throw new CareerError('The live job search could not be completed. Try again.', 'UPSTREAM', 502)
+    const targets = plan.targets.length ? plan.targets : [null]
+    const settled = await Promise.allSettled(
+      targets.map((target) => fetchJobs(apiKey, query, target, plan.remote, controller.signal)),
+    )
+    const groups = settled.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []))
+    if (!groups.length) {
+      const failure = settled.find((result): result is PromiseRejectedResult => result.status === 'rejected')
+      throw failure?.reason
     }
-
-    const jobs = (Array.isArray(payload.jobs_results) ? payload.jobs_results : [])
-      .map(normalizeJob)
-      .filter((job): job is Job => Boolean(job))
+    const jobs = prioritizeByLocation(interleave(groups), plan.matchTerms)
       .filter((job, index, all) => all.findIndex((other) => other.id === job.id) === index)
 
-    return { query, location, jobs }
+    return { query, location: plan.label || location, jobs }
   } catch (error) {
     if (error instanceof CareerError) throw error
     if (signal?.aborted) throw error
