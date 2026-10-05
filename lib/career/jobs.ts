@@ -1,5 +1,8 @@
 import 'server-only'
+import { getJobSearchParameters } from './job-query'
 import { CareerError, JOBS_NOT_CONFIGURED_MESSAGE, type Job } from './types'
+
+export { getJobSearchParameters, parseJobSearch, toJobQuery } from './job-query'
 
 const SERPAPI_ENDPOINT = 'https://serpapi.com/search.json'
 const REQUEST_TIMEOUT_MS = 15_000
@@ -26,13 +29,6 @@ export function isJobSearchConfigured() {
   return Boolean(process.env.SERPAPI_API_KEY?.trim())
 }
 
-const FILLER = /\b(i\s+want\s+to|i'?d\s+like\s+to|help\s+me|please|can\s+you|find\s+me|find|search\s+for|look\s+for|looking\s+for|show\s+me|get\s+me|apply\s+for|apply\s+to|work\s+as|become|an?|the|that\s+match(es)?\s+my\s+experience|matching\s+my\s+(experience|profile))\b/gi
-
-export function toJobQuery(goal: string) {
-  const cleaned = goal.replace(FILLER, ' ').replace(/[.?!]+$/g, '').replace(/\s+/g, ' ').trim()
-  const query = cleaned || goal.trim()
-  return /\b(jobs?|positions?|roles?|vacanc(y|ies)|openings?)\b/i.test(query) ? query : `${query} jobs`
-}
 
 export function normalizeJob(value: unknown): Job | null {
   const record = asRecord(value)
@@ -86,13 +82,14 @@ export async function searchJobs(goal: string, signal?: AbortSignal) {
   const apiKey = process.env.SERPAPI_API_KEY?.trim()
   if (!apiKey) throw new CareerError(JOBS_NOT_CONFIGURED_MESSAGE, 'CONFIGURATION', 503)
 
-  const query = toJobQuery(goal)
+  const { query, location, remote } = getJobSearchParameters(goal)
   const url = new URL(SERPAPI_ENDPOINT)
   url.searchParams.set('engine', 'google_jobs')
   url.searchParams.set('q', query)
   url.searchParams.set('hl', 'en')
   url.searchParams.set('api_key', apiKey)
-  if (/\bremote\b/i.test(goal)) url.searchParams.set('ltype', '1')
+  if (location) url.searchParams.set('location', location)
+  if (remote) url.searchParams.set('ltype', '1')
 
   const controller = new AbortController()
   const forwardAbort = () => controller.abort(signal?.reason)
@@ -108,7 +105,7 @@ export async function searchJobs(goal: string, signal?: AbortSignal) {
 
     const payload = asRecord(await response.json().catch(() => null))
     const providerError = asString(payload?.error)
-    if (providerError && /hasn't returned any results/i.test(providerError)) return { query, jobs: [] as Job[] }
+    if (providerError && /hasn't returned any results/i.test(providerError)) return { query, location, jobs: [] as Job[] }
     if (!response.ok || providerError || !payload) {
       throw new CareerError('The live job search could not be completed. Try again.', 'UPSTREAM', 502)
     }
@@ -118,7 +115,7 @@ export async function searchJobs(goal: string, signal?: AbortSignal) {
       .filter((job): job is Job => Boolean(job))
       .filter((job, index, all) => all.findIndex((other) => other.id === job.id) === index)
 
-    return { query, jobs }
+    return { query, location, jobs }
   } catch (error) {
     if (error instanceof CareerError) throw error
     if (signal?.aborted) throw error
