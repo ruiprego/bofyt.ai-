@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
+import { BriefcaseBusiness } from 'lucide-react'
 import type { CapabilityId } from '@/lib/bofyt/capabilities'
 import { CategoryCarousel } from './category-carousel'
 
@@ -9,9 +10,11 @@ type DiscoveryPhase = 'ready' | 'leaving'
 
 interface CapabilityDiscoveryProps {
   onSelectCapability: (id: CapabilityId) => void
+  onActivateCore?: () => void
+  onOpenCareer?: () => void
 }
 
-export function CapabilityDiscovery({ onSelectCapability }: CapabilityDiscoveryProps) {
+export function CapabilityDiscovery({ onSelectCapability, onActivateCore, onOpenCareer }: CapabilityDiscoveryProps) {
   const reduceMotion = useReducedMotion() === true
   const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [phase, setPhase] = useState<DiscoveryPhase>('ready')
@@ -40,13 +43,13 @@ export function CapabilityDiscovery({ onSelectCapability }: CapabilityDiscoveryP
       role="dialog"
       aria-modal="true"
       aria-labelledby="capability-discovery-title"
-      className="fixed inset-0 z-[90] isolate overflow-hidden bg-void text-white"
+      className="bofyt-app-shell fixed inset-0 z-[90] isolate overflow-hidden text-white"
       initial={{ opacity: 0 }}
       animate={{ opacity: leaving ? 0 : 1 }}
       transition={{ duration: reduceMotion ? 0 : 0.45, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div aria-hidden className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_center,rgba(226,184,101,0.15),transparent_34%),radial-gradient(ellipse_at_center,#090806_0%,#020201_72%)]" />
-      <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 h-40 bg-[linear-gradient(to_bottom,rgba(246,221,161,0.08),transparent)]" />
+      <div aria-hidden className="bofyt-discovery-field pointer-events-none fixed inset-0" />
+      <div aria-hidden className="bofyt-discovery-edge pointer-events-none fixed inset-x-0 top-0 h-40" />
 
       <div className="relative mx-auto flex min-h-dvh w-full max-w-[124rem] flex-col px-3 pb-6 pt-5 sm:px-5 lg:px-8 lg:pt-7">
         <header className="relative z-30 shrink-0 text-center">
@@ -59,6 +62,17 @@ export function CapabilityDiscovery({ onSelectCapability }: CapabilityDiscoveryP
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-white/55">
             {ready ? 'Choose one path. BOFYT opens that experience next.' : 'The Core is revealing the paths around it.'}
           </p>
+          {onOpenCareer && (
+            <button
+              type="button"
+              onClick={() => ready && onOpenCareer()}
+              disabled={!ready}
+              className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-tech-cyan/25 bg-tech-navy/60 px-5 text-[11px] font-medium uppercase tracking-[0.3em] text-white/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-md transition-colors hover:border-tech-cyan/50 hover:text-white active:border-tech-cyan/60 active:text-white disabled:opacity-50"
+            >
+              <BriefcaseBusiness aria-hidden className="size-4 text-tech-cyan" />
+              Career
+            </button>
+          )}
         </header>
 
         <div className="relative flex min-h-0 flex-1 flex-col justify-center pt-5 min-[960px]:pt-3">
@@ -70,7 +84,7 @@ export function CapabilityDiscovery({ onSelectCapability }: CapabilityDiscoveryP
             {ready ? 'Cards revealed · select one to continue' : 'Mapping available experiences'}
           </motion.p>
 
-          <div className="relative min-h-0 flex-1 min-[960px]:h-[calc(100dvh-12rem)]">
+          <div className="relative min-h-0 flex-1 min-[960px]:h-[calc(100dvh-17rem)]">
             <CategoryCarousel
               layout="core"
               mode="discovery"
@@ -79,6 +93,7 @@ export function CapabilityDiscovery({ onSelectCapability }: CapabilityDiscoveryP
               highlighted={[]}
               interactive={ready}
               onSelect={selectCapability}
+              onActivateCore={onActivateCore}
             />
           </div>
         </div>

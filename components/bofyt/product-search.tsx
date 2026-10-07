@@ -2,7 +2,7 @@
 
 import type { RefObject } from 'react'
 import type { CategoryModule } from '@/lib/bofyt/categories'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { LoaderCircle, Search as SearchIcon } from 'lucide-react'
 import type { ProductSearchFeedback } from '@/lib/products/types'
@@ -12,6 +12,7 @@ import { ProductSearchStatus } from './product-search-status'
 
 interface ProductSearchProps {
   open: boolean
+  autoFocus: boolean
   inputRef: RefObject<HTMLInputElement | null>
   headingRef: RefObject<HTMLHeadingElement | null>
   query: string
@@ -30,6 +31,7 @@ const ease = [0.22, 1, 0.36, 1] as const
 
 export function ProductSearch({
   open,
+  autoFocus,
   inputRef,
   headingRef,
   query,
@@ -43,18 +45,26 @@ export function ProductSearch({
   onSubmit,
   onRetry,
 }: ProductSearchProps) {
+  const focusedOnOpen = useRef(false)
+
   useEffect(() => {
-    if (!open) return
+    if (!open || !autoFocus) {
+      focusedOnOpen.current = false
+      return
+    }
+    if (focusedOnOpen.current) return
+    if (busy || result) {
+      focusedOnOpen.current = true
+      return
+    }
+
+    focusedOnOpen.current = true
     const timer = window.setTimeout(() => {
       inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       inputRef.current?.focus({ preventScroll: true })
     }, 180)
     return () => window.clearTimeout(timer)
-  }, [inputRef, open])
-
-  useEffect(() => {
-    if (open && !result && !busy) inputRef.current?.focus({ preventScroll: true })
-  }, [busy, inputRef, open, result])
+  }, [autoFocus, busy, inputRef, open, result])
 
   return (
     <section
@@ -92,9 +102,9 @@ export function ProductSearch({
         transition={{ duration: 0.55, delay: 0.08, ease }}
         className="w-full max-w-2xl"
       >
-        <div className="group relative flex items-center gap-3 rounded-[28px] border border-gold/45 bg-black/65 p-2 pl-5 shadow-[0_0_40px_-14px_rgba(226,184,101,0.7),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl transition-[border-color,box-shadow] duration-500 focus-within:border-gold-light focus-within:shadow-[0_0_64px_-12px_rgba(226,184,101,0.85),inset_0_1px_0_rgba(255,255,255,0.08)]">
-          <SearchIcon aria-hidden className="size-5 shrink-0 text-gold-light" />
-          <span aria-hidden className="h-8 w-px shrink-0 bg-gold/25" />
+        <div className="bofyt-input-shell group relative flex items-center gap-3 rounded-[28px] p-2 pl-5 transition-[border-color,box-shadow] duration-500">
+          <SearchIcon aria-hidden className="size-5 shrink-0 text-tech-cyan" />
+          <span aria-hidden className="h-8 w-px shrink-0 bg-tech-cyan/20" />
           <label htmlFor="product-search-input" className="sr-only">
             Search products, brands or anything you want
           </label>
@@ -117,7 +127,7 @@ export function ProductSearch({
             type="submit"
             disabled={busy || !query.trim()}
             aria-label="Search products"
-            className="grid size-12 shrink-0 place-items-center rounded-full bg-gradient-to-b from-gold-light to-gold text-black shadow-[0_0_24px_-4px_rgba(226,184,101,0.8)] transition-transform duration-300 hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 md:size-14"
+            className="bofyt-primary-action grid size-12 shrink-0 place-items-center rounded-full transition-transform duration-300 hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 md:size-14"
           >
             {busy ? <LoaderCircle aria-hidden className="size-5 animate-spin" /> : <SearchIcon aria-hidden className="size-5" />}
           </button>
@@ -137,7 +147,7 @@ export function ProductSearch({
                 <button
                   type="button"
                   onClick={() => onPickPrompt(suggestion.prompt)}
-                  className="group flex min-h-24 w-full flex-col justify-between rounded-xl border border-gold/25 bg-black/40 p-3 text-left transition-[border-color,background-color,transform] duration-300 hover:-translate-y-0.5 hover:border-gold/70 hover:bg-gold/[0.07] active:scale-[0.98]"
+                  className="bofyt-glass-panel group flex min-h-24 w-full flex-col justify-between rounded-xl p-3 text-left transition-[border-color,background-color,transform] duration-300 hover:-translate-y-0.5 active:scale-[0.98]"
                 >
                   <span className="text-[13px] font-medium text-white group-hover:text-gold-light">{suggestion.name}</span>
                   <span className="mt-2 text-xs leading-relaxed text-white/55">{suggestion.description}</span>

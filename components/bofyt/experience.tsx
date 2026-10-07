@@ -1,17 +1,26 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { mutate as mutateCache } from 'swr'
 import { categoryById, detectCategories, type CategoryId } from '@/lib/bofyt/categories'
 import {
   capabilitiesForCategories,
   capabilityById,
   capabilityForCategory,
   type CapabilityId,
+  type CapabilitySearchRequest,
 } from '@/lib/bofyt/capabilities'
-import { activeGoal, goalStore, useGoals } from '@/lib/bofyt/goals'
+import { activeGoal, planActions, type GoalEntry } from '@/lib/bofyt/goals'
 import { detectGoalIntent } from '@/lib/bofyt/intent'
+import { deleteSavedProduct, insertGoal, insertGoalActivity, insertSavedProduct, updateGoalProgress, upsertFocusAreas } from '@/lib/bofyt/persistence'
+import type { ResultItem } from '@/lib/bofyt/results'
+import { accountHrefFor, type BofytReturnState } from '@/lib/bofyt/return-location'
 import { ProductSearchClientError, searchProducts } from '@/lib/products/client'
+import { isProductSearchQuery } from '@/lib/products/parse'
+import { createClient } from '@/lib/supabase/client'
+import { savedItemKey, type UserProfile } from '@/lib/bofyt/user-data'
 import type { ProductSearchFeedback } from '@/lib/products/types'
+import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js'
 import type { CoreMode } from './ai-core'
 import { BottomNav, type NavTarget } from './bottom-nav'
 import { BrandHeader } from './brand-header'
@@ -20,19 +29,47 @@ import { CapabilityOverlay } from './capability-overlay'
 import { CategoryCarousel } from './category-carousel'
 import { CenterStage } from './center-stage'
 import { CoreOverlay } from './core-overlay'
+import { CareerExperience } from './career/career-experience'
+import { isCareerWorkspaceGoal } from '@/lib/career/routing'
 import { CoreAwakening } from './core-awakening'
 import { ContinueGoal } from './continue-goal'
-import { GoalResult, type GoalResultData, type GoalResultHandlers } from './goal-result'
+import type { GoalResultData, GoalResultHandlers } from './goal-result'
 import { InfoSheet, type SheetKind } from './info-sheet'
 import { PlanSheet } from './plan-sheet'
 import { Toast, type ToastMessage } from './toast'
 
 type GoalOutcome = GoalResultData
 type IntroStage = 'awakening' | 'discovery' | 'complete'
+type CapabilitySearchContext = Pick<CapabilitySearchRequest, 'capabilityId' | 'categoryId'>
 
-const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches
+const contextForCapability = (capabilityId: CapabilityId): CapabilitySearchContext => ({
+  capabilityId,
+  categoryId: capabilityById[capabilityId].categoryId,
+})
 
-export function BofytExperience() {
+export function BofytExperience({
+  initialUser,
+  initialGoals,
+  initialProfile,
+  initialSavedItemKeys,
+  initialReturn = null,
+}: {
+  initialUser: User | null
+  initialGoals: GoalEntry[]
+  initialProfile: UserProfile | null
+  initialSavedItemKeys: string[]
+  initialReturn?: BofytReturnState | null
+}) {
+  const returnCapability = initialReturn?.kind === 'capability' ? initialReturn.capability : null
+  const returnCapabilityContext =
+    initialReturn?.kind === 'capability' && !initialReturn.overlay ? contextForCapability(initialReturn.capability) : null
+  const returnSelected =
+    initialReturn?.kind === 'category'
+      ? initialReturn.category
+      : returnCapability
+        ? capabilityById[returnCapability].categoryId
+        : null
+
   const inputRef = useRef<HTMLInputElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -41,11 +78,17 @@ export function BofytExperience() {
   const searchAbort = useRef<AbortController | null>(null)
   const searchRequest = useRef(0)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const userIdRef = useRef<string | null>(initialUser?.id ?? null)
 
   const [goal, setGoal] = useState('')
+  const [goalCapabilityContext, setGoalCapabilityContext] = useState<CapabilitySearchContext | null>(
+    returnCapabilityContext && returnCapabilityContext.categoryId !== 'search' ? returnCapabilityContext : null,
+  )
   const [focused, setFocused] = useState(false)
-  const [selected, setSelected] = useState<CategoryId | null>(null)
-  const [expandedCapability, setExpandedCapability] = useState<CapabilityId | null>(null)
+  const [selected, setSelected] = useState<CategoryId | null>(returnSelected)
+  const [expandedCapability, setExpandedCapability] = useState<CapabilityId | null>(
+    initialReturn?.kind === 'capability' && initialReturn.overlay ? initialReturn.capability : null,
+  )
   const [preview, setPreview] = useState<CategoryId | null>(null)
   const [activating, setActivating] = useState(false)
   const [result, setResult] = useState<GoalOutcome | null>(null)
@@ -53,14 +96,52 @@ export function BofytExperience() {
   const [sheet, setSheet] = useState<SheetKind | null>(null)
   const [navActive, setNavActive] = useState<NavTarget>('home')
   const [coreOpen, setCoreOpen] = useState(false)
-  const [introStage, setIntroStage] = useState<IntroStage>('awakening')
+  const [careerQuery, setCareerQuery] = useState<string | null>(null)
+  const [introStage, setIntroStage] = useState<IntroStage>(initialReturn ? 'complete' : 'awakening')
   const [planSource, setPlanSource] = useState<GoalOutcome | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searching, setSearching] = useState(false)
   const [searchResult, setSearchResult] = useState<GoalOutcome | null>(null)
+  const [searchCapabilityContext, setSearchCapabilityContext] = useState<CapabilitySearchContext | null>(
+    returnCapabilityContext?.categoryId === 'search' ? returnCapabilityContext : null,
+  )
   const [searchFeedback, setSearchFeedback] = useState<ProductSearchFeedback | null>(null)
   const [toast, setToast] = useState<ToastMessage | null>(null)
-  const goals = useGoals()
+  const [user, setUser] = useState<User | null>(initialUser)
+  const [goals, setGoals] = useState<GoalEntry[]>(initialGoals)
+  const [profile, setProfile] = useState<UserProfile | null>(initialProfile)
+  const [savedItemIds, setSavedItemIds] = useState<string[]>(initialSavedItemKeys)
+
+  useEffect(() => {
+    const supabase = createClient()
+    let active = true
+
+    const applySession = (session: Session | null) => {
+      if (!active) return
+      const nextUser = session?.user ?? null
+      if ((nextUser?.id ?? null) !== userIdRef.current) {
+        userIdRef.current = nextUser?.id ?? null
+        setGoals([])
+        setProfile(null)
+        setSavedItemIds([])
+        void mutateCache((key) => typeof key === 'string' && key.startsWith('/api/career/'))
+      }
+      setUser(nextUser)
+    }
+
+    void supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => applySession(data.session))
+    const { data } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => applySession(session))
+
+    return () => {
+      active = false
+      data.subscription.unsubscribe()
+    }
+  }, [])
+
+  useEffect(() => {
+    // Strip the restore params so a later reload still plays the normal entry experience.
+    if (initialReturn) window.history.replaceState(window.history.state, '', '/')
+  }, [initialReturn])
 
   const pulse = () => setPulseKey((key) => key + 1)
   const completeIntro = useCallback(() => setIntroStage('complete'), [])
@@ -96,6 +177,34 @@ export function BofytExperience() {
     toastTimer.current = setTimeout(() => setToast(null), 3200)
   }
 
+  const dismissKeyboard = () => {
+    const activeElement = document.activeElement
+    if (activeElement instanceof HTMLElement) activeElement.blur()
+  }
+
+  const clearSearchExperience = () => {
+    searchAbort.current?.abort()
+    searchAbort.current = null
+    searchRequest.current += 1
+    setSearching(false)
+    setSearchQuery('')
+    setSearchResult(null)
+    setSearchCapabilityContext(null)
+    setSearchFeedback(null)
+  }
+
+  const clearTransientExperience = () => {
+    if (activationTimer.current) clearTimeout(activationTimer.current)
+    activationTimer.current = null
+    setActivating(false)
+    setResult(null)
+    setGoal('')
+    setGoalCapabilityContext(null)
+    setPreview(null)
+    setFocused(false)
+    clearSearchExperience()
+  }
+
   const coreMode: CoreMode = activating ? 'activating' : selected || preview ? 'selected' : focused || goal ? 'typing' : 'idle'
 
   const focusInput = () => {
@@ -104,7 +213,26 @@ export function BofytExperience() {
     inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
-  const selectCategory = (id: CategoryId) => {
+  const activateCore = () => {
+    pulse()
+    focusInput()
+  }
+
+  const selectCategory = (id: CategoryId, options: { preserveGoal?: boolean } = {}) => {
+    if (selected !== id) {
+      clearSearchExperience()
+
+      if (!options.preserveGoal) {
+        if (activationTimer.current) clearTimeout(activationTimer.current)
+        activationTimer.current = null
+        setActivating(false)
+        setResult(null)
+        setGoal('')
+        setGoalCapabilityContext(null)
+        setFocused(false)
+      }
+    }
+
     setSelected(id)
     pulse()
   }
@@ -117,43 +245,45 @@ export function BofytExperience() {
   const openCapability = (id: CapabilityId) => {
     capabilityEntryRef.current = false
     const capability = capabilityById[id]
+    clearTransientExperience()
     setSelected(capability.categoryId)
     setExpandedCapability(id)
     setCoreOpen(false)
     setSheet(null)
-    setPreview(null)
+    setNavActive('home')
     pulse()
-  }
-
-  const toggleCapability = (id: CapabilityId) => {
-    setResult(null)
-    if (expandedCapability === id) closeCapability()
-    else openCapability(id)
   }
 
   const startFromIntroCapability = (id: CapabilityId) => {
     completeIntro()
-    setResult(null)
-    setGoal('')
     setNavActive('home')
-    openCapability(id)
+    openCapabilityFromCard(id)
   }
 
   const enterCapabilityExperience = (id: CapabilityId) => {
+    const context = contextForCapability(id)
+    clearTransientExperience()
     closeCapability()
-    setSelected(capabilityById[id].categoryId)
+    setSelected(context.categoryId)
     setSheet(null)
     setCoreOpen(false)
     setNavActive('home')
+    if (context.categoryId === 'search') setSearchCapabilityContext(context)
+    else setGoalCapabilityContext(context)
     pulse()
     return true
   }
 
-  const enterExpandedCapability = (id: CapabilityId) => enterCapabilityExperience(id)
-
-  const pickFromGrid = (id: CapabilityId) => {
-    toggleCapability(id)
-    if (!isDesktop()) headingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const openCapabilityFromCard = (id: CapabilityId) => {
+    if (id === 'career') {
+      closeCapability()
+      setSheet(null)
+      setCoreOpen(false)
+      setCareerQuery('')
+      pulse()
+      return
+    }
+    openCapability(id)
   }
 
   const changeGoal = (value: string) => {
@@ -165,13 +295,17 @@ export function BofytExperience() {
       setPreview(null)
       return
     }
+    if (goalCapabilityContext) {
+      setPreview(null)
+      return
+    }
     if (selected === 'search') setSelected(null)
     if (intent.kind !== 'category') {
       setPreview(null)
       if (intent.categoryId !== selected) setSelected(intent.categoryId)
     } else if (intent.categoryId && intent.categoryId !== selected) {
       setPreview(null)
-      selectCategory(intent.categoryId)
+      selectCategory(intent.categoryId, { preserveGoal: true })
     }
   }
 
@@ -181,32 +315,48 @@ export function BofytExperience() {
 
     const intent = detectGoalIntent(trimmed)
     const targetCategory = selected ?? intent.categoryId
+    const productContext = targetCategory === 'search' ? searchCapabilityContext : null
     setResult(null)
 
-    if (targetCategory === 'search' || intent.kind === 'shopping') {
+    if (isCareerWorkspaceGoal(trimmed)) {
+      submitGoalOrCareer(trimmed)
+    } else if (isProductSearchQuery(trimmed)) {
       setSelected('search')
       setGoal('')
+      setGoalCapabilityContext(null)
       setSearchQuery(trimmed)
       setSearchFeedback(null)
-      runProductSearch(trimmed)
+      runProductSearch(trimmed, productContext)
     } else {
-      submitGoal(trimmed)
+      submitGoalOrCareer(trimmed, goalCapabilityContext)
     }
 
     pulse()
   }
 
   const selectCapabilityPrompt = (capabilityId: CapabilityId, prompt: string) => {
-    const id = capabilityById[capabilityId].categoryId
+    const context = contextForCapability(capabilityId)
+    const intent = detectGoalIntent(prompt)
+    const inferredCategory =
+      context.categoryId === 'search' && intent.kind !== 'shopping'
+        ? intent.categoryId ?? detectCategories(prompt).find((id) => id !== 'search') ?? 'personal'
+        : context.categoryId
+
+    clearTransientExperience()
     closeCapability()
     setResult(null)
-    setSelected(id)
+    setSelected(inferredCategory)
+    setCoreOpen(false)
+    setNavActive('home')
 
-    if (id === 'search') {
-      setSearchFeedback(null)
+    if (context.categoryId === 'search' && intent.kind === 'shopping') {
+      setGoalCapabilityContext(null)
+      setSearchCapabilityContext(context)
       setSearchQuery(prompt)
       window.setTimeout(() => searchInputRef.current?.focus({ preventScroll: true }), 0)
     } else {
+      setSearchCapabilityContext(null)
+      setGoalCapabilityContext(context)
       setGoal(prompt)
       window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 0)
     }
@@ -222,29 +372,50 @@ export function BofytExperience() {
     if (capabilityEntryRef.current) return
 
     capabilityEntryRef.current = true
-    const id = capabilityById[expandedCapability].categoryId
+    const context = contextForCapability(expandedCapability)
+    clearTransientExperience()
     closeCapability()
-    setSelected(id)
-    if (id === 'search') {
+    setSelected(context.categoryId)
+    setSheet(null)
+    if (context.categoryId === 'search') {
+      setGoalCapabilityContext(null)
+      setSearchCapabilityContext(context)
       window.setTimeout(() => searchInputRef.current?.focus({ preventScroll: true }), 0)
     } else {
+      setSearchCapabilityContext(null)
+      setGoalCapabilityContext(context)
       setCoreOpen(true)
       setNavActive('core')
     }
     pulse()
   }
 
-  const submitGoal = (goalOverride?: string) => {
+  const submitGoalOrCareer = (goalOverride?: string, contextOverride?: CapabilitySearchContext | null) => {
+    const candidate = (typeof goalOverride === 'string' ? goalOverride : goal).trim()
+    if (candidate && isCareerWorkspaceGoal(candidate)) {
+      setCareerQuery(candidate)
+      setGoal('')
+      setCoreOpen(false)
+      pulse()
+      return
+    }
+    submitGoal(goalOverride, contextOverride)
+  }
+
+  const submitGoal = (goalOverride?: string, contextOverride?: CapabilitySearchContext | null) => {
+    const context = contextOverride === undefined ? goalCapabilityContext : contextOverride
     const trimmed = (goalOverride ?? goal).trim()
-    if (!trimmed || activating) {
+    if (!trimmed || activationTimer.current) {
       focusInput()
       pulse()
       return
     }
 
+    dismissKeyboard()
     const intent = detectGoalIntent(trimmed)
-    if (intent.kind === 'shopping') {
+    if (isProductSearchQuery(trimmed)) {
       setActivating(false)
+      setGoalCapabilityContext(null)
       setResult(null)
       setGoal('')
       setPreview(null)
@@ -253,35 +424,47 @@ export function BofytExperience() {
       setCoreOpen(false)
       setSearchQuery(trimmed)
       setSearchFeedback(null)
-      runProductSearch(trimmed)
+      runProductSearch(trimmed, context?.categoryId === 'search' ? context : null)
       pulse()
       return
     }
 
-    const preferredArea = intent.categoryId ?? (intent.kind === 'category' && selected !== 'search' ? selected : null)
-    const areas = detectCategories(trimmed, preferredArea).filter((id) => id !== 'search')
-    const goalAreas: CategoryId[] = areas.length ? areas : ['personal']
+    if (selected === 'search' || context?.categoryId === 'search') clearSearchExperience()
 
+    const preferredArea = context?.categoryId && context.categoryId !== 'search'
+      ? context.categoryId
+      : intent.categoryId ?? (intent.kind === 'category' && selected !== 'search' ? selected : null)
+    const areas = detectCategories(trimmed, preferredArea).filter((id) => id !== 'search')
+    const fallbackArea = context?.categoryId && context.categoryId !== 'search' ? context.categoryId : 'personal'
+    const goalAreas: CategoryId[] = areas.length ? areas : [fallbackArea]
+
+    setGoalCapabilityContext(context)
+    setSearchCapabilityContext(null)
     setActivating(true)
     setResult(null)
     pulse()
     activationTimer.current = setTimeout(() => {
+      activationTimer.current = null
       setActivating(false)
-      setSelected(intent.categoryId)
-      setResult({ id: crypto.randomUUID(), goal: trimmed, areas: goalAreas })
+      setSelected(goalAreas[0] ?? intent.categoryId ?? null)
+      setResult({ id: crypto.randomUUID(), goal: trimmed, areas: goalAreas, capabilityId: context?.capabilityId })
       setGoal('')
       pulse()
     }, 1400)
   }
 
-  function runProductSearch(query: string) {
+  function runProductSearch(query: string, contextOverride?: CapabilitySearchContext | null) {
+    const context = contextOverride === undefined ? searchCapabilityContext : contextOverride
     const trimmed = query.trim()
-    if (!trimmed || searching) return
+    if (!trimmed) return
 
+    dismissKeyboard()
     searchAbort.current?.abort()
     const controller = new AbortController()
     const requestId = ++searchRequest.current
     searchAbort.current = controller
+    setSearchQuery(trimmed)
+    setSearchCapabilityContext(context)
     setSearchFeedback(null)
     setSearching(true)
     setSearchResult(null)
@@ -296,6 +479,7 @@ export function BofytExperience() {
           id: crypto.randomUUID(),
           goal: trimmed,
           areas: ['search'],
+          capabilityId: context?.capabilityId,
           products: response.products,
           closestProducts: response.closestProducts,
           priceConstraint: response.priceConstraint,
@@ -316,32 +500,70 @@ export function BofytExperience() {
 
   const submitProductSearch = (queryOverride?: string) => runProductSearch(queryOverride ?? searchQuery)
 
+  const submitCapabilitySearch = (request: CapabilitySearchRequest) => {
+    const context: CapabilitySearchContext = {
+      capabilityId: request.capabilityId,
+      categoryId: request.categoryId,
+    }
+    const query = request.query.trim()
+    const isShoppingQuery = isProductSearchQuery(query)
+    const productContext = context.categoryId === 'search' ? context : null
+
+    clearTransientExperience()
+    dismissKeyboard()
+    closeCapability()
+    setSelected(isShoppingQuery ? 'search' : request.categoryId)
+    setNavActive('home')
+    setCoreOpen(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+
+    if (isShoppingQuery) {
+      setGoalCapabilityContext(null)
+      setSearchCapabilityContext(productContext)
+      setSearchQuery(query)
+      runProductSearch(query, productContext)
+      pulse()
+      return
+    }
+
+    setSearchCapabilityContext(null)
+    setGoalCapabilityContext(context)
+    setSearchResult(null)
+    setGoal(query)
+    submitGoal(query, context)
+
+    pulse()
+  }
+
   const reset = () => {
-    if (activationTimer.current) clearTimeout(activationTimer.current)
-    setActivating(false)
-    setResult(null)
-    setGoal('')
+    clearTransientExperience()
     setSelected(null)
     closeCapability()
-    setTimeout(focusInput, 0)
+    setCoreOpen(false)
+    setNavActive('home')
+    window.setTimeout(focusInput, 0)
   }
 
   const editResult = () => {
     if (!result) return
     if (activationTimer.current) clearTimeout(activationTimer.current)
+    activationTimer.current = null
     setActivating(false)
+    setGoalCapabilityContext(result.capabilityId ? contextForCapability(result.capabilityId) : null)
     setGoal(result.goal)
     setResult(null)
-    setTimeout(focusInput, 0)
+    window.setTimeout(focusInput, 0)
   }
 
   const resetSearch = () => {
+    const context = searchCapabilityContext
     searchAbort.current?.abort()
     searchAbort.current = null
     searchRequest.current += 1
     setSearching(false)
     setSearchFeedback(null)
     setSearchResult(null)
+    setSearchCapabilityContext(context)
     setSearchQuery('')
     pulse()
   }
@@ -358,10 +580,105 @@ export function BofytExperience() {
     pulse()
   }
 
+  const saveGoal = (entry: GoalOutcome, successMessage: string) => {
+    if (goals.some((savedGoal) => savedGoal.id === entry.id)) {
+      notify(successMessage)
+      return
+    }
+
+    const persistedEntry: GoalEntry = {
+      id: entry.id,
+      goal: entry.goal,
+      areas: entry.areas,
+      capabilityId: entry.capabilityId,
+      createdAt: Date.now(),
+      done: 0,
+      status: 'active',
+    }
+    const previousProfile = profile
+    const nextFocusAreas = Array.from(
+      new Set([...(profile?.focusAreas ?? []), ...entry.areas.filter((area) => area !== 'search')]),
+    )
+
+    setGoals((current) => [persistedEntry, ...current])
+    if (user) {
+      const now = new Date().toISOString()
+      setProfile({
+        userId: user.id,
+        displayName: profile?.displayName ?? null,
+        focusAreas: nextFocusAreas,
+        createdAt: profile?.createdAt ?? now,
+        updatedAt: now,
+      })
+    }
+    notify(successMessage)
+
+    if (!user) return
+
+    void (async () => {
+      const goalSync = await insertGoal(user.id, persistedEntry)
+      if (goalSync.error) {
+        setGoals((current) => current.filter((savedGoal) => savedGoal.id !== persistedEntry.id))
+        setProfile(previousProfile)
+        notify('Unable to sync this goal. Please try again.')
+        return
+      }
+
+      const profileSync = await upsertFocusAreas(user.id, nextFocusAreas)
+      if (profileSync.error) notify('Goal saved, but your focus profile could not sync.')
+    })()
+  }
+
+  const toggleSavedItem = (item: ResultItem) => {
+    const itemKey = savedItemKey(item)
+    const wasSaved = savedItemIds.includes(itemKey)
+    setSavedItemIds((current) => (wasSaved ? current.filter((id) => id !== itemKey) : [...current, itemKey]))
+    notify(wasSaved ? `Removed ${item.name} from saved products` : `${item.name} saved`)
+
+    if (!user || !item.productUrl) return
+
+    void (async () => {
+      const sync = wasSaved ? await deleteSavedProduct(user.id, itemKey) : await insertSavedProduct(user.id, item)
+      if (!sync.error) return
+
+      setSavedItemIds((current) =>
+        wasSaved ? Array.from(new Set([...current, itemKey])) : current.filter((id) => id !== itemKey),
+      )
+      notify('Unable to sync this saved product. Please try again.')
+    })()
+  }
+
+  const advanceGoal = (id: string) => {
+    const entry = goals.find((goalEntry) => goalEntry.id === id)
+    if (!entry) return
+
+    const actions = planActions(entry)
+    const nextDone = Math.min(entry.done + 1, actions.length)
+    if (nextDone === entry.done) return
+    const nextStatus = nextDone >= actions.length ? 'completed' : 'active'
+    const updatedEntry = { ...entry, done: nextDone, status: nextStatus as GoalEntry['status'] }
+
+    setGoals((current) => current.map((goalEntry) => (goalEntry.id === id ? updatedEntry : goalEntry)))
+    notify('Next action completed')
+
+    if (!user) return
+
+    void (async () => {
+      const goalSync = await updateGoalProgress(user.id, id, nextDone, nextStatus)
+      if (goalSync.error) {
+        setGoals((current) => current.map((goalEntry) => (goalEntry.id === id ? entry : goalEntry)))
+        notify('Unable to sync progress. Please try again.')
+        return
+      }
+
+      const activitySync = await insertGoalActivity(user.id, id, nextDone)
+      if (activitySync.error) notify('Progress saved, but the activity record could not sync.')
+    })()
+  }
+
   const saveResult = () => {
     if (!result) return
-    goalStore.save(result)
-    notify('Goal saved to progress')
+    saveGoal(result, 'Goal saved to progress')
   }
 
   const openProgress = () => {
@@ -370,14 +687,14 @@ export function BofytExperience() {
   }
 
   const startPlan = () => {
-    if (planSource) goalStore.save(planSource)
+    if (planSource) saveGoal(planSource, 'Plan added to progress')
     setPlanSource(null)
     setCoreOpen(false)
     openProgress()
-    notify('Plan added to progress')
   }
 
   const resumeGoal = (entry: { id: string; goal: string; areas: CategoryId[] }) => {
+    clearTransientExperience()
     setSheet(null)
     setNavActive('home')
     setSelected(entry.areas[0] ?? null)
@@ -389,16 +706,21 @@ export function BofytExperience() {
     closeCapability()
     setNavActive(target)
     if (target === 'home') {
+      clearTransientExperience()
       setSheet(null)
       setCoreOpen(false)
-      if (selected === 'search') setSelected(null)
+      setSelected(null)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (target === 'explore') {
+      clearTransientExperience()
       setSheet(null)
+      setCoreOpen(false)
+      setSelected(null)
       document.getElementById('explore')?.scrollIntoView({ behavior: 'smooth' })
     } else if (target === 'core') {
+      clearTransientExperience()
       setSheet(null)
-      if (selected === 'search') setSelected(null)
+      setSelected(null)
       setCoreOpen(true)
       pulse()
     } else {
@@ -408,24 +730,27 @@ export function BofytExperience() {
 
   const resultHandlers: GoalResultHandlers = {
     saved: Boolean(result && goals.some((entry) => entry.id === result.id)),
+    savedItemIds,
     onEdit: editResult,
     onReset: reset,
     onBuildPlan: () => result && setPlanSource(result),
     onSave: saveResult,
+    onToggleSavedItem: toggleSavedItem,
     onOpenProgress: openProgress,
     onNotify: notify,
   }
 
   const searchResultHandlers: GoalResultHandlers = {
     saved: Boolean(searchResult && goals.some((entry) => entry.id === searchResult.id)),
+    savedItemIds,
     onEdit: editSearch,
     onReset: resetSearch,
     onBuildPlan: () => searchResult && setPlanSource(searchResult),
     onSave: () => {
       if (!searchResult) return
-      goalStore.save(searchResult)
-      notify('Search saved to progress')
+      saveGoal(searchResult, 'Search saved to progress')
     },
+    onToggleSavedItem: toggleSavedItem,
     onOpenProgress: openProgress,
     onNotify: notify,
   }
@@ -436,15 +761,23 @@ export function BofytExperience() {
   const selectedCapability = selectedCapabilityId ? capabilityById[selectedCapabilityId] : null
   const returning = !result ? activeGoal(goals) : null
   const expandedPresentation = expandedCapability ? capabilityById[expandedCapability] : null
+  const enteredCapability = (goalCapabilityContext ?? searchCapabilityContext)?.capabilityId ?? null
+  const currentReturnState: BofytReturnState = expandedCapability
+    ? { kind: 'capability', capability: expandedCapability, overlay: true }
+    : enteredCapability
+      ? { kind: 'capability', capability: enteredCapability, overlay: false }
+      : selected
+        ? { kind: 'category', category: selected }
+        : { kind: 'home' }
 
   return (
-    <div className="relative min-h-dvh overflow-x-clip bg-void text-white">
+    <div className="bofyt-app-shell relative min-h-dvh overflow-x-clip text-white">
       {introStage === 'complete' && (
         <div className="relative">
         <AmbientBackdrop />
-        <BrandHeader progressCount={goals.length} onOpenSheet={setSheet} />
+        <BrandHeader progressCount={goals.length} onOpenSheet={setSheet} onOpenCareer={() => openCapabilityFromCard('career')} />
 
-      <main className="relative z-10 flex flex-col items-center px-4 pb-32 pt-2 lg:px-8 lg:pb-12 lg:pt-2">
+      <main className="bofyt-main-stage relative z-10 flex flex-col items-center px-4 pb-32 pt-2 lg:px-8 lg:pb-12 lg:pt-2">
         <CenterStage
           inputRef={inputRef}
           headingRef={headingRef}
@@ -452,14 +785,21 @@ export function BofytExperience() {
           selected={selected}
           preview={preview}
           system={null}
-          explore={              <CategoryCarousel selected={selectedCapabilityId} highlighted={recommendedCapabilities} onSelect={pickFromGrid} />}
+          explore={
+            <CategoryCarousel
+              selected={selectedCapabilityId}
+              highlighted={recommendedCapabilities}
+              onSelect={openCapabilityFromCard}
+              onActivateCore={activateCore}
+            />
+          }
           centeredExplore={
             <CategoryCarousel
               layout="core"
               selected={selectedCapabilityId}
               highlighted={recommendedCapabilities}
-              onSelect={pickFromGrid}
-              onEnter={enterExpandedCapability}
+              onSelect={openCapabilityFromCard}
+              onActivateCore={activateCore}
             />
           }
           returning={
@@ -470,6 +810,7 @@ export function BofytExperience() {
           result={result}
           resultHandlers={resultHandlers}
           capability={selectedCapability}
+          searchAutoFocus={!expandedCapability}
           searchInputRef={searchInputRef}
           searchQuery={searchQuery}
           searchBusy={searching}
@@ -477,12 +818,9 @@ export function BofytExperience() {
           searchResultHandlers={searchResultHandlers}
           searchFeedback={searchFeedback}
           onGoalChange={changeGoal}
-          onSubmit={submitGoal}
+          onSubmit={submitGoalOrCareer}
           onFocusChange={setFocused}
-          onActivateCore={() => {
-            pulse()
-            focusInput()
-          }}
+          onActivateCore={activateCore}
           onPickPrompt={startPrompt}
           onSearchChange={setSearchQuery}
           onSearchSubmit={submitProductSearch}
@@ -505,6 +843,7 @@ export function BofytExperience() {
         onSelectModule={(module) => {
           if (expandedCapability) selectCapabilityPrompt(expandedCapability, module.prompt)
         }}
+        onCapabilitySearch={submitCapabilitySearch}
       />
 
       <CoreOverlay
@@ -516,13 +855,23 @@ export function BofytExperience() {
         result={result}
         resultHandlers={resultHandlers}
         onGoalChange={changeGoal}
-        onSubmit={submitGoal}
+        onSubmit={submitGoalOrCareer}
         onPulse={pulse}
         onClose={() => {
           setCoreOpen(false)
           setNavActive('home')
         }}
       />
+
+      {careerQuery !== null && (
+        <CareerExperience
+          key={careerQuery}
+          initialQuery={careerQuery}
+          accountHref={accountHrefFor(currentReturnState)}
+          onClose={() => setCareerQuery(null)}
+          onNotify={notify}
+        />
+      )}
 
       <PlanSheet source={planSource} onClose={() => setPlanSource(null)} onStart={startPlan} />
 
@@ -538,28 +887,37 @@ export function BofytExperience() {
       <InfoSheet
         kind={sheet}
         goals={goals}
-        onClose={() => setSheet(null)}
-        onAdvance={(id) => {
-          goalStore.advance(id)
-          notify('Next action completed')
+        profile={profile}
+        user={user}
+        accountHref={accountHrefFor(currentReturnState)}
+        onSignedOut={() => {
+          userIdRef.current = null
+          setUser(null)
+          setGoals([])
+          setProfile(null)
+          setSavedItemIds([])
+          setSheet(null)
+          notify('Signed out')
         }}
+        onClose={() => setSheet(null)}
+        onAdvance={advanceGoal}
         onOpenGoal={(entry) => resumeGoal(entry)}
       />
           <Toast message={toast} />
         </div>
       )}
       {introStage === 'awakening' && <CoreAwakening onContinue={completeAwakening} />}
-      {introStage === 'discovery' && <CapabilityDiscovery onSelectCapability={startFromIntroCapability} />}
+      {introStage === 'discovery' && (
+        <CapabilityDiscovery
+            onSelectCapability={startFromIntroCapability}
+            onActivateCore={completeIntro}
+            onOpenCareer={() => startFromIntroCapability('career')}
+          />
+      )}
     </div>
   )
 }
 
 function AmbientBackdrop() {
-  return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
-      <div className="absolute left-1/2 top-[32%] size-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(226,184,101,0.13),transparent_60%)]" />
-      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-[radial-gradient(ellipse_at_bottom,rgba(226,184,101,0.1),transparent_65%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.85))]" />
-    </div>
-  )
+  return <div aria-hidden className="bofyt-ambient-backdrop pointer-events-none fixed inset-0 overflow-hidden" />
 }

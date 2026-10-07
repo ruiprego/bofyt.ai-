@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import {
   ArrowDownUp,
@@ -18,19 +18,23 @@ import {
   SlidersHorizontal,
 } from 'lucide-react'
 import type { CategoryId } from '@/lib/bofyt/categories'
+import type { CapabilityId } from '@/lib/bofyt/capabilities'
 import type { Product, ProductPriceConstraint } from '@/lib/products/types'
 import { toGoalTitle } from '@/lib/bofyt/plan'
 import { buildResult, reasonFor, refineItems, type ResultItem } from '@/lib/bofyt/results'
+import { savedItemKey } from '@/lib/bofyt/user-data'
 import { cn } from '@/lib/utils'
 import { EyeMark } from './logo'
 import { MetaRow, openDirections, openProduct, ResultSheet, type ResultSheetState } from './result-sheet'
 
 export interface GoalResultHandlers {
   saved: boolean
+  savedItemIds: string[]
   onEdit: () => void
   onReset: () => void
   onBuildPlan: () => void
   onSave: () => void
+  onToggleSavedItem: (item: ResultItem) => void
   onOpenProgress: () => void
   onNotify: (text: string) => void
 }
@@ -39,6 +43,7 @@ export interface GoalResultData {
   id: string
   goal: string
   areas: CategoryId[]
+  capabilityId?: CapabilityId
   products?: Product[]
   closestProducts?: Product[]
   priceConstraint?: ProductPriceConstraint
@@ -79,10 +84,12 @@ export function GoalResult({
   closestProducts,
   priceConstraint,
   saved,
+  savedItemIds,
   onEdit,
   onReset,
   onBuildPlan,
   onSave,
+  onToggleSavedItem,
   onOpenProgress,
   onNotify,
 }: GoalResultProps) {
@@ -92,10 +99,20 @@ export function GoalResult({
   )
   const [refinement, setRefinement] = useState(model.defaultRefinement)
   const [compared, setCompared] = useState<string[]>([])
-  const [savedItems, setSavedItems] = useState<string[]>([])
   const [sheet, setSheet] = useState<ResultSheetState>(null)
   const [productPanel, setProductPanel] = useState<ProductPanel>(null)
   const [productFilters, setProductFilters] = useState<ProductFilterState>({})
+  const resultHeadingRef = useRef<HTMLHeadingElement>(null)
+
+  useEffect(() => {
+    if (!window.matchMedia('(max-width: 1023px)').matches) return
+
+    const frame = window.requestAnimationFrame(() => {
+      resultHeadingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [])
 
   const isPlaces = model.kind === 'places'
   const isProduct = model.kind === 'products'
@@ -121,13 +138,7 @@ export function GoalResult({
   }
 
   const toggleSavedItem = (item: ResultItem) => {
-    if (savedItems.includes(item.id)) {
-      setSavedItems((ids) => ids.filter((id) => id !== item.id))
-      onNotify(`Removed ${item.name} from saved products`)
-    } else {
-      setSavedItems((ids) => [...ids, item.id])
-      onNotify(`${item.name} saved`)
-    }
+    onToggleSavedItem(item)
   }
 
   const choose = (item: ResultItem) => {
@@ -172,10 +183,10 @@ export function GoalResult({
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.5, ease }}
       aria-labelledby="result-heading"
-      className="flex w-full max-w-xl flex-col text-left"
+      className="bofyt-result-surface flex w-full max-w-xl flex-col text-left"
     >
       {/* 2. User's goal */}
-      <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/50 py-2 pl-4 pr-2">
+      <div className="bofyt-glass-panel flex items-center gap-3 rounded-2xl py-2 pl-4 pr-2">
         <p className="min-w-0 flex-1">
           <span className="block text-[10px] uppercase tracking-[0.3em] text-white/45">{isProduct ? 'Your search' : 'Your goal'}</span>
           <span className="block truncate text-base text-white">{`“${toGoalTitle(goal)}”`}</span>
@@ -228,7 +239,7 @@ export function GoalResult({
         />
       )}
 
-      <h2 id="result-heading" className="mt-3 font-display text-2xl leading-tight text-white md:text-3xl">
+      <h2 ref={resultHeadingRef} id="result-heading" className="mt-3 scroll-mt-24 font-display text-2xl leading-tight text-white md:text-3xl">
         Your results
         <span className="mt-1 block font-sans text-sm text-white/55">{model.heading}</span>
       </h2>
@@ -242,13 +253,13 @@ export function GoalResult({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease }}
             aria-label={`Recommended: ${top.name}`}
-            className="mt-4 rounded-2xl border border-gold/45 bg-black/60 p-4 shadow-[0_0_60px_-30px_rgba(226,184,101,0.9)]"
+            className="bofyt-result-featured mt-4 rounded-2xl border p-4"
           >
             {isProduct && top.imageUrl && (
               <img
                 src={top.imageUrl}
                 alt={`${top.brand ? `${top.brand} ` : ''}${top.name} product image`}
-                className="mb-4 h-40 w-full rounded-xl object-contain bg-white/5"
+                className="mb-4 h-40 w-full rounded-xl object-contain bofyt-media-well"
                 loading="eager"
                 decoding="async"
               />
@@ -264,7 +275,7 @@ export function GoalResult({
               isPlaces={isPlaces}
               isProduct={isProduct}
               isCompared={compared.includes(top.id)}
-              isSaved={savedItems.includes(top.id)}
+              isSaved={savedItemIds.includes(savedItemKey(top))}
               onView={() => setSheet({ type: 'view', item: top })}
               onCompare={() => toggleCompare(top)}
               onSaveItem={() => toggleSavedItem(top)}
@@ -277,14 +288,14 @@ export function GoalResult({
           {rest.length > 0 && (
             <ul className="mt-3 flex flex-col gap-2" aria-label="More options">
               {rest.map((item) => (
-                <li key={item.id} className="rounded-2xl border border-white/10 bg-black/45 p-3.5">
+                <li key={item.id} className="bofyt-result-item rounded-2xl p-3.5">
                   {isProduct ? (
                     <div className="flex items-start gap-3">
                       {item.imageUrl && (
                         <img
                           src={item.imageUrl}
                           alt={`${item.brand ? `${item.brand} ` : ''}${item.name} product image`}
-                          className="size-16 shrink-0 rounded-lg object-contain bg-white/5"
+                          className="size-16 shrink-0 rounded-lg object-contain bofyt-media-well"
                           loading="lazy"
                           decoding="async"
                         />
@@ -311,7 +322,7 @@ export function GoalResult({
                     isPlaces={isPlaces}
                     isProduct={isProduct}
                     isCompared={compared.includes(item.id)}
-                    isSaved={savedItems.includes(item.id)}
+                    isSaved={savedItemIds.includes(savedItemKey(item))}
                     onView={() => setSheet({ type: 'view', item })}
                     onCompare={() => toggleCompare(item)}
                     onSaveItem={() => toggleSavedItem(item)}
@@ -324,7 +335,7 @@ export function GoalResult({
         </>
       ) : (
         <>
-          <div className="mt-4 rounded-2xl border border-white/10 bg-black/45 p-4 text-sm text-white/70">
+          <div className="bofyt-glass-panel mt-4 rounded-2xl p-4 text-sm text-white/70">
             {isProduct && hasProductFilters ? 'No products match the selected filters.' : model.emptyMessage ?? 'Nothing matches that filter right now.'}{' '}
             <button
               type="button"
@@ -354,13 +365,13 @@ export function GoalResult({
                 }
               >
                 {closestItems.map((item) => (
-                  <li key={item.id} className="rounded-2xl border border-white/10 bg-black/35 p-3.5">
+                  <li key={item.id} className="bofyt-result-item rounded-2xl p-3.5">
                     <div className="flex items-start gap-3">
                       {item.imageUrl && (
                         <img
                           src={item.imageUrl}
                           alt={`${item.brand ? `${item.brand} ` : ''}${item.name} product image`}
-                          className="size-16 shrink-0 rounded-lg object-contain bg-white/5"
+                          className="size-16 shrink-0 rounded-lg object-contain bofyt-media-well"
                           loading="lazy"
                           decoding="async"
                         />
@@ -378,7 +389,7 @@ export function GoalResult({
                       isPlaces={false}
                       isProduct
                       isCompared={compared.includes(item.id)}
-                      isSaved={savedItems.includes(item.id)}
+                      isSaved={savedItemIds.includes(savedItemKey(item))}
                       onView={() => setSheet({ type: 'view', item })}
                       onCompare={() => toggleCompare(item)}
                       onSaveItem={() => toggleSavedItem(item)}
@@ -408,8 +419,8 @@ export function GoalResult({
                   aria-pressed={active}
                   onClick={() => setRefinement(option.id)}
                   className={cn(
-                    'min-h-11 shrink-0 rounded-full border px-4 text-xs uppercase tracking-[0.14em] transition-colors active:scale-95',
-                    active ? 'border-gold bg-gold text-black' : 'border-white/20 text-white/80 hover:border-gold/60',
+                    'bofyt-control-action min-h-11 shrink-0 rounded-full px-4 text-xs uppercase tracking-[0.14em] active:scale-95',
+                    active && 'border-gold bg-gold text-black',
                   )}
                 >
                   {option.label}
@@ -426,7 +437,7 @@ export function GoalResult({
         type="button"
         onClick={runNextAction}
         whileTap={{ scale: 0.97 }}
-        className="group mt-2 inline-flex h-13 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-gold-light to-gold py-4 text-sm font-medium uppercase tracking-[0.16em] text-black shadow-[0_0_30px_-8px_rgba(226,184,101,0.9)]"
+        className="bofyt-primary-action group mt-2 inline-flex h-13 w-full items-center justify-center gap-2 rounded-full py-4 text-sm font-medium uppercase tracking-[0.16em]"
       >
         {compared.length >= 2 ? `Compare ${compared.length} selected` : model.nextActionLabel}
         <ArrowRight aria-hidden className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
@@ -437,8 +448,8 @@ export function GoalResult({
         type="button"
         onClick={saved ? onOpenProgress : onSave}
         className={cn(
-          'mt-2.5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border text-xs uppercase tracking-[0.16em] transition-colors active:scale-[0.98]',
-          saved ? 'border-gold/50 text-gold-light' : 'border-white/20 text-white/85 hover:border-gold/60',
+          'bofyt-secondary-action mt-2.5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full text-xs uppercase tracking-[0.16em] active:scale-[0.98]',
+          saved && 'border-gold/50 text-gold-light',
         )}
       >
         {saved ? <BookmarkCheck aria-hidden className="size-4" /> : <Bookmark aria-hidden className="size-4" />}
@@ -518,8 +529,8 @@ function ProductResultControls({
           aria-controls="product-filters-panel"
           onClick={() => togglePanel('filters')}
           className={cn(
-            'inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-full border px-3 text-xs uppercase tracking-[0.16em] transition-colors active:scale-95',
-            panel === 'filters' ? 'border-gold bg-gold/15 text-gold-light' : 'border-white/20 text-white/85 hover:border-gold/60',
+            'bofyt-control-action inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-3 text-xs uppercase tracking-[0.16em] active:scale-95',
+            panel === 'filters' && 'border-gold bg-gold/15 text-gold-light',
           )}
         >
           <SlidersHorizontal aria-hidden className="size-3.5" />
@@ -536,8 +547,8 @@ function ProductResultControls({
           aria-controls="product-sort-panel"
           onClick={() => togglePanel('sort')}
           className={cn(
-            'inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-full border px-3 text-xs uppercase tracking-[0.16em] transition-colors active:scale-95',
-            panel === 'sort' ? 'border-gold bg-gold/15 text-gold-light' : 'border-white/20 text-white/85 hover:border-gold/60',
+            'bofyt-control-action inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-3 text-xs uppercase tracking-[0.16em] active:scale-95',
+            panel === 'sort' && 'border-gold bg-gold/15 text-gold-light',
           )}
         >
           <ArrowDownUp aria-hidden className="size-3.5" />
@@ -557,7 +568,7 @@ function ProductResultControls({
       </div>
 
       {panel === 'filters' && (
-        <section id="product-filters-panel" aria-labelledby="product-filters-heading" className="mt-2 rounded-2xl border border-white/10 bg-black/55 p-3">
+        <section id="product-filters-panel" aria-labelledby="product-filters-heading" className="bofyt-glass-panel mt-2 rounded-2xl p-3">
           <div className="flex items-center justify-between gap-3">
             <p id="product-filters-heading" className="text-[10px] uppercase tracking-[0.3em] text-gold-light">
               Filter products
@@ -612,7 +623,7 @@ function ProductResultControls({
                   <select
                     value={filters.minRating?.toString() ?? ''}
                     onChange={(event) => onFilterChange('minRating', event.target.value ? Number(event.target.value) : undefined)}
-                    className="min-h-10 w-full rounded-xl border border-white/15 bg-black px-3 text-sm text-white outline-none transition-colors focus:border-gold"
+                    className="bofyt-auth-input min-h-10 w-full rounded-xl px-3 text-sm outline-none transition-colors"
                   >
                     <option value="">Any rating</option>
                     {ratingOptions.map((rating) => (
@@ -631,7 +642,7 @@ function ProductResultControls({
       )}
 
       {panel === 'sort' && (
-        <section id="product-sort-panel" aria-labelledby="product-sort-heading" className="mt-2 rounded-2xl border border-white/10 bg-black/55 p-3">
+        <section id="product-sort-panel" aria-labelledby="product-sort-heading" className="bofyt-glass-panel mt-2 rounded-2xl p-3">
           <fieldset>
             <legend id="product-sort-heading" className="text-[10px] uppercase tracking-[0.3em] text-gold-light">
               Sort by
@@ -680,7 +691,7 @@ function ProductFilterSelect({
         id={id}
         value={value}
         onChange={(event) => onChange(event.target.value || undefined)}
-        className="min-h-10 w-full rounded-xl border border-white/15 bg-black px-3 text-sm text-white outline-none transition-colors focus:border-gold"
+        className="bofyt-auth-input min-h-10 w-full rounded-xl px-3 text-sm outline-none transition-colors"
       >
         <option value="">Any {label.toLowerCase()}</option>
         {options.map((option) => (
@@ -741,7 +752,7 @@ function ItemActions({
   onThird: () => void
   prominent?: boolean
 }) {
-  const base = 'inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full border text-[11px] uppercase tracking-[0.12em] transition-colors active:scale-95'
+  const base = 'bofyt-control-action inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full text-[11px] uppercase tracking-[0.12em] active:scale-95'
   return (
     <div className={cn('mt-3 gap-2', isProduct ? 'grid grid-cols-2' : 'flex')}>
       <button type="button" onClick={onView} aria-label={`View ${item.name}`} className={cn(base, 'border-white/20 text-white/85 hover:border-gold/60')}>

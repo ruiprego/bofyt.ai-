@@ -23,7 +23,7 @@ export function Toast({ message }: { message: ToastMessage | null }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="inline-flex max-w-full items-center gap-2 rounded-full border border-gold/40 bg-[#0b0a08] px-4 py-2.5 text-sm text-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.9)]"
+            className="bofyt-glass-panel-gold inline-flex max-w-full items-center gap-2 rounded-full px-4 py-2.5 text-sm text-white"
           >
             <Check aria-hidden className="size-4 shrink-0 text-gold" />
             <span className="truncate">{message.text}</span>

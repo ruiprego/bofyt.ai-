@@ -6,8 +6,9 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef } from 'react'
 import type { MouseEvent as ReactMouseEvent } from 'react'
 import type { Category, CategoryModule } from '@/lib/bofyt/categories'
-import type { Capability } from '@/lib/bofyt/capabilities'
+import type { Capability, CapabilitySearchRequest } from '@/lib/bofyt/capabilities'
 import { cn } from '@/lib/utils'
+import { CapabilitySearch } from './capability-search'
 
 interface CapabilityOverlayProps {
   category: Category | null
@@ -19,6 +20,7 @@ interface CapabilityOverlayProps {
   onStart: () => void
   onEnter: () => void
   onSelectModule: (module: CategoryModule) => void
+  onCapabilitySearch: (request: CapabilitySearchRequest) => void
 }
 
 const ease = [0.22, 1, 0.36, 1] as const
@@ -33,6 +35,7 @@ export function CapabilityOverlay({
   onStart,
   onEnter,
   onSelectModule,
+  onCapabilitySearch,
 }: CapabilityOverlayProps) {
   const closeRef = useRef<HTMLButtonElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -40,23 +43,43 @@ export function CapabilityOverlay({
 
   const handleCardClick = (event: ReactMouseEvent<HTMLElement>) => {
     const target = event.target
-    if (target instanceof Element && target.closest('button')) return
+    if (target instanceof Element && target.closest('button, input, form, label, textarea, select, a')) return
     onEnter()
   }
 
   useEffect(() => {
     if (!open) return
 
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    contentRef.current?.scrollTo({ top: 0 })
-    const timer = window.setTimeout(() => closeRef.current?.focus(), 260)
+    const root = document.documentElement
+    const body = document.body
+    const scrollX = window.scrollX
+    const scrollY = window.scrollY
+    const scrollbarWidth = window.innerWidth - root.clientWidth
+    const previousStyles = {
+      bodyOverflow: body.style.overflow,
+      bodyPaddingRight: body.style.paddingRight,
+      rootOverflow: root.style.overflow,
+    }
+
+    root.style.overflow = 'hidden'
+    body.style.overflow = 'hidden'
+    body.style.paddingRight = scrollbarWidth > 0 ? `${scrollbarWidth}px` : previousStyles.bodyPaddingRight
+
+    const timer = window.setTimeout(() => closeRef.current?.focus({ preventScroll: true }), 260)
 
     return () => {
-      document.body.style.overflow = previousOverflow
+      root.style.overflow = previousStyles.rootOverflow
+      body.style.overflow = previousStyles.bodyOverflow
+      body.style.paddingRight = previousStyles.bodyPaddingRight
+      window.scrollTo(scrollX, scrollY)
       window.clearTimeout(timer)
     }
-  }, [open, category?.id, capability?.id])
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    contentRef.current?.scrollTo({ left: 0, top: 0, behavior: 'auto' })
+  }, [open, capability?.id])
 
   return (
     <div className={cn('contents', !open && 'pointer-events-none')}>
@@ -83,7 +106,7 @@ export function CapabilityOverlay({
             <section
               aria-describedby="capability-overlay-description"
               onClick={handleCardClick}
-              className="relative flex max-h-[calc(100dvh-7rem)] min-h-0 w-full flex-col overflow-hidden rounded-[1.75rem] border border-gold/55 bg-void/95 shadow-[0_0_100px_-28px_rgba(226,184,101,0.85),0_28px_90px_-30px_rgba(0,0,0,0.95)] sm:max-w-4xl"
+              className="bofyt-auth-panel relative flex max-h-[calc(100dvh-7rem)] min-h-0 w-full flex-col overflow-hidden rounded-[1.75rem] border sm:max-w-4xl"
             >
               <div className="relative h-40 shrink-0 overflow-hidden border-b border-gold/30 sm:h-48">
                 <Image
@@ -94,7 +117,7 @@ export function CapabilityOverlay({
                   className="object-cover object-center opacity-65"
                   priority
                 />
-                <span aria-hidden className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,5,5,0.98),rgba(5,5,5,0.58),rgba(5,5,5,0.72)),linear-gradient(0deg,#050505,transparent_70%)]" />
+                <span aria-hidden className="bofyt-capability-hero-wash absolute inset-0" />
                 <span aria-hidden className="absolute inset-x-8 bottom-0 h-px bg-gradient-to-r from-transparent via-gold-light/80 to-transparent" />
 
                 <div className="absolute inset-x-5 bottom-5 flex items-end justify-between gap-4 sm:inset-x-7 sm:bottom-6">
@@ -128,6 +151,8 @@ export function CapabilityOverlay({
 
               <div ref={contentRef} className="min-h-0 overflow-y-auto overscroll-contain">
                 <div className="flex flex-col gap-6 p-5 text-left sm:gap-7 sm:p-7">
+                  <CapabilitySearch key={capability.id} capability={capability} onSubmit={onCapabilitySearch} />
+
                   {category.id === 'search' && (
                     <div className="flex flex-col gap-3 border-b border-white/10 pb-5 sm:flex-row sm:items-center sm:justify-between">
                       <div>
@@ -154,11 +179,11 @@ export function CapabilityOverlay({
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                    <div className="bofyt-glass-panel rounded-2xl p-4">
                       <p className="text-[10px] uppercase tracking-[0.26em] text-white/45">What BOFYT builds</p>
                       <p className="mt-2 text-sm leading-relaxed text-white/75">{capability.response}</p>
                     </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                    <div className="bofyt-glass-panel rounded-2xl p-4">
                       <p className="text-[10px] uppercase tracking-[0.26em] text-white/45">Your path</p>
                       <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-2" aria-label="Capability path">
                         {capability.paths.map((path) => (
@@ -200,7 +225,7 @@ export function CapabilityOverlay({
                       </p>
                       <ul className="mt-4 grid gap-3 sm:grid-cols-2" aria-label="Evidence levels">
                         {capability.evidenceLevels.map((level) => (
-                          <li key={level.label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                          <li key={level.label} className="bofyt-glass-panel rounded-2xl p-4">
                             <p className="text-sm text-white">{level.label}</p>
                             <p className="mt-1 text-xs leading-relaxed text-white/50">{level.description}</p>
                           </li>
@@ -226,7 +251,7 @@ export function CapabilityOverlay({
                                 prompt: `I want to explore ${book.title} by ${book.author} and apply its ideas to my goal.`,
                               })
                             }
-                            className="group flex h-full w-full flex-col rounded-2xl border border-white/10 bg-black/35 p-4 text-left transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-gold/45 hover:bg-gold/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70"
+                            className="bofyt-result-item group flex h-full w-full flex-col rounded-2xl p-4 text-left transition-[border-color,background-color,transform] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tech-cyan/70"
                           >
                             <span className="font-display text-lg text-white group-hover:text-gold-light">{book.title}</span>
                             <span className="mt-1 text-xs uppercase tracking-[0.14em] text-gold-light/75">{book.author}</span>
@@ -251,7 +276,7 @@ export function CapabilityOverlay({
                         onClick={onStart}
                         className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-gold/70 bg-gold px-5 text-xs font-semibold uppercase tracking-[0.16em] text-void transition-[transform,box-shadow,background-color] hover:bg-gold-light hover:shadow-[0_0_30px_-8px_rgba(246,221,161,0.95)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-light focus-visible:ring-offset-2 focus-visible:ring-offset-void"
                       >
-                        Plan with AI Core
+                        Start with BOFYT
                         <ArrowRight aria-hidden className="size-4" />
                       </button>
                     </div>
@@ -273,7 +298,7 @@ function ModuleCard({ module, onSelect }: { module: CategoryModule; onSelect: ()
       <button
         type="button"
         onClick={onSelect}
-        className="group flex min-h-40 w-full flex-col justify-between rounded-2xl border border-white/10 bg-black/35 p-4 text-left transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-gold/45 hover:bg-gold/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70"
+        className="bofyt-result-item group flex min-h-40 w-full flex-col justify-between rounded-2xl p-4 text-left transition-[border-color,background-color,transform] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tech-cyan/70"
       >
         <span>
           <span className="block font-display text-lg text-white group-hover:text-gold-light">{module.name}</span>

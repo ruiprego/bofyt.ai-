@@ -35,7 +35,7 @@ export function PlanSheet({ source, onClose, onStart }: PlanSheetProps) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="plan-title"
-            className="fixed inset-x-0 bottom-0 z-[61] max-h-[88dvh] overflow-y-auto rounded-t-3xl border border-gold/25 bg-[#0b0a08] px-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-6 md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:w-[min(92vw,560px)] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-3xl md:pb-6"
+            className="bofyt-sheet fixed inset-x-0 bottom-0 z-[61] max-h-[88dvh] overflow-y-auto rounded-t-3xl border px-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-6 md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:w-[min(92vw,560px)] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-3xl md:pb-6"
             initial={{ y: '100%', opacity: 0.6 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
@@ -97,7 +97,7 @@ export function PlanSheet({ source, onClose, onStart }: PlanSheetProps) {
               type="button"
               onClick={onStart}
               whileTap={{ scale: 0.97 }}
-              className="group mt-8 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-gold-light to-gold text-sm font-medium uppercase tracking-[0.18em] text-black shadow-[0_0_30px_-8px_rgba(226,184,101,0.9)]"
+              className="bofyt-primary-action group mt-8 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-medium uppercase tracking-[0.18em]"
             >
               Start this plan
               <ArrowRight aria-hidden className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />

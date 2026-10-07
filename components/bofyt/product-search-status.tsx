@@ -13,7 +13,7 @@ export function ProductSearchStatus({ message, onRetry }: ProductSearchStatusPro
     <motion.div
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex w-full max-w-xl flex-col items-center gap-3 rounded-2xl border border-white/10 bg-black/45 px-4 py-4 text-center"
+      className="bofyt-glass-panel flex w-full max-w-xl flex-col items-center gap-3 rounded-2xl px-4 py-4 text-center"
       role="alert"
       aria-live="assertive"
     >

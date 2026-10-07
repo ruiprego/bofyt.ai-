@@ -21,7 +21,7 @@ export function ContinueGoal({ entry, onContinue }: ContinueGoalProps) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -6 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className="group flex w-full max-w-xl items-center gap-4 rounded-2xl border border-gold/25 bg-black/50 p-4 text-left backdrop-blur-md transition-colors hover:border-gold/60 focus-visible:border-gold focus-visible:outline-none"
+      className="bofyt-glass-panel-gold group flex w-full max-w-xl items-center gap-4 rounded-2xl p-4 text-left transition-[border-color,background-color,transform] hover:-translate-y-0.5 focus-visible:outline-none"
     >
       <span
         aria-hidden

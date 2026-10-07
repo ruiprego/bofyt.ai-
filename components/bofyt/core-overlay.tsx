@@ -67,7 +67,7 @@ export function CoreOverlay({
           role="dialog"
           aria-modal="true"
           aria-labelledby="core-overlay-title"
-          className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-black/85 backdrop-blur-md"
+          className="bofyt-app-shell fixed inset-0 z-50 flex flex-col overflow-y-auto backdrop-blur-md"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -80,7 +80,7 @@ export function CoreOverlay({
               type="button"
               onClick={onClose}
               aria-label="Close AI Core"
-              className="grid size-11 place-items-center rounded-full border border-white/15 bg-black/40 text-white/80 transition-colors hover:border-white/40 active:scale-95"
+              className="bofyt-control-action grid size-11 place-items-center rounded-full text-white/80 active:scale-95"
             >
               <X aria-hidden className="size-4" />
             </button>
@@ -127,7 +127,7 @@ export function CoreOverlay({
                   transition={{ duration: 0.5, delay: 0.2, ease }}
                 >
                   {category && (
-                    <p className="-mb-2 rounded-full border border-gold/50 bg-gold/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-gold-light">
+                    <p className="-mb-2 rounded-full border border-tech-cyan/35 bg-tech-cyan/[0.08] px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-tech-cyan">
                       {category.index} · {category.title}
                     </p>
                   )}
@@ -168,7 +168,7 @@ function OrbitalField() {
   return (
     <motion.div
       aria-hidden
-      className="pointer-events-none fixed inset-0 overflow-hidden"
+      className="bofyt-orbital-field pointer-events-none fixed inset-0 overflow-hidden"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 1.1, ease }}
